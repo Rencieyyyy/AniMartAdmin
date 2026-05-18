@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Service | AniMart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+
+    <style>
+        :root {
+            --mint: #7EFFC5;
+            --mint-dim: #5CE8A8;
+            --mint-glow: rgba(126, 255, 197, 0.15);
+            --dark: #0D1117;
+            --surface: #161B22;
+            --surface-2: #1C2333;
+            --border: rgba(255,255,255,0.07);
+            --text: #E6EDF3;
+            --muted: #7D8590;
+            --danger: #FF6B6B;
+            --sidebar-w: 260px;
+            --radius: 16px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background-color: white;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -30%;
+            left: -10%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(ellipse, rgba(126,255,197,0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrapper { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+            padding: 0 12px 20px;
+        }
+
+        .sidebar-brand {
+            padding: 28px 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px;
+            background: var(--mint);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .brand-icon svg { width: 18px; height: 18px; color: var(--dark); }
+
+        .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+        .brand-name span { color: var(--mint); }
+
+        .nav { display: flex; flex-direction: column; flex: 1; gap: 3px; }
+
+        .nav-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 14px 12px 6px;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 10px;
+            text-decoration: none; color: var(--muted);
+            font-size: 0.875rem; font-weight: 500;
+            transition: all 0.18s ease;
+            border: none; background: transparent; cursor: pointer;
+            width: 100%; text-align: left;
+        }
+
+        .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; transition: color 0.18s; }
+        .nav-link:hover { color: var(--text); background: var(--mint); }
+        .nav-link.active { background: var(--mint); color: var(--dark); font-weight: 700; }
+        .nav-link.active svg { color: var(--dark); }
+        .nav-link.logout { color: var(--danger); margin-top: auto; }
+        .nav-link.logout:hover { background: rgba(255,107,107,0.1); color: var(--danger); }
+
+        .nav-bottom {
+            border-top: 1px solid var(--border);
+            padding-top: 12px; margin-top: auto;
+            display: flex; flex-direction: column; gap: 3px;
+        }
+
+        /* MAIN */
+        .main {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            padding: 24px 32px 20px;
+            border-bottom: 1px solid var(--border);
+            background: white;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        .topbar h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--mint);
+            flex: 1;
+        }
+
+        .topbar p { font-size: 0.8rem; color: var(--muted); }
+
+        .topbar-stats {
+            display: flex;
+            gap: 12px;
+        }
+
+        .topbar-stat {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 16px;
+            text-align: center;
+        }
+
+        .topbar-stat-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+        }
+
+        .topbar-stat-label {
+            font-size: 0.65rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        /* LAYOUT */
+        .cs-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* CONVERSATION LIST */
+        .conv-list {
+            border-right: 1px solid var(--border);
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .conv-search {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .conv-search input {
+            width: 100%;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 12px 8px 36px;
+            font-size: 0.8rem;
+            color: var(--text);
+            font-family: 'Sora', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+            position: relative;
+        }
+
+        .conv-search input:focus { border-color: rgba(126,255,197,0.3); }
+        .conv-search input::placeholder { color: var(--muted); }
+
+        .conv-search-wrap {
+            position: relative;
+        }
+
+        .conv-search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px; height: 14px;
+            color: var(--muted);
+            pointer-events: none;
+        }
+
+        .conv-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            padding: 0 8px;
+            flex-shrink: 0;
+        }
+
+        .conv-tab {
+            flex: 1;
+            padding: 10px 8px;
+            font-size: 0.73rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.18s;
+        }
+
+        .conv-tab.active { color: var(--mint); border-bottom-color: var(--mint); }
+
+        .conv-items {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .conv-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            cursor: pointer;
+            transition: background 0.15s;
+            position: relative;
+        }
+
+        .conv-item:hover { background: var(--surface-2); }
+        .conv-item.active { background: var(--surface-2); border-left: 2px solid var(--mint); }
+
+        .conv-avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700;
+            color: var(--mint);
+            flex-shrink: 0;
+        }
+
+        .conv-meta { flex: 1; min-width: 0; }
+
+        .conv-name {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .conv-time {
+            font-size: 0.65rem;
+            color: var(--muted);
+            font-family: 'DM Mono', monospace;
+            flex-shrink: 0;
+        }
+
+        .conv-preview {
+            font-size: 0.73rem;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 3px;
+        }
+
+        .conv-unread {
+            width: 18px; height: 18px;
+            background: var(--mint);
+            color: var(--dark);
+            border-radius: 50%;
+            font-size: 0.6rem;
+            font-weight: 800;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .priority-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 6px;
+        }
+
+        /* CHAT PANEL */
+        .chat-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #0D1117;
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .chat-header-info { flex: 1; }
+
+        .chat-header-name {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .online-dot {
+            width: 7px; height: 7px;
+            background: var(--mint);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--mint);
+        }
+
+        .chat-header-sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+        .chat-header-actions { display: flex; gap: 8px; }
+
+        .icon-btn {
+            width: 34px; height: 34px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: var(--muted);
+            transition: all 0.18s;
+        }
+
+        .icon-btn:hover { border-color: rgba(126,255,197,0.3); color: var(--mint); }
+        .icon-btn svg { width: 14px; height: 14px; }
+
+        /* MESSAGES */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .msg-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .msg-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .msg-row.admin { flex-direction: row-reverse; }
+
+        .msg-avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.6rem; font-weight: 700;
+            flex-shrink: 0;
+            margin-bottom: 2px;
+        }
+
+        .msg-avatar.user-av { background: var(--surface-2); border: 1px solid var(--border); color: var(--mint); }
+        .msg-avatar.admin-av { background: var(--mint); color: var(--dark); }
+
+        .msg-bubble {
+            max-width: 60%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 0.82rem;
+            line-height: 1.55;
+            position: relative;
+        }
+
+        .msg-row:not(.admin) .msg-bubble {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg-row.admin .msg-bubble {
+            background: var(--mint);
+            color: var(--dark);
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg-time {
+            font-size: 0.62rem;
+            color: var(--muted);
+            font-family: 'DM Mono', monospace;
+            margin-top: 3px;
+            padding: 0 4px;
+        }
+
+        .msg-row.admin .msg-time { text-align: right; }
+
+        .date-divider {
+            text-align: center;
+            font-size: 0.68rem;
+            color: var(--muted);
+            font-family: 'DM Mono', monospace;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-divider::before, .date-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* CHAT INPUT */
+        .chat-input-wrap {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            flex-shrink: 0;
+        }
+
+        .quick-replies {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .quick-replies::-webkit-scrollbar { height: 3px; }
+
+        .quick-btn {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.7rem;
+            color: var(--muted);
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: 'Sora', sans-serif;
+            transition: all 0.18s;
+            flex-shrink: 0;
+        }
+
+        .quick-btn:hover { border-color: rgba(126,255,197,0.3); color: var(--mint); }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .chat-textarea {
+            flex: 1;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            color: var(--text);
+            font-family: 'Sora', sans-serif;
+            outline: none;
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+            line-height: 1.5;
+            transition: border-color 0.2s;
+        }
+
+        .chat-textarea:focus { border-color: rgba(126,255,197,0.35); }
+        .chat-textarea::placeholder { color: var(--muted); }
+
+        .send-btn {
+            width: 44px; height: 44px;
+            background: var(--mint);
+            border: none;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: var(--dark);
+            transition: all 0.18s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover { background: var(--mint-dim); transform: scale(1.05); }
+        .send-btn svg { width: 16px; height: 16px; }
+
+        /* STATUS TAGS */
+        .tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.62rem; font-weight: 600;
+            padding: 2px 7px; border-radius: 20px;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .tag-open { background: rgba(126,255,197,0.12); color: var(--mint-dim); border: 1px solid rgba(126,255,197,0.2); }
+        .tag-pending { background: rgba(251,191,36,0.12); color: #FBB824; border: 1px solid rgba(251,191,36,0.2); }
+        .tag-closed { background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--border); }
+        .tag-urgent { background: rgba(255,107,107,0.12); color: var(--danger); border: 1px solid rgba(255,107,107,0.2); }
+
+        /* EMPTY STATE */
+        .empty-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: var(--muted);
+        }
+
+        .empty-chat svg { width: 48px; height: 48px; opacity: 0.3; }
+        .empty-chat p { font-size: 0.85rem; }
+
+        /* ANIMATIONS */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* SCROLLBARS */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            :root { --sidebar-w: 64px; }
+            .sidebar-brand, .nav-link span, .nav-label { display: none; }
+            .nav-link { justify-content: center; padding: 10px; }
+            .cs-layout { grid-template-columns: 240px 1fr; }
+        }
+
+        @media (max-width: 700px) {
+            .cs-layout { grid-template-columns: 1fr; }
+            .conv-list { display: none; }
+            .topbar-stats { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="brand-name">Ani<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-label">Main</div>
+            <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+            <a href="sellers.html" class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+            <a href="premium.html" class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
+
+            <div class="nav-label">Admin</div>
+            <a href="announcements.html" class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
+            <a href="user.html" class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
+            <a href="customer-service.html" class="nav-link"><i data-lucide="message-circle"></i><span>Customer Service</span></a>
+
+            <div class="nav-bottom">
+                <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
+                <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <div class="topbar">
+            <div style="flex:1;">
+                <h1>Customer Service</h1>
+                <p style="color:black; margin-top:2px;">Messages from users to AniMart</p>
+            </div>
+            <div class="topbar-stats">
+                <div class="topbar-stat">
+                    <div class="topbar-stat-val" id="stat-open">12</div>
+                    <div class="topbar-stat-label">Open</div>
+                </div>
+                <div class="topbar-stat">
+                    <div class="topbar-stat-val" id="stat-pending">5</div>
+                    <div class="topbar-stat-label">Pending</div>
+                </div>
+                <div class="topbar-stat">
+                    <div class="topbar-stat-val" id="stat-resolved">48</div>
+                    <div class="topbar-stat-label">Resolved</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cs-layout">
+
+            <!-- CONVERSATION LIST -->
+            <div class="conv-list">
+                <div class="conv-search">
+                    <div class="conv-search-wrap">
+                        <i data-lucide="search" class="conv-search-icon"></i>
+                        <input type="text" placeholder="Search conversations…" id="searchInput" oninput="filterConversations()">
+                    </div>
+                </div>
+
+                <div class="conv-tabs">
+                    <div class="conv-tab active" onclick="switchTab(this,'all')">All</div>
+                    <div class="conv-tab" onclick="switchTab(this,'open')">Open</div>
+                    <div class="conv-tab" onclick="switchTab(this,'pending')">Pending</div>
+                    <div class="conv-tab" onclick="switchTab(this,'closed')">Closed</div>
+                </div>
+
+                <div class="conv-items" id="convItems"></div>
+            </div>
+
+            <!-- CHAT PANEL -->
+            <div class="chat-panel" id="chatPanel">
+
+                <!-- Header -->
+                <div class="chat-header" id="chatHeader" style="display:none;">
+                    <div class="conv-avatar" id="headerAvatar" style="width:38px;height:38px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:var(--mint);flex-shrink:0;"></div>
+                    <div class="chat-header-info">
+                        <div class="chat-header-name">
+                            <span id="headerName">—</span>
+                            <span class="online-dot" id="onlineDot" style="display:none;"></span>
+                            <span id="headerTag"></span>
+                        </div>
+                        <div class="chat-header-sub" id="headerSub">—</div>
+                    </div>
+                    <div class="chat-header-actions">
+                        <button class="icon-btn" title="Mark resolved" onclick="markResolved()"><i data-lucide="check-circle"></i></button>
+                        <button class="icon-btn" title="Flag urgent" onclick="markUrgent()"><i data-lucide="flag"></i></button>
+                        <button class="icon-btn" title="More options"><i data-lucide="more-horizontal"></i></button>
+                    </div>
+                </div>
+
+                <!-- Empty state -->
+                <div class="empty-chat" id="emptyChat">
+                    <i data-lucide="message-square-dashed"></i>
+                    <p>Select a conversation to start replying</p>
+                </div>
+
+                <!-- Messages -->
+                <div class="messages" id="messagesArea" style="display:none;"></div>
+
+                <!-- Input -->
+                <div class="chat-input-wrap" id="chatInputWrap" style="display:none;">
+                    <div class="quick-replies" id="quickReplies"></div>
+                    <div class="input-row">
+                        <textarea class="chat-textarea" id="chatInput" placeholder="Type your reply…" rows="1" onkeydown="handleKey(event)"></textarea>
+                        <button class="send-btn" onclick="sendMessage()"><i data-lucide="send"></i></button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────
+const conversations = [
+    {
+        id: 1,
+        name: "Cardo Dalisay",
+        role: "Seller",
+        location: "Batangas",
+        status: "open",
+        unread: 2,
+        lastMsg: "Hindi pa natatanggap ang payment ko.",
+        lastTime: "9:42 AM",
+        online: true,
+        messages: [
+            { from: "user", text: "Good morning po! Gusto ko lang magtanong tungkol sa aking listing.", time: "9:30 AM" },
+            { from: "admin", text: "Magandang umaga! Paano po kita matutulungan?", time: "9:31 AM" },
+            { from: "user", text: "May isang buyer na nagbayad pero hindi pa natatanggap ang payment sa aking account.", time: "9:40 AM" },
+            { from: "user", text: "Hindi pa natatanggap ang payment ko.", time: "9:42 AM" }
+        ]
+    },
+    {
+        id: 2,
+        name: "Maria Lourdes",
+        role: "Buyer",
+        location: "Laguna",
+        status: "pending",
+        unread: 1,
+        lastMsg: "Kailan po darating ang order ko?",
+        lastTime: "8:55 AM",
+        online: false,
+        messages: [
+            { from: "user", text: "Hi! May tanong lang po ako sa aking order.", time: "8:50 AM" },
+            { from: "admin", text: "Hello Maria! Sige po, ano ang inyong katanungan?", time: "8:52 AM" },
+            { from: "user", text: "Kailan po darating ang order ko?", time: "8:55 AM" }
+        ]
+    },
+    {
+        id: 3,
+        name: "Rico Cruz",
+        role: "Seller",
+        location: "Quezon",
+        status: "open",
+        unread: 0,
+        lastMsg: "Salamat po sa tulong!",
+        lastTime: "Yesterday",
+        online: false,
+        messages: [
+            { from: "user", text: "Paano po mag-upload ng bagong listing?", time: "Yesterday 2:10 PM" },
+            { from: "admin", text: "Pumunta po kayo sa inyong dashboard at i-click ang 'Add Listing' button.", time: "Yesterday 2:15 PM" },
+            { from: "user", text: "Nakita ko na po! Salamat po sa tulong!", time: "Yesterday 2:20 PM" },
+            { from: "admin", text: "Wala pong anuman! Kung may katanungan pa kayo, handa kaming tumulong.", time: "Yesterday 2:21 PM" },
+            { from: "user", text: "Salamat po sa tulong!", time: "Yesterday 2:22 PM" }
+        ]
+    },
+    {
+        id: 4,
+        name: "Anna Santos",
+        role: "Buyer",
+        location: "Cavite",
+        status: "urgent",
+        unread: 3,
+        lastMsg: "Scam yung seller! Wala na syang reply!",
+        lastTime: "10:01 AM",
+        online: true,
+        messages: [
+            { from: "user", text: "Emergency po! May problema ako sa isang seller.", time: "9:55 AM" },
+            { from: "user", text: "Nagbayad na ako pero wala pa rin sa akin ang livestock.", time: "9:57 AM" },
+            { from: "admin", text: "Naiintindihan ko ang inyong sitwasyon. Maaari po ba kayong ibigay ang order number?", time: "9:59 AM" },
+            { from: "user", text: "Scam yung seller! Wala na syang reply!", time: "10:01 AM" }
+        ]
+    },
+    {
+        id: 5,
+        name: "Ben Magtibay",
+        role: "Seller",
+        location: "Rizal",
+        status: "closed",
+        unread: 0,
+        lastMsg: "Naresolba na po ang issue.",
+        lastTime: "Mon",
+        online: false,
+        messages: [
+            { from: "user", text: "Bakit na-block ang aking account?", time: "Mon 11:00 AM" },
+            { from: "admin", text: "Nakatanggap kami ng ilang reklamo kaugnay ng inyong account. Kailangan naming i-verify ang ilang impormasyon.", time: "Mon 11:05 AM" },
+            { from: "user", text: "Okay po, ano pong kailangan ninyo?", time: "Mon 11:08 AM" },
+            { from: "admin", text: "Maari po ba kayong mag-send ng valid ID at business permit para ma-verify?", time: "Mon 11:10 AM" },
+            { from: "user", text: "Naresolba na po ang issue.", time: "Mon 2:30 PM" }
+        ]
+    },
+    {
+        id: 6,
+        name: "Liza Manalo",
+        role: "Seller",
+        location: "Cavite",
+        status: "pending",
+        unread: 1,
+        lastMsg: "Puwede ba mag-upgrade sa Premium?",
+        lastTime: "10:15 AM",
+        online: true,
+        messages: [
+            { from: "user", text: "Magandang araw! Tanong lang po tungkol sa Premium plan.", time: "10:10 AM" },
+            { from: "user", text: "Puwede ba mag-upgrade sa Premium?", time: "10:15 AM" }
+        ]
+    }
+];
+
+const quickRepliesData = [
+    "Salamat sa inyong mensahe!",
+    "Inirepasar na namin ang inyong concern.",
+    "Maaari po bang ibigay ang inyong order number?",
+    "Ipapasa namin ito sa aming team.",
+    "Naayos na po ba ang inyong issue?"
+];
+
+let activeId = null;
+let currentTab = 'all';
+
+// ─── INIT ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    renderConversations();
+    renderQuickReplies();
+
+    // Auto-resize textarea
+    const ta = document.getElementById('chatInput');
+    ta.addEventListener('input', () => {
+        ta.style.height = 'auto';
+        ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+    });
+});
+
+// ─── RENDER CONVERSATIONS ────────────────────────────────
+function renderConversations() {
+    const container = document.getElementById('convItems');
+    const search = document.getElementById('searchInput').value.toLowerCase();
+
+    const filtered = conversations.filter(c => {
+        const matchTab = currentTab === 'all' || c.status === currentTab || (currentTab === 'open' && c.status === 'urgent');
+        const matchSearch = c.name.toLowerCase().includes(search) || c.lastMsg.toLowerCase().includes(search);
+        return matchTab && matchSearch;
+    });
+
+    container.innerHTML = '';
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:0.8rem;">No conversations found</div>`;
+        return;
+    }
+
+    filtered.forEach(c => {
+        const initials = c.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+        const dotColor = { open: '#7EFFC5', pending: '#FBB824', closed: 'var(--muted)', urgent: '#FF6B6B' }[c.status];
+
+        const div = document.createElement('div');
+        div.className = 'conv-item' + (activeId === c.id ? ' active' : '');
+        div.dataset.id = c.id;
+        div.onclick = () => openConversation(c.id);
+        div.innerHTML = `
+            <div class="conv-avatar">${initials}</div>
+            <div class="conv-meta">
+                <div class="conv-name">
+                    <span>${c.name}</span>
+                    <span class="conv-time">${c.lastTime}</span>
+                </div>
+                <div class="conv-preview">${c.lastMsg}</div>
+            </div>
+            ${c.unread > 0 ? `<div class="conv-unread">${c.unread}</div>` : `<div class="priority-dot" style="background:${dotColor};"></div>`}
+        `;
+        container.appendChild(div);
+    });
+
+    lucide.createIcons();
+}
+
+// ─── OPEN CONVERSATION ───────────────────────────────────
+function openConversation(id) {
+    activeId = id;
+    const conv = conversations.find(c => c.id === id);
+    if (!conv) return;
+
+    // Clear unread
+    conv.unread = 0;
+
+    // Update active state
+    document.querySelectorAll('.conv-item').forEach(el => {
+        el.classList.toggle('active', parseInt(el.dataset.id) === id);
+    });
+
+    // Update header
+    const initials = conv.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+    document.getElementById('headerAvatar').textContent = initials;
+    document.getElementById('headerName').textContent = conv.name;
+    document.getElementById('onlineDot').style.display = conv.online ? 'block' : 'none';
+    document.getElementById('headerSub').textContent = `${conv.role} · ${conv.location}`;
+
+    const tagMap = {
+        open: '<span class="tag tag-open">Open</span>',
+        pending: '<span class="tag tag-pending">Pending</span>',
+        closed: '<span class="tag tag-closed">Closed</span>',
+        urgent: '<span class="tag tag-urgent">Urgent</span>'
+    };
+    document.getElementById('headerTag').innerHTML = tagMap[conv.status] || '';
+
+    // Show panels
+    document.getElementById('emptyChat').style.display = 'none';
+    document.getElementById('chatHeader').style.display = 'flex';
+    document.getElementById('messagesArea').style.display = 'flex';
+    document.getElementById('chatInputWrap').style.display = 'block';
+
+    // Render messages
+    renderMessages(conv);
+
+    // Re-render list to clear badge
+    renderConversations();
+    lucide.createIcons();
+}
+
+// ─── RENDER MESSAGES ────────────────────────────────────
+function renderMessages(conv) {
+    const area = document.getElementById('messagesArea');
+    area.innerHTML = '';
+
+    let lastDate = '';
+    const today = 'Today';
+
+    conv.messages.forEach((msg, i) => {
+        const dateLabel = msg.time.includes('Yesterday') ? 'Yesterday' :
+                          msg.time.includes('Mon') ? 'Monday' : today;
+
+        if (dateLabel !== lastDate) {
+            const divider = document.createElement('div');
+            divider.className = 'date-divider';
+            divider.textContent = dateLabel;
+            area.appendChild(divider);
+            lastDate = dateLabel;
+        }
+
+        const isAdmin = msg.from === 'admin';
+        const initials = isAdmin ? 'AD' : conv.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+
+        const row = document.createElement('div');
+        row.className = 'msg-row' + (isAdmin ? ' admin' : '');
+        row.style.animation = 'fadeIn 0.25s ease both';
+        row.style.animationDelay = (i * 0.04) + 's';
+
+        row.innerHTML = `
+            <div class="msg-avatar ${isAdmin ? 'admin-av' : 'user-av'}">${initials}</div>
+            <div>
+                <div class="msg-bubble">${msg.text}</div>
+                <div class="msg-time">${msg.time.replace('Yesterday ', '').replace('Mon ', '')}</div>
+            </div>
+        `;
+        area.appendChild(row);
+    });
+
+    // Scroll to bottom
+    area.scrollTop = area.scrollHeight;
+}
+
+// ─── QUICK REPLIES ───────────────────────────────────────
+function renderQuickReplies() {
+    const wrap = document.getElementById('quickReplies');
+    quickRepliesData.forEach(r => {
+        const btn = document.createElement('button');
+        btn.className = 'quick-btn';
+        btn.textContent = r;
+        btn.onclick = () => {
+            document.getElementById('chatInput').value = r;
+            document.getElementById('chatInput').focus();
+        };
+        wrap.appendChild(btn);
+    });
+}
+
+// ─── SEND MESSAGE ────────────────────────────────────────
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text || activeId === null) return;
+
+    const conv = conversations.find(c => c.id === activeId);
+    if (!conv) return;
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+
+    conv.messages.push({ from: 'admin', text, time: timeStr });
+    conv.lastMsg = text;
+    conv.lastTime = timeStr;
+    if (conv.status === 'pending') conv.status = 'open';
+
+    input.value = '';
+    input.style.height = 'auto';
+
+    renderMessages(conv);
+    renderConversations();
+}
+
+function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+}
+
+// ─── TABS ────────────────────────────────────────────────
+function switchTab(el, tab) {
+    currentTab = tab;
+    document.querySelectorAll('.conv-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderConversations();
+}
+
+// ─── SEARCH ─────────────────────────────────────────────
+function filterConversations() {
+    renderConversations();
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────
+function markResolved() {
+    if (activeId === null) return;
+    const conv = conversations.find(c => c.id === activeId);
+    if (conv) {
+        conv.status = 'closed';
+        document.getElementById('headerTag').innerHTML = '<span class="tag tag-closed">Closed</span>';
+        renderConversations();
+    }
+}
+
+function markUrgent() {
+    if (activeId === null) return;
+    const conv = conversations.find(c => c.id === activeId);
+    if (conv && conv.status !== 'closed') {
+        conv.status = 'urgent';
+        document.getElementById('headerTag').innerHTML = '<span class="tag tag-urgent">Urgent</span>';
+        renderConversations();
+    }
+}
+
+// ─── LOGOUT ─────────────────────────────────────────────
+function confirmLogout() {
+    if (confirm("Are you sure you want to sign out?")) {
+        window.location.href = "../index.html";
+    }
+}
+</script>
+</body>
+</html>

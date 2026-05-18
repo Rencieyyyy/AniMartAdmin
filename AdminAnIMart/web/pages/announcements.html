@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Announcements | AniMart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --mint: #7EFFC5;
+            --mint-dim: #5CE8A8;
+            --mint-glow: rgba(126,255,197,0.15);
+            --dark: #0D1117;
+            --surface: #161B22;
+            --surface-2: #1C2333;
+            --surface-3: #21293a;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.13);
+            --text: #E6EDF3;
+            --muted: #7D8590;
+            --danger: #FF6B6B;
+            --warn: #FBB824;
+            --sidebar-w: 260px;
+            --radius: 16px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: white   ;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -20%; right: -10%;
+            width: 55%; height: 55%;
+            background: radial-gradient(ellipse, rgba(126,255,197,0.05) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .wrapper { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; height: 100vh;
+            z-index: 100; padding: 0 12px 20px;
+        }
+
+        .sidebar-brand {
+            padding: 28px 12px 24px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border); margin-bottom: 16px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px; background: var(--mint);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
+        }
+
+        .brand-icon svg { width: 18px; height: 18px; color: var(--dark); }
+        .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+        .brand-name span { color: var(--mint); }
+
+        .nav { display: flex; flex-direction: column; flex: 1; gap: 3px; }
+
+        .nav-label {
+            font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--muted); padding: 14px 12px 6px;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+            border-radius: 10px; text-decoration: none; color: var(--muted);
+            font-size: 0.875rem; font-weight: 500; transition: all 0.18s;
+            border: none; background: transparent; cursor: pointer; width: 100%; text-align: left;
+        }
+
+        .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .nav-link:hover { color: var(--dark); background: var(--mint); }
+        .nav-link.active { background: var(--mint); color: var(--dark); font-weight: 700; }
+        .nav-link.logout { color: var(--danger); }
+        .nav-link.logout:hover { background: rgba(255,107,107,0.1); color: var(--danger); }
+
+        .nav-bottom {
+            border-top: 1px solid var(--border); padding-top: 12px;
+            margin-top: auto; display: flex; flex-direction: column; gap: 3px;
+        }
+
+        /* ── MAIN ── */
+        .main {
+            margin-left: var(--sidebar-w); flex: 1;
+            padding: 36px 40px;
+            max-width: calc(100vw - var(--sidebar-w));
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            display: flex; align-items: flex-start;
+            justify-content: space-between; margin-bottom: 32px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem; font-weight: 800;
+            letter-spacing: -0.04em; color: var(--mint);
+        }
+
+        .page-header p { font-size: 0.875rem; color: var(--muted); margin-top: 3px; }
+
+        .header-right { display: flex; align-items: center; gap: 10px; }
+
+        .date-badge {
+            font-family: 'DM Mono', monospace; font-size: 0.75rem;
+            color: var(--muted); background: var(--surface-2);
+            border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+        }
+
+        .btn-new {
+            display: flex; align-items: center; gap: 7px;
+            background: var(--mint); color: var(--dark);
+            border: none; border-radius: 10px;
+            padding: 9px 18px; font-size: 0.85rem; font-weight: 700;
+            font-family: 'Sora', sans-serif; cursor: pointer;
+            transition: opacity 0.15s, transform 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-new:hover { opacity: 0.88; transform: translateY(-1px); }
+        .btn-new svg { width: 15px; height: 15px; }
+
+        /* ── STATS ── */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 14px; margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 18px 20px;
+            transition: border-color 0.2s, transform 0.2s;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .stat-card:hover { border-color: rgba(126,255,197,0.2); transform: translateY(-2px); }
+        .stat-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+        .stat-icon svg { width: 16px; height: 16px; }
+        .stat-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+        .stat-value { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.03em; }
+
+        /* ── FILTER BAR ── */
+        .filter-bar {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 20px; flex-wrap: wrap;
+            animation: fadeUp 0.45s ease both;
+        }
+
+        .filter-btn {
+            padding: 7px 16px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--surface);
+            color: var(--muted); font-size: 0.78rem; font-weight: 600;
+            font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.15s;
+            display: flex; align-items: center; gap: 5px;
+        }
+
+        .filter-btn:hover { color: var(--text); border-color: var(--border-hover); }
+        .filter-btn.active { background: var(--mint); color: var(--dark); border-color: var(--mint); }
+
+        .search-wrap {
+            margin-left: auto; position: relative;
+        }
+
+        .search-wrap input {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 9px; padding: 7px 14px 7px 36px;
+            font-size: 0.8rem; color: var(--text); font-family: 'Sora', sans-serif;
+            width: 220px; outline: none; transition: border-color 0.2s;
+        }
+
+        .search-wrap input::placeholder { color: var(--muted); }
+        .search-wrap input:focus { border-color: rgba(126,255,197,0.35); }
+
+        .search-wrap .search-icon {
+            position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+            width: 14px; height: 14px; color: var(--muted); pointer-events: none;
+        }
+
+        /* ── ANNOUNCEMENTS GRID ── */
+        .ann-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .ann-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden;
+            transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+            animation: fadeUp 0.5s ease both;
+            display: flex; flex-direction: column;
+        }
+
+        .ann-card:hover {
+            border-color: rgba(126,255,197,0.22);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        }
+
+        .ann-card-top {
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: flex-start; gap: 12px;
+        }
+
+        .ann-type-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; margin-top: 1px;
+        }
+
+        .ann-type-icon svg { width: 16px; height: 16px; }
+
+        .ann-meta-top { flex: 1; min-width: 0; }
+
+        .ann-type-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.62rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            padding: 2px 8px; border-radius: 20px; margin-bottom: 6px;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+
+        .type-general  { background: rgba(126,255,197,0.1); color: var(--mint-dim); border: 1px solid rgba(126,255,197,0.2); }
+        .type-urgent   { background: rgba(255,107,107,0.12); color: var(--danger); border: 1px solid rgba(255,107,107,0.2); }
+        .type-event    { background: rgba(56,189,248,0.12); color: #38BDF8; border: 1px solid rgba(56,189,248,0.2); }
+        .type-promo    { background: rgba(251,184,36,0.12); color: var(--warn); border: 1px solid rgba(251,184,36,0.2); }
+
+        .ann-title {
+            font-size: 0.92rem; font-weight: 700; color: var(--text);
+            letter-spacing: -0.01em; margin-bottom: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .ann-date { font-size: 0.7rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+        .ann-card-body {
+            padding: 14px 20px 12px; flex: 1;
+        }
+
+        .ann-body-text {
+            font-size: 0.8rem; color: var(--muted); line-height: 1.65;
+            display: -webkit-box; -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical; overflow: hidden;
+        }
+
+        .ann-card-footer {
+            padding: 12px 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-top: 1px solid var(--border);
+        }
+
+        .ann-stats {
+            display: flex; align-items: center; gap: 14px;
+        }
+
+        .ann-stat {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace;
+            cursor: pointer; transition: color 0.15s;
+        }
+
+        .ann-stat:hover { color: var(--mint); }
+        .ann-stat svg { width: 13px; height: 13px; }
+
+        .ann-actions { display: flex; gap: 6px; }
+
+        .icon-btn {
+            width: 32px; height: 32px; border-radius: 8px;
+            border: 1px solid var(--border); background: transparent;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.15s; color: var(--muted);
+        }
+
+        .icon-btn svg { width: 14px; height: 14px; }
+        .icon-btn:hover { border-color: var(--border-hover); color: var(--text); background: var(--surface-2); }
+        .icon-btn.edit:hover { color: var(--mint); border-color: rgba(126,255,197,0.3); }
+        .icon-btn.delete:hover { color: var(--danger); border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.07); }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center; padding: 60px 20px;
+            color: var(--muted);
+        }
+
+        .empty-state svg { width: 48px; height: 48px; margin-bottom: 14px; opacity: 0.35; }
+        .empty-state p { font-size: 0.9rem; }
+
+        /* ── MODALS ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.72); backdrop-filter: blur(6px);
+            z-index: 999; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 20px; width: 100%;
+            animation: fadeUp 0.25s ease both;
+            display: flex; flex-direction: column;
+            max-height: 90vh;
+        }
+
+        .modal-form { max-width: 540px; }
+        .modal-comments { max-width: 580px; }
+        .modal-delete { max-width: 420px; }
+
+        .modal-header {
+            padding: 24px 26px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: flex-start; justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .modal-header h2 {
+            font-size: 1.05rem; font-weight: 800;
+            letter-spacing: -0.03em; color: var(--text);
+        }
+
+        .modal-header p { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+
+        .modal-close {
+            width: 30px; height: 30px; border-radius: 8px;
+            border: 1px solid var(--border); background: transparent;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--muted); flex-shrink: 0;
+            transition: all 0.15s;
+        }
+
+        .modal-close:hover { color: var(--text); background: var(--surface-2); }
+        .modal-close svg { width: 14px; height: 14px; }
+
+        .modal-body {
+            padding: 22px 26px; overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 16px 26px;
+            border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: flex-end;
+            gap: 10px; flex-shrink: 0;
+        }
+
+        /* FORM */
+        .form-group { margin-bottom: 18px; }
+
+        .form-label {
+            display: block; font-size: 0.78rem; font-weight: 600;
+            color: var(--muted); margin-bottom: 7px; text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%; background: var(--surface-2);
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: 10px 14px; font-size: 0.85rem; color: var(--text);
+            font-family: 'Sora', sans-serif; outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: rgba(126,255,197,0.4);
+        }
+
+        .form-input::placeholder, .form-textarea::placeholder { color: var(--muted); }
+
+        .form-select {
+            appearance: none; cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237D8590' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center;
+            padding-right: 34px;
+        }
+
+        .form-select option { background: var(--surface-2); }
+
+        .form-textarea { resize: vertical; min-height: 110px; line-height: 1.6; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        /* CHAR COUNT */
+        .char-count {
+            text-align: right; font-size: 0.68rem;
+            color: var(--muted); font-family: 'DM Mono', monospace;
+            margin-top: 4px;
+        }
+
+        /* BUTTONS */
+        .btn-primary {
+            background: var(--mint); color: var(--dark);
+            border: none; border-radius: 9px; padding: 9px 22px;
+            font-size: 0.82rem; font-weight: 700; font-family: 'Sora', sans-serif;
+            cursor: pointer; transition: opacity 0.15s, transform 0.15s;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .btn-primary:hover { opacity: 0.87; transform: translateY(-1px); }
+        .btn-primary svg { width: 14px; height: 14px; }
+
+        .btn-secondary {
+            background: transparent; color: var(--muted);
+            border: 1px solid var(--border); border-radius: 9px;
+            padding: 9px 20px; font-size: 0.82rem; font-weight: 600;
+            font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.15s;
+        }
+
+        .btn-secondary:hover { color: var(--text); border-color: var(--border-hover); }
+
+        .btn-danger {
+            background: rgba(255,107,107,0.15); color: var(--danger);
+            border: 1px solid rgba(255,107,107,0.25); border-radius: 9px;
+            padding: 9px 22px; font-size: 0.82rem; font-weight: 700;
+            font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.15s;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .btn-danger:hover { background: rgba(255,107,107,0.25); }
+        .btn-danger svg { width: 14px; height: 14px; }
+
+        /* COMMENTS */
+        .comments-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .comment-card {
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px 16px;
+            animation: slideIn 0.3s ease both;
+        }
+
+        .comment-header {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 9px;
+        }
+
+        .comment-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65rem; font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .comment-name { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+        .comment-role { font-size: 0.68rem; color: var(--muted); margin-top: 1px; }
+
+        .comment-time {
+            margin-left: auto; font-size: 0.68rem; color: var(--muted);
+            font-family: 'DM Mono', monospace; flex-shrink: 0;
+        }
+
+        .comment-body {
+            font-size: 0.8rem; color: var(--muted); line-height: 1.65;
+        }
+
+        .comment-actions {
+            display: flex; align-items: center; gap: 10px;
+            margin-top: 10px;
+        }
+
+        .comment-like {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 0.7rem; color: var(--muted); cursor: pointer;
+            transition: color 0.15s; border: none; background: transparent;
+            font-family: 'Sora', sans-serif;
+        }
+
+        .comment-like:hover { color: var(--mint); }
+        .comment-like svg { width: 13px; height: 13px; }
+
+        .comment-delete-btn {
+            margin-left: auto; font-size: 0.68rem; color: var(--muted);
+            cursor: pointer; border: none; background: transparent;
+            font-family: 'Sora', sans-serif; transition: color 0.15s;
+            display: flex; align-items: center; gap: 4px;
+        }
+
+        .comment-delete-btn svg { width: 12px; height: 12px; }
+        .comment-delete-btn:hover { color: var(--danger); }
+
+        .comments-empty {
+            text-align: center; padding: 36px 20px;
+            color: var(--muted); font-size: 0.82rem;
+        }
+
+        .comments-empty svg { width: 36px; height: 36px; margin-bottom: 10px; opacity: 0.3; display: block; margin-inline: auto; }
+
+        .comments-count-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 16px; padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comments-count-bar .label { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+        .comments-count-bar .num {
+            font-family: 'DM Mono', monospace; font-size: 0.78rem;
+            color: var(--mint); font-weight: 700;
+        }
+
+        /* DELETE MODAL */
+        .delete-icon-wrap {
+            width: 52px; height: 52px; border-radius: 14px;
+            background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.2);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .delete-icon-wrap svg { width: 22px; height: 22px; color: var(--danger); }
+
+        /* PUBLISHED / DRAFT TOGGLE */
+        .toggle-group {
+            display: flex; gap: 0; border: 1px solid var(--border);
+            border-radius: 9px; overflow: hidden;
+        }
+
+        .toggle-opt {
+            flex: 1; padding: 9px 0; text-align: center;
+            font-size: 0.78rem; font-weight: 600; cursor: pointer;
+            transition: all 0.15s; border: none; background: transparent;
+            color: var(--muted); font-family: 'Sora', sans-serif;
+        }
+
+        .toggle-opt.active { background: var(--mint); color: var(--dark); }
+
+        /* PUBLISHED BADGE */
+        .pub-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.65rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            padding: 2px 8px; border-radius: 20px;
+        }
+
+        .pub-published { background: rgba(126,255,197,0.1); color: var(--mint-dim); border: 1px solid rgba(126,255,197,0.2); }
+        .pub-draft { background: rgba(125,133,144,0.1); color: var(--muted); border: 1px solid var(--border); }
+
+        /* TOAST */
+        .toast {
+            position: fixed; bottom: 28px; right: 28px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 12px; padding: 12px 18px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.82rem; font-weight: 600;
+            z-index: 9999; transform: translateY(80px); opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            min-width: 240px;
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: rgba(126,255,197,0.3); color: var(--mint-dim); }
+        .toast.error { border-color: rgba(255,107,107,0.3); color: var(--danger); }
+        .toast svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+        /* RESPONSIVE */
+        @media (max-width: 1100px) {
+            .ann-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 900px) {
+            :root { --sidebar-w: 64px; }
+            .sidebar-brand, .nav-link span, .nav-label { display: none; }
+            .nav-link { justify-content: center; padding: 10px; }
+            .main { padding: 24px 20px; }
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .search-wrap input { width: 160px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="brand-name">Ani<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-label">Main</div>
+            <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+            <a href="sellers.html" class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+            <a href="premium.html" class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
+
+            <div class="nav-label">Admin</div>
+            <a href="announcements.html" class="nav-link active"><i data-lucide="megaphone"></i><span>Announcements</span></a>
+            <a href="user.html" class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
+ <a href="customer-service.html" class="nav-link "><i data-lucide="message-circle"></i><span>Customer Service</span></a>
+            <div class="nav-bottom">
+                <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
+                <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <div class="page-header">
+            <div>
+                <h1>Announcements</h1>
+                <p>Post and manage announcements visible to all users.</p>
+            </div>
+            <div class="header-right">
+                <div class="date-badge" id="dateBadge">—</div>
+                <button class="btn-new" onclick="openFormModal()">
+                    <i data-lucide="plus"></i> New Announcement
+                </button>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+            <div class="stat-card" style="animation-delay:0.05s">
+                <div class="stat-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);"><i data-lucide="megaphone"></i></div>
+                <div class="stat-label">Total Posts</div>
+                <div class="stat-value" id="stat-total">0</div>
+            </div>
+            <div class="stat-card" style="animation-delay:0.1s">
+                <div class="stat-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);"><i data-lucide="eye"></i></div>
+                <div class="stat-label">Published</div>
+                <div class="stat-value" id="stat-published">0</div>
+            </div>
+            <div class="stat-card" style="animation-delay:0.15s">
+                <div class="stat-icon" style="background:rgba(125,133,144,0.12); color:var(--muted);"><i data-lucide="file-text"></i></div>
+                <div class="stat-label">Drafts</div>
+                <div class="stat-value" id="stat-drafts">0</div>
+            </div>
+            <div class="stat-card" style="animation-delay:0.2s">
+                <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:#38BDF8;"><i data-lucide="message-circle"></i></div>
+                <div class="stat-label">Total Comments</div>
+                <div class="stat-value" id="stat-comments">0</div>
+            </div>
+        </div>
+
+        <!-- FILTER BAR -->
+        <div class="filter-bar">
+            <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+            <button class="filter-btn" onclick="setFilter('general', this)">
+                <i data-lucide="info" style="width:12px;height:12px;"></i> General
+            </button>
+            <button class="filter-btn" onclick="setFilter('urgent', this)">
+                <i data-lucide="alert-triangle" style="width:12px;height:12px;"></i> Urgent
+            </button>
+            <button class="filter-btn" onclick="setFilter('event', this)">
+                <i data-lucide="calendar" style="width:12px;height:12px;"></i> Event
+            </button>
+            <button class="filter-btn" onclick="setFilter('promo', this)">
+                <i data-lucide="tag" style="width:12px;height:12px;"></i> Promo
+            </button>
+            <div class="search-wrap">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="searchInput" placeholder="Search announcements…" oninput="renderAnnouncements()">
+            </div>
+        </div>
+
+        <!-- ANNOUNCEMENTS GRID -->
+        <div class="ann-grid" id="ann-grid"></div>
+
+    </main>
+</div>
+
+<!-- ── FORM MODAL (Add / Edit) ── -->
+<div class="modal-overlay" id="formModal">
+    <div class="modal modal-form">
+        <div class="modal-header">
+            <div>
+                <h2 id="form-title">New Announcement</h2>
+                <p id="form-subtitle">Fill in the details to post an announcement.</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('formModal')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" id="f-type">
+                        <option value="general">📢 General</option>
+                        <option value="urgent">🚨 Urgent</option>
+                        <option value="event">📅 Event</option>
+                        <option value="promo">🏷️ Promo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <div class="toggle-group">
+                        <button class="toggle-opt active" id="tog-pub" onclick="setStatus('published')">Published</button>
+                        <button class="toggle-opt" id="tog-dra" onclick="setStatus('draft')">Draft</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <input class="form-input" type="text" id="f-title" placeholder="Enter announcement title…" maxlength="100" oninput="updateCharCount()">
+                <div class="char-count"><span id="char-used">0</span> / 100</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Content</label>
+                <textarea class="form-textarea" id="f-body" placeholder="Write your announcement here…" rows="5"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target Audience</label>
+                <select class="form-select" id="f-audience">
+                    <option value="all">All Users</option>
+                    <option value="sellers">Sellers Only</option>
+                    <option value="buyers">Buyers Only</option>
+                    <option value="premium">Premium Members</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('formModal')">Cancel</button>
+            <button class="btn-primary" onclick="saveAnnouncement()">
+                <i data-lucide="send"></i>
+                <span id="save-btn-label">Post Announcement</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── DELETE MODAL ── -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal modal-delete">
+        <div class="modal-body" style="text-align:center; padding: 32px 28px;">
+            <div class="delete-icon-wrap">
+                <i data-lucide="trash-2"></i>
+            </div>
+            <h2 style="font-size:1rem; margin-bottom:8px;">Delete Announcement?</h2>
+            <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">
+                This will permanently remove the announcement and all its comments.<br>This action cannot be undone.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+            <button class="btn-danger" id="confirm-delete-btn">
+                <i data-lucide="trash-2"></i> Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── COMMENTS MODAL ── -->
+<div class="modal-overlay" id="commentsModal">
+    <div class="modal modal-comments">
+        <div class="modal-header">
+            <div>
+                <h2 id="comments-modal-title">Comments</h2>
+                <p id="comments-modal-sub">User reactions to this announcement.</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('commentsModal')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="comments-count-bar">
+                <span class="label">All Comments</span>
+                <span class="num" id="comments-count-label">0 comments</span>
+            </div>
+            <div class="comments-list" id="comments-list"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('commentsModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+    <i data-lucide="check-circle"></i>
+    <span id="toast-msg">Done.</span>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+let announcements = [
+    {
+        id: 1,
+        type: 'urgent',
+        title: 'Scheduled Maintenance – May 15, 2025',
+        body: 'AniMart will undergo scheduled system maintenance on May 15, 2025 from 12:00 AM to 4:00 AM. All listings and transactions will be temporarily unavailable. We apologize for the inconvenience.',
+        status: 'published',
+        audience: 'all',
+        date: 'May 10, 2025',
+        views: 892,
+        comments: [
+            { id: 1, name: 'Cardo Dalisay', role: 'Seller', avatar: 'CD', color: '#38BDF8', time: '2h ago', body: 'Thanks for the heads up! Will make sure to complete my transactions before then.', likes: 14 },
+            { id: 2, name: 'Nena Reyes',    role: 'Buyer',  avatar: 'NR', color: '#7EFFC5', time: '1h ago', body: 'Hope the maintenance goes smoothly. Looking forward to the improvements!', likes: 7 },
+            { id: 3, name: 'Ferdie Santos', role: 'Seller', avatar: 'FS', color: '#FBB824', time: '45m ago', body: 'Noted po! Will inform my buyers as well about the downtime.', likes: 3 },
+        ]
+    },
+    {
+        id: 2,
+        type: 'promo',
+        title: 'Zero Commission Weekend – May 17–18!',
+        body: 'Celebrate the long weekend with FREE commission on all completed livestock transactions this Saturday and Sunday. That\'s right — AniMart takes zero commission. Happy selling!',
+        status: 'published',
+        audience: 'sellers',
+        date: 'May 9, 2025',
+        views: 1240,
+        comments: [
+            { id: 1, name: 'Bong Villanueva', role: 'Seller', avatar: 'BV', color: '#C084FC', time: '3h ago', body: 'Grabe naman! This is amazing. Will definitely be listing more this weekend!', likes: 22 },
+            { id: 2, name: 'Clara Ramos',     role: 'Seller', avatar: 'CR', color: '#FB923C', time: '2h ago', body: 'Salamat AniMart! This really helps us small farmers.', likes: 18 },
+        ]
+    },
+    {
+        id: 3,
+        type: 'event',
+        title: 'AniMart Livestock Fair – June 2025',
+        body: 'Join us at the first ever AniMart Livestock Fair on June 20–22, 2025 at Batangas City Sports Complex. Top sellers will be featured, with prizes for best-in-category livestock. Registration opens May 20.',
+        status: 'published',
+        audience: 'all',
+        date: 'May 7, 2025',
+        views: 567,
+        comments: [
+            { id: 1, name: 'Liza Manalo', role: 'Seller', avatar: 'LM', color: '#38BDF8', time: '1d ago', body: 'So excited for this! Will be bringing our best Angus cattle. 🐂', likes: 11 },
+        ]
+    },
+    {
+        id: 4,
+        type: 'general',
+        title: 'New Messaging Feature Now Live',
+        body: 'Premium sellers can now directly message buyers through the AniMart platform. The new messaging feature supports photos, voice notes, and live negotiation tools. Available exclusively to Pro and Elite members.',
+        status: 'published',
+        audience: 'premium',
+        date: 'May 5, 2025',
+        views: 431,
+        comments: []
+    },
+    {
+        id: 5,
+        type: 'general',
+        title: 'Tips for Better Listing Photos',
+        body: 'Great photos sell faster! Here are some tips: (1) Use natural lighting. (2) Take photos from multiple angles. (3) Include a size reference. (4) Ensure the background is clean. Sellers with quality photos see 3x more inquiries.',
+        status: 'draft',
+        audience: 'sellers',
+        date: 'May 3, 2025',
+        views: 0,
+        comments: []
+    },
+];
+
+let currentFilter = 'all';
+let editingId = null;
+let formStatus = 'published';
+let deleteTargetId = null;
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function typeConfig(type) {
+    const map = {
+        general: { label: 'General',  cls: 'type-general', icon: 'info',           bg: 'rgba(126,255,197,0.1)', color: 'var(--mint-dim)' },
+        urgent:  { label: 'Urgent',   cls: 'type-urgent',  icon: 'alert-triangle', bg: 'rgba(255,107,107,0.1)', color: 'var(--danger)' },
+        event:   { label: 'Event',    cls: 'type-event',   icon: 'calendar',       bg: 'rgba(56,189,248,0.1)',  color: '#38BDF8' },
+        promo:   { label: 'Promo',    cls: 'type-promo',   icon: 'tag',            bg: 'rgba(251,184,36,0.1)',  color: 'var(--warn)' },
+    };
+    return map[type] || map.general;
+}
+
+function audienceLabel(a) {
+    return { all: 'All Users', sellers: 'Sellers', buyers: 'Buyers', premium: 'Premium' }[a] || a;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderAnnouncements() {
+    const grid = document.getElementById('ann-grid');
+    const q = document.getElementById('searchInput').value.toLowerCase();
+
+    let filtered = announcements.filter(a => {
+        const matchFilter = currentFilter === 'all' || a.type === currentFilter;
+        const matchSearch = !q || a.title.toLowerCase().includes(q) || a.body.toLowerCase().includes(q);
+        return matchFilter && matchSearch;
+    });
+
+    grid.innerHTML = '';
+
+    if (filtered.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <i data-lucide="megaphone"></i>
+                <p>No announcements found.</p>
+            </div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    filtered.forEach((ann, idx) => {
+        const tc = typeConfig(ann.type);
+        const card = document.createElement('div');
+        card.className = 'ann-card';
+        card.style.animationDelay = (idx * 0.07) + 's';
+        card.innerHTML = `
+            <div class="ann-card-top">
+                <div class="ann-type-icon" style="background:${tc.bg}; color:${tc.color};">
+                    <i data-lucide="${tc.icon}"></i>
+                </div>
+                <div class="ann-meta-top">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px;">
+                        <span class="ann-type-badge ${tc.cls}">${tc.label}</span>
+                        <span class="pub-badge ${ann.status === 'published' ? 'pub-published' : 'pub-draft'}">
+                            ${ann.status === 'published' ? '● Published' : '○ Draft'}
+                        </span>
+                        <span style="font-size:0.65rem;color:var(--muted);margin-left:auto;font-family:'DM Mono',monospace;">${audienceLabel(ann.audience)}</span>
+                    </div>
+                    <div class="ann-title" title="${ann.title}">${ann.title}</div>
+                    <div class="ann-date">${ann.date}</div>
+                </div>
+            </div>
+            <div class="ann-card-body">
+                <div class="ann-body-text">${ann.body}</div>
+            </div>
+            <div class="ann-card-footer">
+                <div class="ann-stats">
+                    <div class="ann-stat">
+                        <i data-lucide="eye"></i> ${ann.views.toLocaleString()}
+                    </div>
+                    <div class="ann-stat" onclick="openComments(${ann.id})" title="View comments">
+                        <i data-lucide="message-circle"></i> ${ann.comments.length}
+                        ${ann.comments.length > 0 ? '<span style="color:var(--mint);font-size:0.65rem;margin-left:2px;">View</span>' : ''}
+                    </div>
+                </div>
+                <div class="ann-actions">
+                    <button class="icon-btn edit" title="Edit" onclick="openEditModal(${ann.id})">
+                        <i data-lucide="pencil"></i>
+                    </button>
+                    <button class="icon-btn delete" title="Delete" onclick="openDeleteModal(${ann.id})">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+
+    updateStats();
+    lucide.createIcons();
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────
+function updateStats() {
+    const total = announcements.length;
+    const published = announcements.filter(a => a.status === 'published').length;
+    const drafts = announcements.filter(a => a.status === 'draft').length;
+    const totalComments = announcements.reduce((s, a) => s + a.comments.length, 0);
+
+    animCount('stat-total', total);
+    animCount('stat-published', published);
+    animCount('stat-drafts', drafts);
+    animCount('stat-comments', totalComments);
+}
+
+const animatedEls = {};
+function animCount(id, target) {
+    const el = document.getElementById(id);
+    const current = parseInt(el.textContent) || 0;
+    if (current === target) return;
+    let c = 0;
+    clearInterval(animatedEls[id]);
+    const inc = Math.max(1, Math.ceil(target / 30));
+    animatedEls[id] = setInterval(() => {
+        c = Math.min(c + inc, target);
+        el.textContent = c;
+        if (c >= target) clearInterval(animatedEls[id]);
+    }, 20);
+}
+
+// ── FILTER ────────────────────────────────────────────────────────────────
+function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAnnouncements();
+}
+
+// ── FORM MODAL ────────────────────────────────────────────────────────────
+function openFormModal(id = null) {
+    editingId = id;
+    formStatus = 'published';
+
+    if (id) {
+        const ann = announcements.find(a => a.id === id);
+        document.getElementById('form-title').textContent = 'Edit Announcement';
+        document.getElementById('form-subtitle').textContent = 'Update the announcement details.';
+        document.getElementById('save-btn-label').textContent = 'Save Changes';
+        document.getElementById('f-type').value = ann.type;
+        document.getElementById('f-title').value = ann.title;
+        document.getElementById('f-body').value = ann.body;
+        document.getElementById('f-audience').value = ann.audience;
+        formStatus = ann.status;
+    } else {
+        document.getElementById('form-title').textContent = 'New Announcement';
+        document.getElementById('form-subtitle').textContent = 'Fill in the details to post an announcement.';
+        document.getElementById('save-btn-label').textContent = 'Post Announcement';
+        document.getElementById('f-type').value = 'general';
+        document.getElementById('f-title').value = '';
+        document.getElementById('f-body').value = '';
+        document.getElementById('f-audience').value = 'all';
+        formStatus = 'published';
+    }
+
+    setStatus(formStatus);
+    updateCharCount();
+    document.getElementById('formModal').classList.add('open');
+    lucide.createIcons();
+    setTimeout(() => document.getElementById('f-title').focus(), 200);
+}
+
+function openEditModal(id) { openFormModal(id); }
+
+function setStatus(s) {
+    formStatus = s;
+    document.getElementById('tog-pub').classList.toggle('active', s === 'published');
+    document.getElementById('tog-dra').classList.toggle('active', s === 'draft');
+}
+
+function updateCharCount() {
+    const len = document.getElementById('f-title').value.length;
+    document.getElementById('char-used').textContent = len;
+}
+
+function saveAnnouncement() {
+    const title = document.getElementById('f-title').value.trim();
+    const body  = document.getElementById('f-body').value.trim();
+    const type  = document.getElementById('f-type').value;
+    const audience = document.getElementById('f-audience').value;
+
+    if (!title) { showToast('Please enter a title.', 'error'); return; }
+    if (!body)  { showToast('Please enter content.', 'error'); return; }
+
+    const now = new Date().toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' });
+
+    if (editingId) {
+        const ann = announcements.find(a => a.id === editingId);
+        ann.title    = title;
+        ann.body     = body;
+        ann.type     = type;
+        ann.status   = formStatus;
+        ann.audience = audience;
+        showToast('Announcement updated!', 'success');
+    } else {
+        announcements.unshift({
+            id: Date.now(),
+            type, title, body, status: formStatus, audience,
+            date: now, views: 0, comments: []
+        });
+        showToast('Announcement posted!', 'success');
+    }
+
+    closeModal('formModal');
+    renderAnnouncements();
+}
+
+// ── DELETE MODAL ──────────────────────────────────────────────────────────
+function openDeleteModal(id) {
+    deleteTargetId = id;
+    document.getElementById('confirm-delete-btn').onclick = () => {
+        announcements = announcements.filter(a => a.id !== deleteTargetId);
+        closeModal('deleteModal');
+        renderAnnouncements();
+        showToast('Announcement deleted.', 'error');
+    };
+    document.getElementById('deleteModal').classList.add('open');
+    lucide.createIcons();
+}
+
+// ── COMMENTS MODAL ────────────────────────────────────────────────────────
+function openComments(id) {
+    const ann = announcements.find(a => a.id === id);
+    if (!ann) return;
+
+    document.getElementById('comments-modal-title').textContent = ann.title;
+    document.getElementById('comments-modal-sub').textContent = `Posted on ${ann.date} · ${audienceLabel(ann.audience)}`;
+
+    renderCommentsList(ann);
+    document.getElementById('commentsModal').classList.add('open');
+    lucide.createIcons();
+}
+
+function renderCommentsList(ann) {
+    const list = document.getElementById('comments-list');
+    const countLabel = document.getElementById('comments-count-label');
+
+    countLabel.textContent = ann.comments.length + ' comment' + (ann.comments.length !== 1 ? 's' : '');
+
+    if (ann.comments.length === 0) {
+        list.innerHTML = `
+            <div class="comments-empty">
+                <i data-lucide="message-circle"></i>
+                <p>No comments yet on this announcement.</p>
+            </div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    list.innerHTML = '';
+    ann.comments.forEach((c, idx) => {
+        const div = document.createElement('div');
+        div.className = 'comment-card';
+        div.style.animationDelay = (idx * 0.06) + 's';
+        div.innerHTML = `
+            <div class="comment-header">
+                <div class="comment-avatar" style="background:${c.color}22; color:${c.color}; border:1.5px solid ${c.color}44;">
+                    ${c.avatar}
+                </div>
+                <div>
+                    <div class="comment-name">${c.name}</div>
+                    <div class="comment-role">${c.role}</div>
+                </div>
+                <div class="comment-time">${c.time}</div>
+            </div>
+            <div class="comment-body">${c.body}</div>
+            <div class="comment-actions">
+                <button class="comment-like" id="like-${ann.id}-${c.id}" onclick="toggleLike(${ann.id}, ${c.id}, this)">
+                    <i data-lucide="thumbs-up"></i> ${c.likes}
+                </button>
+                <button class="comment-delete-btn" onclick="deleteComment(${ann.id}, ${c.id})">
+                    <i data-lucide="trash-2"></i> Remove
+                </button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+
+    lucide.createIcons();
+}
+
+function toggleLike(annId, commentId, btn) {
+    const ann = announcements.find(a => a.id === annId);
+    const c   = ann.comments.find(x => x.id === commentId);
+    c.likes = c.liked ? c.likes - 1 : c.likes + 1;
+    c.liked = !c.liked;
+    btn.innerHTML = `<i data-lucide="thumbs-up"></i> ${c.likes}`;
+    btn.style.color = c.liked ? 'var(--mint)' : '';
+    lucide.createIcons();
+}
+
+function deleteComment(annId, commentId) {
+    const ann = announcements.find(a => a.id === annId);
+    ann.comments = ann.comments.filter(c => c.id !== commentId);
+    renderCommentsList(ann);
+    renderAnnouncements();
+    showToast('Comment removed.', 'error');
+}
+
+// ── MODAL HELPERS ─────────────────────────────────────────────────────────
+function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.className = `toast ${type} show`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+    lucide.createIcons();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+
+    document.getElementById('dateBadge').textContent =
+        new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+
+    renderAnnouncements();
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(o => {
+        o.addEventListener('click', e => {
+            if (e.target === o) o.classList.remove('open');
+        });
+    });
+});
+
+function confirmLogout() {
+    if (confirm("Are you sure you want to sign out?")) {
+        window.location.href = "../index.html";
+    }
+}
+</script>
+</body>
+</html>

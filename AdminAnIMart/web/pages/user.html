@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Approvals | AniMart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --mint: #7EFFC5;
+            --mint-dim: #5CE8A8;
+            --mint-glow: rgba(126,255,197,0.15);
+            --dark: #0D1117;
+            --surface: #161B22;
+            --surface-2: #1C2333;
+            --surface-3: #21293a;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.13);
+            --text: #E6EDF3;
+            --muted: #7D8590;
+            --danger: #FF6B6B;
+            --warn: #FBB824;
+            --sidebar-w: 260px;
+            --radius: 16px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: white;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -25%; left: -5%;
+            width: 50%; height: 50%;
+            background: radial-gradient(ellipse, rgba(126,255,197,0.045) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .wrapper { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; height: 100vh;
+            z-index: 100; padding: 0 12px 20px;
+        }
+
+        .sidebar-brand {
+            padding: 28px 12px 24px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border); margin-bottom: 16px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px; background: var(--mint);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
+        }
+
+        .brand-icon svg { width: 18px; height: 18px; color: var(--dark); }
+        .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+        .brand-name span { color: var(--mint); }
+
+        .nav { display: flex; flex-direction: column; flex: 1; gap: 3px; }
+
+        .nav-label {
+            font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--muted); padding: 14px 12px 6px;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+            border-radius: 10px; text-decoration: none; color: var(--muted);
+            font-size: 0.875rem; font-weight: 500; transition: all 0.18s;
+            border: none; background: transparent; cursor: pointer; width: 100%; text-align: left;
+        }
+
+        .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .nav-link:hover { color: var(--dark); background: var(--mint); }
+        .nav-link.active { background: var(--mint); color: var(--dark); font-weight: 700; }
+        .nav-link.logout { color: var(--danger); }
+        .nav-link.logout:hover { background: rgba(255,107,107,0.1); color: var(--danger); }
+
+        .nav-bottom {
+            border-top: 1px solid var(--border); padding-top: 12px;
+            margin-top: auto; display: flex; flex-direction: column; gap: 3px;
+        }
+
+        /* ── MAIN ── */
+        .main {
+            margin-left: var(--sidebar-w); flex: 1;
+            padding: 36px 40px;
+            max-width: calc(100vw - var(--sidebar-w));
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.94); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slideOut {
+            to { opacity: 0; transform: translateX(30px); height: 0; padding: 0; margin: 0; border: none; overflow: hidden; }
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            display: flex; align-items: flex-start;
+            justify-content: space-between; margin-bottom: 32px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem; font-weight: 800;
+            letter-spacing: -0.04em; color: var(--mint);
+        }
+
+        .page-header p { font-size: 0.875rem; color: var(--muted); margin-top: 3px; }
+
+        .header-right { display: flex; align-items: center; gap: 10px; }
+
+        .date-badge {
+            font-family: 'DM Mono', monospace; font-size: 0.75rem;
+            color: var(--muted); background: var(--surface-2);
+            border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+        }
+
+        /* ── STATS ── */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 14px; margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px;
+            transition: border-color 0.2s, transform 0.2s;
+            animation: fadeUp 0.4s ease both;
+            position: relative; overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 2px; border-radius: 0 0 var(--radius) var(--radius);
+        }
+
+        .stat-card.pending::after  { background: var(--warn); }
+        .stat-card.approved::after { background: var(--mint); }
+        .stat-card.rejected::after { background: var(--danger); }
+        .stat-card.total::after    { background: #38BDF8; }
+
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-card.pending:hover  { border-color: rgba(251,184,36,0.25); }
+        .stat-card.approved:hover { border-color: rgba(126,255,197,0.25); }
+        .stat-card.rejected:hover { border-color: rgba(255,107,107,0.25); }
+        .stat-card.total:hover    { border-color: rgba(56,189,248,0.25); }
+
+        .stat-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+        }
+
+        .stat-icon svg { width: 17px; height: 17px; }
+        .stat-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+        .stat-value { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+        .stat-sub { font-size: 0.7rem; color: var(--muted); margin-top: 7px; font-family: 'DM Mono', monospace; }
+
+        /* ── TABS ── */
+        .tabs-wrap {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+            animation: fadeUp 0.45s ease both;
+        }
+
+        .tabs-row {
+            display: flex; align-items: center; gap: 4px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 5px;
+        }
+
+        .tab-btn {
+            padding: 8px 16px; border-radius: 8px; border: none;
+            background: transparent; color: var(--muted);
+            font-size: 0.8rem; font-weight: 600; font-family: 'Sora', sans-serif;
+            cursor: pointer; transition: all 0.18s;
+            display: flex; align-items: center; gap: 7px;
+        }
+
+        .tab-count {
+            font-size: 0.62rem; font-family: 'DM Mono', monospace;
+            padding: 2px 7px; border-radius: 20px;
+            background: var(--surface-2); color: var(--muted);
+        }
+
+        .tab-btn:hover:not(.active) { color: var(--text); background: var(--surface-2); }
+
+        .tab-btn.tab-pending.active  { background: rgba(251,184,36,0.18); color: var(--warn); }
+        .tab-btn.tab-pending.active .tab-count { background: rgba(251,184,36,0.2); color: var(--warn); }
+
+        .tab-btn.tab-approved.active { background: rgba(126,255,197,0.15); color: var(--mint-dim); }
+        .tab-btn.tab-approved.active .tab-count { background: rgba(126,255,197,0.15); color: var(--mint-dim); }
+
+        .tab-btn.tab-rejected.active { background: rgba(255,107,107,0.12); color: var(--danger); }
+        .tab-btn.tab-rejected.active .tab-count { background: rgba(255,107,107,0.12); color: var(--danger); }
+
+        /* ── SEARCH + FILTER ── */
+        .controls-right { display: flex; align-items: center; gap: 10px; }
+
+        .search-wrap { position: relative; }
+
+        .search-wrap input {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 9px; padding: 8px 14px 8px 36px;
+            font-size: 0.8rem; color: var(--text); font-family: 'Sora', sans-serif;
+            width: 220px; outline: none; transition: border-color 0.2s;
+        }
+
+        .search-wrap input::placeholder { color: var(--muted); }
+        .search-wrap input:focus { border-color: rgba(126,255,197,0.35); }
+
+        .search-icon {
+            position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+            width: 14px; height: 14px; color: var(--muted); pointer-events: none;
+        }
+
+        .role-filter {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 9px; padding: 8px 32px 8px 12px;
+            font-size: 0.8rem; color: var(--text); font-family: 'Sora', sans-serif;
+            outline: none; cursor: pointer; transition: border-color 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237D8590' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+            background-color: var(--surface);
+        }
+
+        .role-filter option { background: var(--surface-2); }
+        .role-filter:focus { border-color: rgba(126,255,197,0.35); }
+
+        /* ── PANEL ── */
+        .panel { display: none; }
+        .panel.active { display: block; animation: fadeUp 0.35s ease both; }
+
+        /* ── USER CARDS ── */
+        .user-list { display: flex; flex-direction: column; gap: 10px; }
+
+        .user-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 20px;
+            display: flex; align-items: center; gap: 16px;
+            transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .user-card:hover {
+            border-color: var(--border-hover);
+            transform: translateX(3px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        /* avatar */
+        .user-avatar {
+            width: 46px; height: 46px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.78rem; font-weight: 800;
+            flex-shrink: 0; position: relative;
+        }
+
+        .user-avatar .role-dot {
+            position: absolute; bottom: 1px; right: 1px;
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid var(--surface);
+        }
+
+        /* info */
+        .user-info { flex: 1; min-width: 0; }
+
+        .user-name {
+            font-size: 0.92rem; font-weight: 700; color: var(--text);
+            margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .user-meta {
+            display: flex; align-items: center; gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .meta-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.68rem; color: var(--muted);
+            font-family: 'DM Mono', monospace;
+        }
+
+        .meta-chip svg { width: 11px; height: 11px; }
+
+        /* role badge */
+        .role-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.65rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em;
+        }
+
+        .role-seller { background: rgba(126,255,197,0.1); color: var(--mint-dim); border: 1px solid rgba(126,255,197,0.2); }
+        .role-buyer  { background: rgba(56,189,248,0.1);  color: #38BDF8;         border: 1px solid rgba(56,189,248,0.2); }
+
+        /* submitted time */
+        .user-time {
+            font-size: 0.7rem; color: var(--muted); font-family: 'DM Mono', monospace;
+            text-align: right; flex-shrink: 0; min-width: 80px;
+        }
+
+        .user-time .time-label { font-size: 0.62rem; color: var(--muted); margin-bottom: 2px; }
+
+        /* actions */
+        .user-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+        .btn-approve {
+            display: flex; align-items: center; gap: 5px;
+            background: rgba(126,255,197,0.12); color: var(--mint-dim);
+            border: 1px solid rgba(126,255,197,0.25); border-radius: 9px;
+            padding: 7px 16px; font-size: 0.78rem; font-weight: 700;
+            font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-approve:hover { background: rgba(126,255,197,0.22); transform: translateY(-1px); }
+        .btn-approve svg { width: 13px; height: 13px; }
+
+        .btn-reject {
+            display: flex; align-items: center; gap: 5px;
+            background: rgba(255,107,107,0.1); color: var(--danger);
+            border: 1px solid rgba(255,107,107,0.2); border-radius: 9px;
+            padding: 7px 16px; font-size: 0.78rem; font-weight: 700;
+            font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-reject:hover { background: rgba(255,107,107,0.2); transform: translateY(-1px); }
+        .btn-reject svg { width: 13px; height: 13px; }
+
+        .btn-view-detail {
+            display: flex; align-items: center; gap: 5px;
+            background: transparent; color: var(--muted);
+            border: 1px solid var(--border); border-radius: 9px;
+            padding: 7px 14px; font-size: 0.78rem; font-weight: 600;
+            font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.15s;
+        }
+
+        .btn-view-detail:hover { color: var(--text); border-color: var(--border-hover); }
+        .btn-view-detail svg { width: 13px; height: 13px; }
+
+        /* status tags for approved/rejected panels */
+        .status-tag {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.68rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            padding: 4px 10px; border-radius: 20px; flex-shrink: 0;
+        }
+
+        .status-tag .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .st-approved { background: rgba(126,255,197,0.1); color: var(--mint-dim); border: 1px solid rgba(126,255,197,0.2); }
+        .st-approved .dot { background: var(--mint); box-shadow: 0 0 5px var(--mint); }
+        .st-rejected { background: rgba(255,107,107,0.1); color: var(--danger); border: 1px solid rgba(255,107,107,0.2); }
+        .st-rejected .dot { background: var(--danger); }
+
+        /* undo button */
+        .btn-undo {
+            display: flex; align-items: center; gap: 5px;
+            background: transparent; color: var(--muted);
+            border: 1px solid var(--border); border-radius: 9px;
+            padding: 6px 12px; font-size: 0.72rem; font-weight: 600;
+            font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.15s;
+        }
+
+        .btn-undo:hover { color: var(--warn); border-color: rgba(251,184,36,0.3); }
+        .btn-undo svg { width: 12px; height: 12px; }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center; padding: 60px 20px;
+            color: var(--muted);
+        }
+
+        .empty-icon {
+            width: 56px; height: 56px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 16px; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .empty-icon svg { width: 24px; height: 24px; opacity: 0.4; }
+        .empty-state h3 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+        .empty-state p  { font-size: 0.8rem; color: var(--muted); }
+
+        /* ── DETAIL MODAL ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+            z-index: 999; align-items: center; justify-content: center; padding: 20px;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 20px; width: 100%; max-width: 500px;
+            animation: popIn 0.25s ease both;
+            max-height: 90vh; display: flex; flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 22px 24px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: flex-start; justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .modal-header h2 { font-size: 1rem; font-weight: 800; letter-spacing: -0.02em; }
+        .modal-header p  { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+        .modal-close {
+            width: 28px; height: 28px; border-radius: 7px;
+            border: 1px solid var(--border); background: transparent;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--muted); flex-shrink: 0; transition: all 0.15s;
+        }
+
+        .modal-close:hover { color: var(--text); background: var(--surface-2); }
+        .modal-close svg { width: 13px; height: 13px; }
+
+        .modal-body { padding: 22px 24px; overflow-y: auto; flex: 1; }
+
+        /* profile block */
+        .profile-block {
+            display: flex; align-items: center; gap: 16px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px; margin-bottom: 18px;
+        }
+
+        .profile-avatar {
+            width: 54px; height: 54px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; font-weight: 800; flex-shrink: 0;
+        }
+
+        .profile-name { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+
+        .detail-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;
+        }
+
+        .detail-item {
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 10px; padding: 12px 14px;
+        }
+
+        .detail-item .d-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 600; }
+        .detail-item .d-val   { font-size: 0.82rem; color: var(--text); font-weight: 600; }
+
+        .docs-section { margin-bottom: 4px; }
+        .docs-label { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+
+        .doc-row {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 9px; padding: 10px 12px; margin-bottom: 7px;
+        }
+
+        .doc-icon { width: 30px; height: 30px; border-radius: 7px; background: rgba(56,189,248,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .doc-icon svg { width: 14px; height: 14px; color: #38BDF8; }
+        .doc-name { font-size: 0.78rem; color: var(--text); font-weight: 600; }
+        .doc-sub  { font-size: 0.65rem; color: var(--muted); }
+        .doc-check { margin-left: auto; width: 20px; height: 20px; border-radius: 50%; background: rgba(126,255,197,0.1); border: 1px solid rgba(126,255,197,0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .doc-check svg { width: 11px; height: 11px; color: var(--mint-dim); }
+
+        .modal-footer {
+            padding: 14px 24px; border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: flex-end; gap: 9px;
+            flex-shrink: 0;
+        }
+
+        .btn-secondary {
+            background: transparent; color: var(--muted);
+            border: 1px solid var(--border); border-radius: 9px;
+            padding: 8px 18px; font-size: 0.8rem; font-weight: 600;
+            font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.15s;
+        }
+
+        .btn-secondary:hover { color: var(--text); border-color: var(--border-hover); }
+
+        /* ── CONFIRM MODAL ── */
+        .confirm-modal { max-width: 400px; }
+
+        .confirm-icon {
+            width: 52px; height: 52px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .confirm-icon svg { width: 22px; height: 22px; }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 28px; right: 28px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 12px; padding: 12px 18px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.82rem; font-weight: 600;
+            z-index: 9999; transform: translateY(80px); opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            min-width: 260px; max-width: 340px;
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: rgba(126,255,197,0.3); color: var(--mint-dim); }
+        .toast.error   { border-color: rgba(255,107,107,0.3); color: var(--danger); }
+        .toast.info    { border-color: rgba(251,184,36,0.3); color: var(--warn); }
+        .toast svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+        /* ── BULK BAR ── */
+        .bulk-bar {
+            display: none; align-items: center; gap: 12px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 10px; padding: 10px 16px;
+            margin-bottom: 14px; font-size: 0.82rem;
+            animation: fadeUp 0.25s ease both;
+        }
+
+        .bulk-bar.visible { display: flex; }
+        .bulk-bar .bulk-count { font-weight: 700; color: var(--text); }
+        .bulk-bar .bulk-muted { color: var(--muted); }
+        .bulk-bar-actions { display: flex; gap: 8px; margin-left: auto; }
+
+        /* ── CHECKBOX ── */
+        .user-checkbox {
+            width: 18px; height: 18px; border-radius: 5px;
+            border: 1.5px solid var(--border); background: var(--surface-2);
+            cursor: pointer; flex-shrink: 0; appearance: none;
+            transition: all 0.15s; position: relative;
+        }
+
+        .user-checkbox:checked {
+            background: var(--mint); border-color: var(--mint);
+        }
+
+        .user-checkbox:checked::after {
+            content: '';
+            position: absolute; top: 2px; left: 5px;
+            width: 5px; height: 9px;
+            border: 2px solid var(--dark); border-top: none; border-left: none;
+            transform: rotate(45deg);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1100px) {
+            .stats-grid { grid-template-columns: repeat(2,1fr); }
+        }
+
+        @media (max-width: 900px) {
+            :root { --sidebar-w: 64px; }
+            .sidebar-brand, .nav-link span, .nav-label { display: none; }
+            .nav-link { justify-content: center; padding: 10px; }
+            .main { padding: 24px 18px; }
+        }
+
+        @media (max-width: 700px) {
+            .user-card { flex-wrap: wrap; }
+            .user-time { min-width: auto; }
+            .user-actions { width: 100%; justify-content: flex-end; }
+            .tabs-wrap { flex-direction: column; align-items: flex-start; }
+            .controls-right { width: 100%; }
+            .search-wrap input { width: 150px; }
+        }
+
+        @media (max-width: 500px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="brand-name">Ani<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-label">Main</div>
+            <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+            <a href="sellers.html"   class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+            <a href="premium.html" class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
+
+            <div class="nav-label">Admin</div>
+            <a href="announcements.html" class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
+            <a href="user.html" class="nav-link active"><i data-lucide="user-check"></i><span>User Approvals</span></a>
+ <a href="customer-service.html" class="nav-link "><i data-lucide="message-circle"></i><span>Customer Service</span></a>
+            <div class="nav-bottom">
+                <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
+                <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <div class="page-header">
+            <div>
+                <h1>User Approvals</h1>
+                <p>Review and manage new seller and buyer account registrations.</p>
+            </div>
+            <div class="header-right">
+                <div class="date-badge" id="dateBadge">—</div>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+            <div class="stat-card pending" style="animation-delay:0.05s">
+                <div class="stat-icon" style="background:rgba(251,184,36,0.12); color:var(--warn);"><i data-lucide="clock"></i></div>
+                <div class="stat-label">Pending</div>
+                <div class="stat-value" id="stat-pending">0</div>
+                <div class="stat-sub" id="stat-pending-sub">awaiting review</div>
+            </div>
+            <div class="stat-card approved" style="animation-delay:0.1s">
+                <div class="stat-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);"><i data-lucide="user-check"></i></div>
+                <div class="stat-label">Approved Today</div>
+                <div class="stat-value" id="stat-approved">0</div>
+                <div class="stat-sub">this session</div>
+            </div>
+            <div class="stat-card rejected" style="animation-delay:0.15s">
+                <div class="stat-icon" style="background:rgba(255,107,107,0.12); color:var(--danger);"><i data-lucide="user-x"></i></div>
+                <div class="stat-label">Rejected Today</div>
+                <div class="stat-value" id="stat-rejected">0</div>
+                <div class="stat-sub">this session</div>
+            </div>
+            <div class="stat-card total" style="animation-delay:0.2s">
+                <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:#38BDF8;"><i data-lucide="users"></i></div>
+                <div class="stat-label">Total Processed</div>
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-sub">all time today</div>
+            </div>
+        </div>
+
+        <!-- TABS + CONTROLS -->
+        <div class="tabs-wrap">
+            <div class="tabs-row">
+                <button class="tab-btn tab-pending active" onclick="switchTab('pending', this)">
+                    <i data-lucide="clock" style="width:14px;height:14px;"></i>
+                    Pending
+                    <span class="tab-count" id="tc-pending">0</span>
+                </button>
+                <button class="tab-btn tab-approved" onclick="switchTab('approved', this)">
+                    <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
+                    Approved Today
+                    <span class="tab-count" id="tc-approved">0</span>
+                </button>
+                <button class="tab-btn tab-rejected" onclick="switchTab('rejected', this)">
+                    <i data-lucide="x-circle" style="width:14px;height:14px;"></i>
+                    Rejected Today
+                    <span class="tab-count" id="tc-rejected">0</span>
+                </button>
+            </div>
+
+            <div class="controls-right">
+                <select class="role-filter" id="roleFilter" onchange="renderAll()">
+                    <option value="all">All Roles</option>
+                    <option value="Seller">Sellers</option>
+                    <option value="Buyer">Buyers</option>
+                </select>
+                <div class="search-wrap">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search name or location…" oninput="renderAll()">
+                </div>
+            </div>
+        </div>
+
+        <!-- BULK ACTION BAR -->
+        <div class="bulk-bar" id="bulkBar">
+            <span class="bulk-count" id="bulkCount">0</span>
+            <span class="bulk-muted">users selected</span>
+            <div class="bulk-bar-actions">
+                <button class="btn-approve" onclick="bulkAction('approve')">
+                    <i data-lucide="check"></i> Approve All
+                </button>
+                <button class="btn-reject" onclick="bulkAction('reject')">
+                    <i data-lucide="x"></i> Reject All
+                </button>
+            </div>
+        </div>
+
+        <!-- PANELS -->
+        <div class="panel active" id="panel-pending">
+            <div class="user-list" id="list-pending"></div>
+        </div>
+
+        <div class="panel" id="panel-approved">
+            <div class="user-list" id="list-approved"></div>
+        </div>
+
+        <div class="panel" id="panel-rejected">
+            <div class="user-list" id="list-rejected"></div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ── DETAIL MODAL ── -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <h2>Account Details</h2>
+                <p>Full registration information submitted by the user.</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('detailModal')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body" id="detailBody"></div>
+        <div class="modal-footer" id="detailFooter"></div>
+    </div>
+</div>
+
+<!-- ── CONFIRM MODAL ── -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal confirm-modal">
+        <div class="modal-body" style="text-align:center; padding:30px 24px;">
+            <div class="confirm-icon" id="confirmIcon"></div>
+            <h2 style="font-size:1rem; margin-bottom:8px;" id="confirmTitle"></h2>
+            <p style="font-size:0.8rem; color:var(--muted); line-height:1.65;" id="confirmDesc"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+            <button id="confirmActionBtn" style="border:none; border-radius:9px; padding:8px 20px; font-size:0.8rem; font-weight:700; font-family:'Sora',sans-serif; cursor:pointer;"></button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+    <i data-lucide="check-circle"></i>
+    <span id="toast-msg">Done.</span>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────────
+const COLORS = ['#38BDF8','#7EFFC5','#FBB824','#C084FC','#FB923C','#F472B6','#34D399','#60A5FA'];
+
+function rndColor(name) {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h += name.charCodeAt(i);
+    return COLORS[h % COLORS.length];
+}
+
+function initials(name) {
+    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+}
+
+let pending = [
+    { id: 1,  name: 'Cardo Dalisay',    role: 'Seller', location: 'Batangas City',  email: 'cardo.d@mail.com',   phone: '09171234567', submitted: '8:14 AM',  livestock: 'Cattle, Swine',   id_type: 'PhilSys ID',    business: 'Dalisay Farm'       },
+    { id: 2,  name: 'Nena Reyes',       role: 'Seller', location: 'Laguna',         email: 'nena.r@mail.com',    phone: '09281234567', submitted: '8:42 AM',  livestock: 'Poultry',         id_type: 'Driver\'s License', business: 'Reyes Poultry'   },
+    { id: 3,  name: 'Ferdie Santos',    role: 'Buyer',  location: 'Quezon City',    email: 'ferdie.s@mail.com',  phone: '09391234567', submitted: '9:05 AM',  livestock: '—',               id_type: 'Passport',          business: '—'               },
+    { id: 4,  name: 'Liza Manalo',      role: 'Seller', location: 'Cavite',         email: 'liza.m@mail.com',    phone: '09451234567', submitted: '9:30 AM',  livestock: 'Goat, Cattle',    id_type: 'PhilSys ID',        business: 'Manalo Livestock'},
+    { id: 5,  name: 'Andres Cruz',      role: 'Buyer',  location: 'Rizal',          email: 'andres.c@mail.com',  phone: '09561234567', submitted: '10:01 AM', livestock: '—',               id_type: 'Voter\'s ID',       business: '—'               },
+    { id: 6,  name: 'Belinda Ocampo',   role: 'Seller', location: 'Batangas',       email: 'bel.o@mail.com',     phone: '09671234567', submitted: '10:22 AM', livestock: 'Swine',           id_type: 'PhilSys ID',        business: 'Ocampo Piggery'  },
+    { id: 7,  name: 'Rodrigo Tan',      role: 'Buyer',  location: 'Manila',         email: 'rod.t@mail.com',     phone: '09181234567', submitted: '10:45 AM', livestock: '—',               id_type: 'Driver\'s License', business: '—'               },
+    { id: 8,  name: 'Gina Flores',      role: 'Seller', location: 'Nueva Ecija',    email: 'gina.f@mail.com',    phone: '09291234567', submitted: '11:03 AM', livestock: 'Cattle',          id_type: 'Passport',          business: 'Flores Ranch'    },
+];
+
+let approved = [];
+let rejected  = [];
+
+let currentTab = 'pending';
+let selectedIds = new Set();
+let detailUserId = null;
+
+// ─────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────
+function applyFilters(arr) {
+    const q    = document.getElementById('searchInput').value.trim().toLowerCase();
+    const role = document.getElementById('roleFilter').value;
+    return arr.filter(u => {
+        const matchRole  = role === 'all' || u.role === role;
+        const matchQuery = !q || u.name.toLowerCase().includes(q) || u.location.toLowerCase().includes(q);
+        return matchRole && matchQuery;
+    });
+}
+
+function renderAll() {
+    renderList('pending', pending);
+    renderList('approved', approved);
+    renderList('rejected', rejected);
+    updateStats();
+    updateBulkBar();
+}
+
+function renderList(type, data) {
+    const list = document.getElementById('list-' + type);
+    const filtered = applyFilters(data);
+    list.innerHTML = '';
+
+    if (filtered.length === 0) {
+        const labels = {
+            pending:  { icon: 'clock',      title: 'No pending requests',    sub: 'All caught up! New registrations will appear here.' },
+            approved: { icon: 'user-check', title: 'No approvals yet today', sub: 'Approved users will show up here.' },
+            rejected: { icon: 'user-x',     title: 'No rejections today',    sub: 'Rejected registrations will appear here.' },
+        };
+        const l = labels[type];
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon"><i data-lucide="${l.icon}"></i></div>
+                <h3>${l.title}</h3>
+                <p>${l.sub}</p>
+            </div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    filtered.forEach((u, idx) => {
+        const color = rndColor(u.name);
+        const card = document.createElement('div');
+        card.className = 'user-card';
+        card.style.animationDelay = (idx * 0.05) + 's';
+        card.id = 'card-' + u.id;
+
+        const isPending  = type === 'pending';
+        const isApproved = type === 'approved';
+        const isRejected = type === 'rejected';
+
+        const roleDotColor = u.role === 'Seller' ? 'var(--mint)' : '#38BDF8';
+
+        let actionsHTML = '';
+        if (isPending) {
+            actionsHTML = `
+                <div class="user-time">
+                    <div class="time-label">Submitted</div>
+                    ${u.submitted}
+                </div>
+                <div class="user-actions">
+                    <button class="btn-view-detail" onclick="openDetail(${u.id})">
+                        <i data-lucide="eye"></i> View
+                    </button>
+                    <button class="btn-approve" onclick="doApprove(${u.id})">
+                        <i data-lucide="check"></i> Approve
+                    </button>
+                    <button class="btn-reject" onclick="openReject(${u.id})">
+                        <i data-lucide="x"></i> Reject
+                    </button>
+                </div>`;
+        } else if (isApproved) {
+            actionsHTML = `
+                <span class="status-tag st-approved"><span class="dot"></span> Approved</span>
+                <div class="user-time">${u.submitted}</div>
+                <div class="user-actions">
+                    <button class="btn-undo" onclick="undoAction(${u.id}, 'approved')">
+                        <i data-lucide="rotate-ccw"></i> Undo
+                    </button>
+                </div>`;
+        } else {
+            actionsHTML = `
+                <span class="status-tag st-rejected"><span class="dot"></span> Rejected</span>
+                <div class="user-time">${u.submitted}</div>
+                <div class="user-actions">
+                    <button class="btn-undo" onclick="undoAction(${u.id}, 'rejected')">
+                        <i data-lucide="rotate-ccw"></i> Undo
+                    </button>
+                </div>`;
+        }
+
+        const checkboxHTML = isPending ? `<input type="checkbox" class="user-checkbox" id="chk-${u.id}" onchange="toggleSelect(${u.id}, this)">` : '';
+
+        card.innerHTML = `
+            ${checkboxHTML}
+            <div class="user-avatar" style="background:${color}22; color:${color}; border: 1.5px solid ${color}44;">
+                ${initials(u.name)}
+                <span class="role-dot" style="background:${roleDotColor};"></span>
+            </div>
+            <div class="user-info">
+                <div class="user-name">${u.name}</div>
+                <div class="user-meta">
+                    <span class="role-badge ${u.role === 'Seller' ? 'role-seller' : 'role-buyer'}">
+                        <i data-lucide="${u.role === 'Seller' ? 'store' : 'shopping-bag'}" style="width:10px;height:10px;"></i>
+                        ${u.role}
+                    </span>
+                    <span class="meta-chip"><i data-lucide="map-pin"></i> ${u.location}</span>
+                    <span class="meta-chip"><i data-lucide="mail"></i> ${u.email}</span>
+                    ${u.role === 'Seller' ? `<span class="meta-chip"><i data-lucide="beef"></i> ${u.livestock}</span>` : ''}
+                </div>
+            </div>
+            ${actionsHTML}
+        `;
+        list.appendChild(card);
+    });
+
+    lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────────
+function switchTab(tab, btn) {
+    currentTab = tab;
+    selectedIds.clear();
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+    updateBulkBar();
+}
+
+// ─────────────────────────────────────────────────
+// STATS
+// ─────────────────────────────────────────────────
+function updateStats() {
+    setCount('stat-pending',  pending.length);
+    setCount('stat-approved', approved.length);
+    setCount('stat-rejected', rejected.length);
+    setCount('stat-total',    approved.length + rejected.length);
+
+    document.getElementById('tc-pending').textContent  = pending.length;
+    document.getElementById('tc-approved').textContent = approved.length;
+    document.getElementById('tc-rejected').textContent = rejected.length;
+
+    document.getElementById('stat-pending-sub').textContent = `${pending.length} awaiting review`;
+}
+
+const countEls = {};
+function setCount(id, target) {
+    const el = document.getElementById(id);
+    const prev = parseInt(el.textContent) || 0;
+    if (prev === target) return;
+    let c = prev;
+    clearInterval(countEls[id]);
+    const dir = target > prev ? 1 : -1;
+    countEls[id] = setInterval(() => {
+        c += dir;
+        el.textContent = c;
+        if (c === target) clearInterval(countEls[id]);
+    }, 30);
+}
+
+// ─────────────────────────────────────────────────
+// ACTIONS
+// ─────────────────────────────────────────────────
+function doApprove(id) {
+    const idx = pending.findIndex(u => u.id === id);
+    if (idx === -1) return;
+    const user = pending.splice(idx, 1)[0];
+    approved.unshift(user);
+    selectedIds.delete(id);
+    renderAll();
+    showToast(`✓ ${user.name} approved successfully.`, 'success');
+    closeModal('detailModal');
+}
+
+function openReject(id) {
+    const user = pending.find(u => u.id === id);
+    if (!user) return;
+
+    document.getElementById('confirmIcon').innerHTML = `
+        <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+            <i data-lucide="user-x" style="width:22px;height:22px;color:var(--danger);"></i>
+        </div>`;
+    document.getElementById('confirmTitle').textContent = `Reject ${user.name}?`;
+    document.getElementById('confirmDesc').textContent  = `This will move ${user.name}'s registration to the rejected list. You can undo this action afterward.`;
+
+    const btn = document.getElementById('confirmActionBtn');
+    btn.textContent = 'Yes, Reject';
+    btn.style.cssText = 'background:rgba(255,107,107,0.15);color:var(--danger);border:1px solid rgba(255,107,107,0.25);';
+    btn.onclick = () => { doReject(id); closeModal('confirmModal'); };
+
+    document.getElementById('confirmModal').classList.add('open');
+    lucide.createIcons();
+}
+
+function doReject(id) {
+    const idx = pending.findIndex(u => u.id === id);
+    if (idx === -1) return;
+    const user = pending.splice(idx, 1)[0];
+    rejected.unshift(user);
+    selectedIds.delete(id);
+    renderAll();
+    showToast(`${user.name} was rejected.`, 'error');
+    closeModal('detailModal');
+}
+
+function undoAction(id, from) {
+    const arr = from === 'approved' ? approved : rejected;
+    const idx = arr.findIndex(u => u.id === id);
+    if (idx === -1) return;
+    const user = arr.splice(idx, 1)[0];
+    pending.unshift(user);
+    renderAll();
+    showToast(`Moved ${user.name} back to pending.`, 'info');
+}
+
+// ─────────────────────────────────────────────────
+// BULK SELECT
+// ─────────────────────────────────────────────────
+function toggleSelect(id, chk) {
+    if (chk.checked) selectedIds.add(id);
+    else selectedIds.delete(id);
+    updateBulkBar();
+}
+
+function updateBulkBar() {
+    const bar = document.getElementById('bulkBar');
+    if (currentTab === 'pending' && selectedIds.size > 0) {
+        bar.classList.add('visible');
+        document.getElementById('bulkCount').textContent = selectedIds.size;
+    } else {
+        bar.classList.remove('visible');
+    }
+}
+
+function bulkAction(action) {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    ids.forEach(id => {
+        if (action === 'approve') doApprove(id);
+        else doReject(id);
+    });
+    selectedIds.clear();
+    updateBulkBar();
+    showToast(`${ids.length} users ${action === 'approve' ? 'approved' : 'rejected'}.`, action === 'approve' ? 'success' : 'error');
+}
+
+// ─────────────────────────────────────────────────
+// DETAIL MODAL
+// ─────────────────────────────────────────────────
+function openDetail(id) {
+    const user = pending.find(u => u.id === id);
+    if (!user) return;
+    detailUserId = id;
+    const color = rndColor(user.name);
+
+    document.getElementById('detailBody').innerHTML = `
+        <div class="profile-block">
+            <div class="profile-avatar" style="background:${color}22; color:${color}; border:2px solid ${color}44; width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;flex-shrink:0;">
+                ${initials(user.name)}
+            </div>
+            <div>
+                <div class="profile-name">${user.name}</div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <span class="role-badge ${user.role === 'Seller' ? 'role-seller' : 'role-buyer'}">
+                        ${user.role}
+                    </span>
+                    <span style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace;">Submitted ${user.submitted}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <div class="detail-item">
+                <div class="d-label">Email</div>
+                <div class="d-val">${user.email}</div>
+            </div>
+            <div class="detail-item">
+                <div class="d-label">Phone</div>
+                <div class="d-val">${user.phone}</div>
+            </div>
+            <div class="detail-item">
+                <div class="d-label">Location</div>
+                <div class="d-val">${user.location}</div>
+            </div>
+            <div class="detail-item">
+                <div class="d-label">ID Type</div>
+                <div class="d-val">${user.id_type}</div>
+            </div>
+            ${user.role === 'Seller' ? `
+            <div class="detail-item">
+                <div class="d-label">Business Name</div>
+                <div class="d-val">${user.business}</div>
+            </div>
+            <div class="detail-item">
+                <div class="d-label">Livestock Type</div>
+                <div class="d-val">${user.livestock}</div>
+            </div>` : ''}
+        </div>
+
+        <div class="docs-section">
+            <div class="docs-label">Submitted Documents</div>
+            <div class="doc-row">
+                <div class="doc-icon"><i data-lucide="id-card"></i></div>
+                <div>
+                    <div class="doc-name">${user.id_type}</div>
+                    <div class="doc-sub">Government-issued ID · Uploaded</div>
+                </div>
+                <div class="doc-check"><i data-lucide="check"></i></div>
+            </div>
+            ${user.role === 'Seller' ? `
+            <div class="doc-row">
+                <div class="doc-icon"><i data-lucide="file-text"></i></div>
+                <div>
+                    <div class="doc-name">Business Permit / Farm Certificate</div>
+                    <div class="doc-sub">Supporting document · Uploaded</div>
+                </div>
+                <div class="doc-check"><i data-lucide="check"></i></div>
+            </div>` : ''}
+            <div class="doc-row">
+                <div class="doc-icon"><i data-lucide="camera"></i></div>
+                <div>
+                    <div class="doc-name">Selfie with ID</div>
+                    <div class="doc-sub">Identity verification photo · Uploaded</div>
+                </div>
+                <div class="doc-check"><i data-lucide="check"></i></div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('detailFooter').innerHTML = `
+        <button class="btn-secondary" onclick="closeModal('detailModal')">Close</button>
+        <button class="btn-reject" onclick="closeModal('detailModal'); openReject(${user.id})">
+            <i data-lucide="x"></i> Reject
+        </button>
+        <button class="btn-approve" onclick="doApprove(${user.id}); closeModal('detailModal');">
+            <i data-lucide="check"></i> Approve
+        </button>
+    `;
+
+    document.getElementById('detailModal').classList.add('open');
+    lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// MODAL HELPERS
+// ─────────────────────────────────────────────────
+function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+}
+
+// ─────────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.className = `toast ${type} show`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3400);
+    lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+
+    document.getElementById('dateBadge').textContent =
+        new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+
+    renderAll();
+
+    document.querySelectorAll('.modal-overlay').forEach(o => {
+        o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+    });
+});
+
+function confirmLogout() {
+    if (confirm('Are you sure you want to sign out?')) window.location.href = '../index.html';
+}
+</script>
+</body>
+</html>
