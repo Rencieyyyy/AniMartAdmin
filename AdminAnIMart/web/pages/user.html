@@ -258,6 +258,49 @@
         .panel { display: none; }
         .panel.active { display: block; animation: fadeUp 0.35s ease both; }
 
+        /* ── SHARED ROW GRID (header + cards align column-for-column) ── */
+        .list-header, .user-card {
+            display: grid;
+            grid-template-columns: minmax(0, 1.6fr) 90px minmax(0, 1fr) minmax(0, 1.3fr) 130px 340px;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .list-header {
+            padding: 11px 20px; margin-bottom: 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.64rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.09em;
+            color: var(--muted); font-family: 'DM Mono', monospace;
+        }
+        .list-header .lh-time    { white-space: nowrap; }
+        .list-header .lh-actions { text-align: center; }
+
+        /* card column cells */
+        .cell-name { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .cell-name .user-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+        .cell-sub { font-size: 0.65rem; color: var(--muted); font-family: 'DM Mono', monospace; display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+        .cell-sub svg { width: 11px; height: 11px; flex-shrink: 0; }
+        .cell-loc, .cell-email {
+            display: flex; align-items: center; gap: 5px; min-width: 0;
+            font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace;
+        }
+        .cell-loc span, .cell-email span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cell-loc svg, .cell-email svg { width: 12px; height: 12px; flex-shrink: 0; }
+        .cell-time { font-size: 0.7rem; color: var(--muted); font-family: 'DM Mono', monospace; white-space: nowrap; }
+        .cell-actions { display: flex; gap: 8px; align-items: center; justify-content: center; }
+
+        @media (max-width: 1100px) {
+            .list-header, .user-card { grid-template-columns: minmax(0, 1.6fr) 88px 130px 340px; }
+            .lh-loc, .lh-email, .cell-loc, .cell-email { display: none; }
+        }
+        @media (max-width: 760px) {
+            .list-header, .user-card { grid-template-columns: minmax(0, 1fr) auto; }
+            .lh-role, .lh-time, .cell-role, .cell-time { display: none; }
+        }
+
         /* ── USER CARDS ── */
         .user-list { display: flex; flex-direction: column; gap: 10px; }
 
@@ -265,8 +308,8 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 14px;
-            padding: 16px 20px;
-            display: flex; align-items: center; gap: 16px;
+            padding: 14px 20px;
+            /* display/columns come from the shared `.list-header, .user-card` grid rule */
             transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
             animation: fadeUp 0.4s ease both;
         }
@@ -639,6 +682,9 @@
             </div>
         </div>
 
+        <!-- TEMP DIAGNOSTIC (remove once working) -->
+        <div id="diagBanner" style="display:none; margin-bottom:18px; padding:14px 16px; border-radius:10px; font-family:'DM Mono',monospace; font-size:0.8rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;"></div>
+
         <!-- STATS -->
         <div class="stats-grid">
             <div class="stat-card pending" style="animation-delay:0.05s">
@@ -716,14 +762,38 @@
 
         <!-- PANELS -->
         <div class="panel active" id="panel-pending">
+            <div class="list-header">
+                <span class="lh-name">Name</span>
+                <span class="lh-role">Role</span>
+                <span class="lh-loc">Location</span>
+                <span class="lh-email">Email</span>
+                <span class="lh-time">Submitted</span>
+                <span class="lh-actions">Actions</span>
+            </div>
             <div class="user-list" id="list-pending"></div>
         </div>
 
         <div class="panel" id="panel-approved">
+            <div class="list-header">
+                <span class="lh-name">Name</span>
+                <span class="lh-role">Role</span>
+                <span class="lh-loc">Location</span>
+                <span class="lh-email">Email</span>
+                <span class="lh-time">Submitted</span>
+                <span class="lh-actions">Actions</span>
+            </div>
             <div class="user-list" id="list-approved"></div>
         </div>
 
         <div class="panel" id="panel-rejected">
+            <div class="list-header">
+                <span class="lh-name">Name</span>
+                <span class="lh-role">Role</span>
+                <span class="lh-loc">Location</span>
+                <span class="lh-email">Email</span>
+                <span class="lh-time">Submitted</span>
+                <span class="lh-actions">Actions</span>
+            </div>
             <div class="user-list" id="list-rejected"></div>
         </div>
 
@@ -766,6 +836,8 @@
     <span id="toast-msg">Done.</span>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
 <script>
 // ─────────────────────────────────────────────────
 // DATA
@@ -782,23 +854,86 @@ function initials(name) {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
-let pending = [
-    { id: 1,  name: 'Cardo Dalisay',    role: 'Seller', location: 'Batangas City',  email: 'cardo.d@mail.com',   phone: '09171234567', submitted: '8:14 AM',  livestock: 'Cattle, Swine',   id_type: 'PhilSys ID',    business: 'Dalisay Farm'       },
-    { id: 2,  name: 'Nena Reyes',       role: 'Seller', location: 'Laguna',         email: 'nena.r@mail.com',    phone: '09281234567', submitted: '8:42 AM',  livestock: 'Poultry',         id_type: 'Driver\'s License', business: 'Reyes Poultry'   },
-    { id: 3,  name: 'Ferdie Santos',    role: 'Buyer',  location: 'Quezon City',    email: 'ferdie.s@mail.com',  phone: '09391234567', submitted: '9:05 AM',  livestock: '—',               id_type: 'Passport',          business: '—'               },
-    { id: 4,  name: 'Liza Manalo',      role: 'Seller', location: 'Cavite',         email: 'liza.m@mail.com',    phone: '09451234567', submitted: '9:30 AM',  livestock: 'Goat, Cattle',    id_type: 'PhilSys ID',        business: 'Manalo Livestock'},
-    { id: 5,  name: 'Andres Cruz',      role: 'Buyer',  location: 'Rizal',          email: 'andres.c@mail.com',  phone: '09561234567', submitted: '10:01 AM', livestock: '—',               id_type: 'Voter\'s ID',       business: '—'               },
-    { id: 6,  name: 'Belinda Ocampo',   role: 'Seller', location: 'Batangas',       email: 'bel.o@mail.com',     phone: '09671234567', submitted: '10:22 AM', livestock: 'Swine',           id_type: 'PhilSys ID',        business: 'Ocampo Piggery'  },
-    { id: 7,  name: 'Rodrigo Tan',      role: 'Buyer',  location: 'Manila',         email: 'rod.t@mail.com',     phone: '09181234567', submitted: '10:45 AM', livestock: '—',               id_type: 'Driver\'s License', business: '—'               },
-    { id: 8,  name: 'Gina Flores',      role: 'Seller', location: 'Nueva Ecija',    email: 'gina.f@mail.com',    phone: '09291234567', submitted: '11:03 AM', livestock: 'Cattle',          id_type: 'Passport',          business: 'Flores Ranch'    },
-];
-
+// Loaded from the Supabase `users` table by loadUsers(); split by status.
+let pending  = [];
 let approved = [];
-let rejected  = [];
+let rejected = [];
 
 let currentTab = 'pending';
 let selectedIds = new Set();
 let detailUserId = null;
+
+// ─────────────────────────────────────────────────
+// SUPABASE LOAD
+// ─────────────────────────────────────────────────
+async function loadUsers() {
+    // ---- TEMP DIAGNOSTIC ----
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const loginEmail = session && session.user ? session.user.email : '(NOT LOGGED IN)';
+
+    // Plain query WITHOUT the seller_profiles embed, to isolate the cause.
+    const plain = await supabaseClient.from('users').select('id,name,email,status');
+
+    const diag = document.getElementById('diagBanner');
+    if (diag) {
+        const ok = loginEmail !== '(NOT LOGGED IN)' && !plain.error && (plain.data || []).length > 0;
+        diag.style.display    = 'block';
+        diag.style.background  = ok ? 'rgba(126,255,197,0.08)' : 'rgba(255,107,107,0.1)';
+        diag.style.border      = '1px solid ' + (ok ? 'rgba(126,255,197,0.35)' : 'rgba(255,107,107,0.35)');
+        diag.style.color       = ok ? 'var(--mint-dim)' : 'var(--danger)';
+        diag.textContent =
+            'DIAGNOSTIC (temporary)\n' +
+            'logged in as : ' + loginEmail + '\n' +
+            'rows returned: ' + (plain.data ? plain.data.length : 0) + '\n' +
+            'error        : ' + (plain.error ? (plain.error.code + ' — ' + plain.error.message) : 'none');
+    }
+    // ---- END DIAGNOSTIC ----
+
+    const { data, error } = await supabaseClient
+        .from('users')
+        .select('id, name, email, phone, location, address, status, is_verified, valid_id_type, valid_id_url, business_name, created_at, seller_profiles(shop_name)')
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('LOAD USERS ERROR:', error);
+        showToast('Failed to load users: ' + error.message, 'error');
+        return;
+    }
+
+    const mapped = (data || []).map(row => {
+        const isSeller = Array.isArray(row.seller_profiles) && row.seller_profiles.length > 0;
+        return {
+            id:        String(row.id),               // uuid -> string (used in onclick handlers)
+            name:      row.name || '(no name)',
+            email:     row.email || '—',
+            phone:     row.phone || '—',
+            location:  row.location || row.address || '—',
+            role:      isSeller ? 'Seller' : 'Buyer',
+            business:  row.business_name
+                        || (isSeller && row.seller_profiles[0] ? row.seller_profiles[0].shop_name : null)
+                        || '—',
+            id_type:   row.valid_id_type || '—',
+            valid_id_url: row.valid_id_url || null,
+            verified:  row.is_verified === true,
+            registered: row.created_at
+                ? new Date(row.created_at).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' })
+                : '—',
+            submitted: row.created_at
+                ? new Date(row.created_at).toLocaleString('en-PH', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })
+                : '—',
+            status:    row.status
+        };
+    });
+
+    // Anything not explicitly approved/rejected is treated as pending, so newly
+    // created rows (status 'pending', null, '', or anything unexpected) still
+    // surface for review instead of silently disappearing.
+    approved = mapped.filter(u => u.status === 'approved');
+    rejected = mapped.filter(u => u.status === 'rejected');
+    pending  = mapped.filter(u => u.status !== 'approved' && u.status !== 'rejected');
+
+    renderAll();
+}
 
 // ─────────────────────────────────────────────────
 // RENDER
@@ -852,69 +987,50 @@ function renderList(type, data) {
 
         const isPending  = type === 'pending';
         const isApproved = type === 'approved';
-        const isRejected = type === 'rejected';
 
         const roleDotColor = u.role === 'Seller' ? 'var(--mint)' : '#38BDF8';
 
-        let actionsHTML = '';
+        // ACTIONS column content
+        let actionsCell = '';
         if (isPending) {
-            actionsHTML = `
-                <div class="user-time">
-                    <div class="time-label">Submitted</div>
-                    ${u.submitted}
-                </div>
-                <div class="user-actions">
-                    <button class="btn-view-detail" onclick="openDetail(${u.id})">
-                        <i data-lucide="eye"></i> View
-                    </button>
-                    <button class="btn-approve" onclick="doApprove(${u.id})">
-                        <i data-lucide="check"></i> Approve
-                    </button>
-                    <button class="btn-reject" onclick="openReject(${u.id})">
-                        <i data-lucide="x"></i> Reject
-                    </button>
-                </div>`;
-        } else if (isApproved) {
-            actionsHTML = `
-                <span class="status-tag st-approved"><span class="dot"></span> Approved</span>
-                <div class="user-time">${u.submitted}</div>
-                <div class="user-actions">
-                    <button class="btn-undo" onclick="undoAction(${u.id}, 'approved')">
-                        <i data-lucide="rotate-ccw"></i> Undo
-                    </button>
-                </div>`;
+            actionsCell = `
+                <button class="btn-view-detail" onclick="openDetail('${u.id}')"><i data-lucide="eye"></i> View</button>
+                <button class="btn-approve" onclick="doApprove('${u.id}')"><i data-lucide="check"></i> Approve</button>
+                <button class="btn-reject" onclick="openReject('${u.id}')"><i data-lucide="x"></i> Reject</button>`;
         } else {
-            actionsHTML = `
-                <span class="status-tag st-rejected"><span class="dot"></span> Rejected</span>
-                <div class="user-time">${u.submitted}</div>
-                <div class="user-actions">
-                    <button class="btn-undo" onclick="undoAction(${u.id}, 'rejected')">
-                        <i data-lucide="rotate-ccw"></i> Undo
-                    </button>
-                </div>`;
+            const fromTab = isApproved ? 'approved' : 'rejected';
+            const tag = isApproved
+                ? `<span class="status-tag st-approved"><span class="dot"></span> Approved</span>`
+                : `<span class="status-tag st-rejected"><span class="dot"></span> Rejected</span>`;
+            actionsCell = `
+                ${tag}
+                <button class="btn-undo" onclick="undoAction('${u.id}', '${fromTab}')"><i data-lucide="rotate-ccw"></i> Undo</button>`;
         }
 
-        const checkboxHTML = isPending ? `<input type="checkbox" class="user-checkbox" id="chk-${u.id}" onchange="toggleSelect(${u.id}, this)">` : '';
+        const checkboxHTML = isPending ? `<input type="checkbox" class="user-checkbox" id="chk-${u.id}" onchange="toggleSelect('${u.id}', this)">` : '';
 
         card.innerHTML = `
-            ${checkboxHTML}
-            <div class="user-avatar" style="background:${color}22; color:${color}; border: 1.5px solid ${color}44;">
-                ${initials(u.name)}
-                <span class="role-dot" style="background:${roleDotColor};"></span>
-            </div>
-            <div class="user-info">
-                <div class="user-name">${u.name}</div>
-                <div class="user-meta">
-                    <span class="role-badge ${u.role === 'Seller' ? 'role-seller' : 'role-buyer'}">
-                        <i data-lucide="${u.role === 'Seller' ? 'store' : 'shopping-bag'}" style="width:10px;height:10px;"></i>
-                        ${u.role}
-                    </span>
-                    <span class="meta-chip"><i data-lucide="map-pin"></i> ${u.location}</span>
-                    <span class="meta-chip"><i data-lucide="mail"></i> ${u.email}</span>
-                    ${u.role === 'Seller' ? `<span class="meta-chip"><i data-lucide="beef"></i> ${u.livestock}</span>` : ''}
+            <div class="cell-name">
+                ${checkboxHTML}
+                <div class="user-avatar" style="background:${color}22; color:${color}; border: 1.5px solid ${color}44;">
+                    ${initials(u.name)}
+                    <span class="role-dot" style="background:${roleDotColor};"></span>
+                </div>
+                <div style="min-width:0;">
+                    <div class="user-name">${u.name}</div>
+                    ${u.role === 'Seller' && u.business !== '—' ? `<div class="cell-sub"><i data-lucide="store"></i> ${u.business}</div>` : ''}
                 </div>
             </div>
-            ${actionsHTML}
+            <div class="cell-role">
+                <span class="role-badge ${u.role === 'Seller' ? 'role-seller' : 'role-buyer'}">
+                    <i data-lucide="${u.role === 'Seller' ? 'store' : 'shopping-bag'}" style="width:10px;height:10px;"></i>
+                    ${u.role}
+                </span>
+            </div>
+            <div class="cell-loc"><i data-lucide="map-pin"></i> <span>${u.location}</span></div>
+            <div class="cell-email"><i data-lucide="mail"></i> <span>${u.email}</span></div>
+            <div class="cell-time">${u.submitted}</div>
+            <div class="cell-actions">${actionsCell}</div>
         `;
         list.appendChild(card);
     });
@@ -969,15 +1085,24 @@ function setCount(id, target) {
 // ─────────────────────────────────────────────────
 // ACTIONS
 // ─────────────────────────────────────────────────
-function doApprove(id) {
-    const idx = pending.findIndex(u => u.id === id);
-    if (idx === -1) return;
-    const user = pending.splice(idx, 1)[0];
-    approved.unshift(user);
+async function doApprove(id) {
+    const user = pending.find(u => u.id === id);
+
+    const { error } = await supabaseClient
+        .from('users')
+        .update({ status: 'approved', is_verified: true })
+        .eq('id', id);
+
+    if (error) {
+        console.error('APPROVE ERROR:', error);
+        showToast('Error approving user: ' + error.message, 'error');
+        return;
+    }
+
     selectedIds.delete(id);
-    renderAll();
-    showToast(`✓ ${user.name} approved successfully.`, 'success');
     closeModal('detailModal');
+    showToast(`✓ ${user ? user.name : 'User'} approved successfully.`, 'success');
+    await loadUsers();
 }
 
 function openReject(id) {
@@ -1000,25 +1125,43 @@ function openReject(id) {
     lucide.createIcons();
 }
 
-function doReject(id) {
-    const idx = pending.findIndex(u => u.id === id);
-    if (idx === -1) return;
-    const user = pending.splice(idx, 1)[0];
-    rejected.unshift(user);
+async function doReject(id) {
+    const user = pending.find(u => u.id === id);
+
+    const { error } = await supabaseClient
+        .from('users')
+        .update({ status: 'rejected', is_verified: false })
+        .eq('id', id);
+
+    if (error) {
+        console.error('REJECT ERROR:', error);
+        showToast('Error rejecting user: ' + error.message, 'error');
+        return;
+    }
+
     selectedIds.delete(id);
-    renderAll();
-    showToast(`${user.name} was rejected.`, 'error');
     closeModal('detailModal');
+    showToast(`${user ? user.name : 'User'} was rejected.`, 'error');
+    await loadUsers();
 }
 
-function undoAction(id, from) {
+async function undoAction(id, from) {
     const arr = from === 'approved' ? approved : rejected;
-    const idx = arr.findIndex(u => u.id === id);
-    if (idx === -1) return;
-    const user = arr.splice(idx, 1)[0];
-    pending.unshift(user);
-    renderAll();
-    showToast(`Moved ${user.name} back to pending.`, 'info');
+    const user = arr.find(u => u.id === id);
+
+    const { error } = await supabaseClient
+        .from('users')
+        .update({ status: 'pending', is_verified: false })
+        .eq('id', id);
+
+    if (error) {
+        console.error('UNDO ERROR:', error);
+        showToast('Error moving user back to pending: ' + error.message, 'error');
+        return;
+    }
+
+    showToast(`Moved ${user ? user.name : 'user'} back to pending.`, 'info');
+    await loadUsers();
 }
 
 // ─────────────────────────────────────────────────
@@ -1040,16 +1183,29 @@ function updateBulkBar() {
     }
 }
 
-function bulkAction(action) {
+async function bulkAction(action) {
     const ids = [...selectedIds];
     if (!ids.length) return;
-    ids.forEach(id => {
-        if (action === 'approve') doApprove(id);
-        else doReject(id);
-    });
+
+    const patch = action === 'approve'
+        ? { status: 'approved', is_verified: true }
+        : { status: 'rejected', is_verified: false };
+
+    const { error } = await supabaseClient
+        .from('users')
+        .update(patch)
+        .in('id', ids);
+
+    if (error) {
+        console.error('BULK ACTION ERROR:', error);
+        showToast('Bulk action failed: ' + error.message, 'error');
+        return;
+    }
+
     selectedIds.clear();
     updateBulkBar();
     showToast(`${ids.length} users ${action === 'approve' ? 'approved' : 'rejected'}.`, action === 'approve' ? 'success' : 'error');
+    await loadUsers();
 }
 
 // ─────────────────────────────────────────────────
@@ -1091,18 +1247,17 @@ function openDetail(id) {
                 <div class="d-val">${user.location}</div>
             </div>
             <div class="detail-item">
+                <div class="d-label">Registered</div>
+                <div class="d-val">${user.registered}</div>
+            </div>
+            <div class="detail-item">
                 <div class="d-label">ID Type</div>
                 <div class="d-val">${user.id_type}</div>
             </div>
-            ${user.role === 'Seller' ? `
             <div class="detail-item">
                 <div class="d-label">Business Name</div>
                 <div class="d-val">${user.business}</div>
             </div>
-            <div class="detail-item">
-                <div class="d-label">Livestock Type</div>
-                <div class="d-val">${user.livestock}</div>
-            </div>` : ''}
         </div>
 
         <div class="docs-section">
@@ -1110,37 +1265,26 @@ function openDetail(id) {
             <div class="doc-row">
                 <div class="doc-icon"><i data-lucide="id-card"></i></div>
                 <div>
-                    <div class="doc-name">${user.id_type}</div>
-                    <div class="doc-sub">Government-issued ID · Uploaded</div>
+                    <div class="doc-name">${user.id_type !== '—' ? user.id_type : 'Valid ID'}</div>
+                    <div class="doc-sub">Government-issued ID · ${user.valid_id_url ? 'Uploaded' : 'Not uploaded'}</div>
                 </div>
-                <div class="doc-check"><i data-lucide="check"></i></div>
-            </div>
-            ${user.role === 'Seller' ? `
-            <div class="doc-row">
-                <div class="doc-icon"><i data-lucide="file-text"></i></div>
-                <div>
-                    <div class="doc-name">Business Permit / Farm Certificate</div>
-                    <div class="doc-sub">Supporting document · Uploaded</div>
-                </div>
-                <div class="doc-check"><i data-lucide="check"></i></div>
-            </div>` : ''}
-            <div class="doc-row">
-                <div class="doc-icon"><i data-lucide="camera"></i></div>
-                <div>
-                    <div class="doc-name">Selfie with ID</div>
-                    <div class="doc-sub">Identity verification photo · Uploaded</div>
-                </div>
-                <div class="doc-check"><i data-lucide="check"></i></div>
+                ${user.valid_id_url
+                    ? `<a href="${user.valid_id_url}" target="_blank" rel="noopener" class="btn-view-detail" style="margin-left:auto;">
+                           <i data-lucide="external-link"></i> View
+                       </a>`
+                    : `<div class="doc-check" style="margin-left:auto; background:rgba(255,107,107,0.1); border-color:rgba(255,107,107,0.25);">
+                           <i data-lucide="x" style="color:var(--danger);"></i>
+                       </div>`}
             </div>
         </div>
     `;
 
     document.getElementById('detailFooter').innerHTML = `
         <button class="btn-secondary" onclick="closeModal('detailModal')">Close</button>
-        <button class="btn-reject" onclick="closeModal('detailModal'); openReject(${user.id})">
+        <button class="btn-reject" onclick="closeModal('detailModal'); openReject('${user.id}')">
             <i data-lucide="x"></i> Reject
         </button>
-        <button class="btn-approve" onclick="doApprove(${user.id}); closeModal('detailModal');">
+        <button class="btn-approve" onclick="doApprove('${user.id}'); closeModal('detailModal');">
             <i data-lucide="check"></i> Approve
         </button>
     `;
@@ -1178,7 +1322,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dateBadge').textContent =
         new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
 
-    renderAll();
+    loadUsers();
 
     document.querySelectorAll('.modal-overlay').forEach(o => {
         o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });

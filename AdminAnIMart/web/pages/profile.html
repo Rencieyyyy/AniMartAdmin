@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile | AniMart</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
 
     <style>
@@ -16,7 +19,7 @@
             --dark: #0D1117;
             --surface: #161B22;
             --surface-2: #1C2333;
-            --border: rgba(255,255,255,0.07);
+            --border: rgba(255, 255, 255, 0.07);
             --text: #E6EDF3;
             --muted: #7D8590;
             --danger: #FF6B6B;
@@ -24,7 +27,13 @@
             --radius: 16px;
         }
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             font-family: 'Sora', sans-serif;
@@ -41,12 +50,17 @@
             left: -10%;
             width: 60%;
             height: 60%;
-            background: radial-gradient(ellipse, rgba(126,255,197,0.06) 0%, transparent 70%);
+            background: radial-gradient(ellipse, rgba(126, 255, 197, 0.06) 0%, transparent 70%);
             pointer-events: none;
             z-index: 0;
         }
 
-        .wrapper { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
 
         /* ─── SIDEBAR ─── */
         .sidebar {
@@ -71,45 +85,135 @@
         }
 
         .brand-icon {
-            width: 36px; height: 36px;
+            width: 36px;
+            height: 36px;
             background: var(--mint);
             border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
         }
-        .brand-icon svg { width: 18px; height: 18px; color: var(--dark); }
-        .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
-        .brand-name span { color: var(--mint); }
 
-        .nav { display: flex; flex-direction: column; flex: 1; gap: 3px; }
+        .brand-icon svg {
+            width: 18px;
+            height: 18px;
+            color: var(--dark);
+        }
+
+        .brand-name {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.03em;
+        }
+
+        .brand-name span {
+            color: var(--mint);
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            gap: 3px;
+        }
+
         .nav-label {
-            font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em;
-            text-transform: uppercase; color: var(--muted); padding: 14px 12px 6px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 14px 12px 6px;
         }
 
         .nav-link {
-            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-            border-radius: 10px; text-decoration: none; color: var(--muted);
-            font-size: 0.875rem; font-weight: 500; transition: all 0.18s ease;
-            border: none; background: transparent; cursor: pointer; width: 100%; text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.18s ease;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
         }
-        .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; transition: color 0.18s; }
-        .nav-link:hover { color: var(--text); background: var(--mint); }
-        .nav-link.active { background: var(--mint); color: var(--dark); font-weight: 700; }
-        .nav-link.active svg { color: var(--dark); }
-        .nav-link.logout { color: var(--danger); }
-        .nav-link.logout:hover { background: rgba(255,107,107,0.1); color: var(--danger); }
-        .nav-bottom { border-top: 1px solid var(--border); padding-top: 12px; margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
+
+        .nav-link svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            transition: color 0.18s;
+        }
+
+        .nav-link:hover {
+            color: var(--text);
+            background: var(--mint);
+        }
+
+        .nav-link.active {
+            background: var(--mint);
+            color: var(--dark);
+            font-weight: 700;
+        }
+
+        .nav-link.active svg {
+            color: var(--dark);
+        }
+
+        .nav-link.logout {
+            color: var(--danger);
+        }
+
+        .nav-link.logout:hover {
+            background: rgba(255, 107, 107, 0.1);
+            color: var(--danger);
+        }
+
+        .nav-bottom {
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
 
         /* ─── MAIN ─── */
-        .main { margin-left: var(--sidebar-w); flex: 1; padding: 36px 40px; max-width: calc(100vw - var(--sidebar-w)); }
+        .main {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            padding: 36px 40px;
+            max-width: calc(100vw - var(--sidebar-w));
+        }
 
         .page-header {
-            display: flex; align-items: flex-start; justify-content: space-between;
-            margin-bottom: 32px; animation: fadeUp 0.4s ease both;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            animation: fadeUp 0.4s ease both;
         }
-        .page-header h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.04em; color: #7EFFC5; }
-        .page-header p { font-size: 0.875rem; color: black; margin-top: 3px; }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            color: #7EFFC5;
+        }
+
+        .page-header p {
+            font-size: 0.875rem;
+            color: black;
+            margin-top: 3px;
+        }
 
         /* ─── PROFILE LAYOUT ─── */
         .profile-layout {
@@ -136,78 +240,146 @@
 
         .avatar-wrap {
             position: relative;
-            width: 96px; height: 96px;
+            width: 96px;
+            height: 96px;
         }
 
         .avatar-img {
-            width: 96px; height: 96px;
+            width: 96px;
+            height: 96px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--mint) 0%, #38BDF8 100%);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; font-weight: 800; color: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--dark);
             letter-spacing: -0.04em;
             border: 3px solid var(--border);
         }
 
         .avatar-edit {
             position: absolute;
-            bottom: 2px; right: 2px;
-            width: 28px; height: 28px;
+            bottom: 2px;
+            right: 2px;
+            width: 28px;
+            height: 28px;
             background: var(--mint);
             border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
             border: 2px solid var(--surface);
             transition: transform 0.2s;
         }
-        .avatar-edit:hover { transform: scale(1.1); }
-        .avatar-edit svg { width: 13px; height: 13px; color: var(--dark); }
+
+        .avatar-edit:hover {
+            transform: scale(1.1);
+        }
+
+        .avatar-edit svg {
+            width: 13px;
+            height: 13px;
+            color: var(--dark);
+        }
 
         .profile-name {
-            font-size: 1.1rem; font-weight: 800; letter-spacing: -0.03em;
-            color: var(--text); text-align: center;
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--text);
+            text-align: center;
         }
 
         .profile-role {
-            display: inline-flex; align-items: center; gap: 5px;
-            font-size: 0.7rem; font-weight: 700; font-family: 'DM Mono', monospace;
-            background: var(--mint-glow); color: var(--mint);
-            border: 1px solid rgba(126,255,197,0.2); border-radius: 20px; padding: 4px 12px;
-            letter-spacing: 0.06em; text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            font-family: 'DM Mono', monospace;
+            background: var(--mint-glow);
+            color: var(--mint);
+            border: 1px solid rgba(126, 255, 197, 0.2);
+            border-radius: 20px;
+            padding: 4px 12px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
         }
 
         .profile-divider {
-            width: 100%; height: 1px; background: var(--border);
+            width: 100%;
+            height: 1px;
+            background: var(--border);
         }
 
         .profile-meta {
             width: 100%;
-            display: flex; flex-direction: column; gap: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .meta-row {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 0.8rem; color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: var(--muted);
         }
-        .meta-row svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--mint-dim); }
-        .meta-row span { color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .meta-row svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            color: var(--mint-dim);
+        }
+
+        .meta-row span {
+            color: var(--text);
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
         .messenger-btn {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            width: 100%; padding: 10px 16px;
-            background: rgba(0,132,255,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 10px 16px;
+            background: rgba(0, 132, 255, 0.12);
             color: #52a8ff;
-            border: 1px solid rgba(0,132,255,0.25);
+            border: 1px solid rgba(0, 132, 255, 0.25);
             border-radius: 10px;
-            font-size: 0.8rem; font-weight: 700; font-family: 'Sora', sans-serif;
-            cursor: pointer; text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 700;
+            font-family: 'Sora', sans-serif;
+            cursor: pointer;
+            text-decoration: none;
             transition: all 0.2s;
         }
-        .messenger-btn:hover { background: rgba(0,132,255,0.22); transform: translateY(-1px); }
-        .messenger-btn svg { width: 15px; height: 15px; }
+
+        .messenger-btn:hover {
+            background: rgba(0, 132, 255, 0.22);
+            transform: translateY(-1px);
+        }
+
+        .messenger-btn svg {
+            width: 15px;
+            height: 15px;
+        }
 
         /* ─── RIGHT PANEL ─── */
-        .right-panel { display: flex; flex-direction: column; gap: 20px; }
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
         .card {
             background: var(--surface);
@@ -218,21 +390,44 @@
         }
 
         .card-header {
-            display: flex; align-items: center; justify-content: space-between;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 22px;
         }
 
-        .card-title-wrap { display: flex; align-items: center; gap: 10px; }
+        .card-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
         .card-icon {
-            width: 34px; height: 34px;
+            width: 34px;
+            height: 34px;
             border-radius: 9px;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .card-icon svg { width: 15px; height: 15px; }
 
-        .card-title { font-size: 0.9rem; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
-        .card-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+        .card-icon svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+
+        .card-sub {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 1px;
+        }
 
         /* ─── FORM ─── */
         .form-grid {
@@ -241,330 +436,819 @@
             gap: 16px;
         }
 
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-group.full { grid-column: 1 / -1; }
-
-        .form-label {
-            font-size: 0.72rem; font-weight: 600; color: var(--muted);
-            text-transform: uppercase; letter-spacing: 0.06em;
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
-        .input-wrap { position: relative; display: flex; align-items: center; }
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
         .input-icon {
-            position: absolute; left: 12px;
-            width: 15px; height: 15px; color: var(--muted);
+            position: absolute;
+            left: 12px;
+            width: 15px;
+            height: 15px;
+            color: var(--muted);
             pointer-events: none;
         }
 
         .form-input {
-            width: 100%; padding: 10px 12px 10px 38px;
+            width: 100%;
+            padding: 10px 12px 10px 38px;
             background: var(--surface-2);
             border: 1px solid var(--border);
             border-radius: 10px;
             color: var(--text);
-            font-size: 0.85rem; font-family: 'Sora', sans-serif;
+            font-size: 0.85rem;
+            font-family: 'Sora', sans-serif;
             transition: border-color 0.2s, box-shadow 0.2s;
             outline: none;
         }
 
         .form-input:focus {
-            border-color: rgba(126,255,197,0.4);
-            box-shadow: 0 0 0 3px rgba(126,255,197,0.08);
+            border-color: rgba(126, 255, 197, 0.4);
+            box-shadow: 0 0 0 3px rgba(126, 255, 197, 0.08);
         }
 
-        .form-input::placeholder { color: var(--muted); opacity: 0.6; }
+        .form-input::placeholder {
+            color: var(--muted);
+            opacity: 0.6;
+        }
 
-        .form-input.no-icon { padding-left: 12px; }
+        .form-input.no-icon {
+            padding-left: 12px;
+        }
 
         /* password toggle */
         .pwd-toggle {
-            position: absolute; right: 12px;
-            background: none; border: none; cursor: pointer;
-            color: var(--muted); padding: 0;
-            display: flex; align-items: center;
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted);
+            padding: 0;
+            display: flex;
+            align-items: center;
             transition: color 0.2s;
         }
-        .pwd-toggle:hover { color: var(--text); }
-        .pwd-toggle svg { width: 15px; height: 15px; }
+
+        .pwd-toggle:hover {
+            color: var(--text);
+        }
+
+        .pwd-toggle svg {
+            width: 15px;
+            height: 15px;
+        }
 
         .password-strength {
-            display: flex; gap: 4px; margin-top: 6px;
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
         }
+
         .strength-bar {
-            height: 3px; flex: 1; border-radius: 4px;
+            height: 3px;
+            flex: 1;
+            border-radius: 4px;
             background: var(--border);
             transition: background 0.3s;
         }
-        .strength-bar.weak { background: var(--danger); }
-        .strength-bar.medium { background: #FBB824; }
-        .strength-bar.strong { background: var(--mint-dim); }
+
+        .strength-bar.weak {
+            background: var(--danger);
+        }
+
+        .strength-bar.medium {
+            background: #FBB824;
+        }
+
+        .strength-bar.strong {
+            background: var(--mint-dim);
+        }
 
         .strength-label {
-            font-size: 0.68rem; color: var(--muted); margin-top: 4px;
+            font-size: 0.68rem;
+            color: var(--muted);
+            margin-top: 4px;
             font-family: 'DM Mono', monospace;
         }
 
         /* ─── MESSENGER SECTION ─── */
-        .messenger-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
+        /* ─── BUTTONS ─── */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
         }
 
-        .messenger-user-card {
-            display: flex; align-items: center; gap: 10px;
-            padding: 12px 14px;
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            text-decoration: none;
+        .btn {
+            padding: 9px 20px;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            font-family: 'Sora', sans-serif;
+            cursor: pointer;
             transition: all 0.2s;
+            border: none;
         }
-        .messenger-user-card:hover {
-            border-color: rgba(0,132,255,0.3);
+
+        .btn-primary {
+            background: var(--mint);
+            color: var(--dark);
+        }
+
+        .btn-primary:hover {
+            background: var(--mint-dim);
             transform: translateY(-1px);
         }
 
-        .mu-avatar {
-            width: 34px; height: 34px; border-radius: 50%;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.7rem; font-weight: 700; color: var(--mint);
-            flex-shrink: 0;
+        .btn-primary:disabled,
+        .btn-primary.disabled {
+            background: #2A313C;
+            color: var(--muted);
+            cursor: not-allowed;
+            transform: none;
+            pointer-events: none;
         }
 
-        .mu-name { font-size: 0.8rem; font-weight: 600; color: var(--text); }
-        .mu-role { font-size: 0.68rem; color: var(--muted); }
-
-        .mu-messenger {
-            margin-left: auto;
-            display: flex; align-items: center; justify-content: center;
-            width: 28px; height: 28px;
-            background: rgba(0,132,255,0.12);
-            border-radius: 8px;
-            color: #52a8ff;
-            flex-shrink: 0;
-            transition: background 0.2s;
-        }
-        .mu-messenger svg { width: 14px; height: 14px; }
-        .messenger-user-card:hover .mu-messenger { background: rgba(0,132,255,0.22); }
-
-        /* ─── BUTTONS ─── */
-        .btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-
-        .btn {
-            padding: 9px 20px; border-radius: 10px; font-size: 0.82rem;
-            font-weight: 700; font-family: 'Sora', sans-serif; cursor: pointer;
-            transition: all 0.2s; border: none;
-        }
-        .btn-primary {
-            background: var(--mint); color: var(--dark);
-        }
-        .btn-primary:hover { background: var(--mint-dim); transform: translateY(-1px); }
         .btn-ghost {
-            background: transparent; color: var(--muted);
+            background: transparent;
+            color: var(--muted);
             border: 1px solid var(--border);
         }
-        .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+        .btn-ghost:hover {
+            color: var(--text);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
 
         /* ─── TOAST ─── */
         .toast {
-            position: fixed; bottom: 28px; right: 28px;
-            background: var(--surface-2); border: 1px solid rgba(126,255,197,0.25);
-            border-radius: 12px; padding: 14px 18px;
-            display: flex; align-items: center; gap: 10px;
-            font-size: 0.82rem; font-weight: 600; color: var(--text);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            transform: translateY(20px); opacity: 0;
+            position: fixed;
+            top: 28px;
+            left: 50%;
+            background: var(--surface-2);
+            border: 1px solid rgba(126, 255, 197, 0.25);
+            border-radius: 12px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transform: translateX(-50%) translateY(-20px);
+            opacity: 0;
             transition: all 0.3s ease;
             z-index: 999;
             pointer-events: none;
         }
-        .toast.show { transform: translateY(0); opacity: 1; }
-        .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 8px var(--mint); flex-shrink: 0; }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--mint);
+            box-shadow: 0 0 8px var(--mint);
+            flex-shrink: 0;
+        }
 
         /* ─── ANIMATIONS ─── */
         @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(14px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .card:nth-child(1) { animation-delay: 0.05s; }
-        .card:nth-child(2) { animation-delay: 0.12s; }
-        .card:nth-child(3) { animation-delay: 0.19s; }
+        .card:nth-child(1) {
+            animation-delay: 0.05s;
+        }
 
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        .card:nth-child(2) {
+            animation-delay: 0.12s;
+        }
+
+        .card:nth-child(3) {
+            animation-delay: 0.19s;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
 
         /* ─── RESPONSIVE ─── */
         @media (max-width: 1100px) {
-            .profile-layout { grid-template-columns: 1fr; }
-            .profile-card { position: static; flex-direction: row; flex-wrap: wrap; justify-content: flex-start; }
+            .profile-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-card {
+                position: static;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+            }
         }
+
         @media (max-width: 900px) {
-            :root { --sidebar-w: 64px; }
-            .sidebar-brand, .nav-link span, .nav-label { display: none; }
-            .nav-link { justify-content: center; padding: 10px; }
-            .main { padding: 24px 20px; }
-            .form-grid { grid-template-columns: 1fr; }
-            .messenger-grid { grid-template-columns: 1fr; }
+            :root {
+                --sidebar-w: 64px;
+            }
+
+            .sidebar-brand,
+            .nav-link span,
+            .nav-label {
+                display: none;
+            }
+
+            .nav-link {
+                justify-content: center;
+                padding: 10px;
+            }
+
+            .main {
+                padding: 24px 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<div class="wrapper">
+    <div class="wrapper">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </div>
-            <div class="brand-name">Ani<span>Mart</span></div>
-        </div>
-
-        <nav class="nav">
-            <div class="nav-label">Main</div>
-            <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
-            <a href="sellers.html" class="nav-link"><i data-lucide="store"></i><span>Sellers &amp; Buyers</span></a>
-            <a href="premium.html" class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
-
-            <div class="nav-label">Admin</div>
-            <a href="announcements.html" class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
-            <a href="user.html" class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
- <a href="customer-service.html" class="nav-link "><i data-lucide="message-circle"></i><span>Customer Service</span></a>
-            <div class="nav-bottom">
-                <a href="profile.html" class="nav-link active"><i data-lucide="user-circle"></i><span>My Profile</span></a>
-                <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
-            </div>
-        </nav>
-    </aside>
-
-    <!-- MAIN -->
-    <main class="main">
-
-        <div class="page-header">
-            <div>
-                <h1>My Profile</h1>
-                <p>Manage your account details and preferences.</p>
-            </div>
-        </div>
-
-        <div class="profile-layout">
-
-            <!-- LEFT: Profile card -->
-            <div class="profile-card">
-                <div class="avatar-wrap">
-                    <div class="avatar-img" id="avatarDisplay">AD</div>
-                    <div class="avatar-edit" onclick="document.getElementById('avatarInput').click()" title="Change photo">
-                        <i data-lucide="camera"></i>
-                    </div>
-                    <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="handleAvatarChange(event)">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
                 </div>
-
-                <div class="profile-name" id="sidebarName">Admin User</div>
-                <div class="profile-role"><i data-lucide="shield-check" style="width:10px;height:10px;"></i> Super Admin</div>
-
-                <div class="profile-divider"></div>
-
-                <div class="profile-meta">
-                    <div class="meta-row">
-                        <i data-lucide="mail"></i>
-                        <span id="sidebarEmail">admin@animart.ph</span>
-                    </div>
-                    <div class="meta-row">
-                        <i data-lucide="phone"></i>
-                        <span id="sidebarPhone">+63 912 345 6789</span>
-                    </div>
-                    <div class="meta-row">
-                        <i data-lucide="map-pin"></i>
-                        <span id="sidebarLocation">Batangas City, Batangas</span>
-                    </div>
-                    <div class="meta-row">
-                        <i data-lucide="calendar"></i>
-                        <span>Admin since Jan 2024</span>
-                    </div>
-                </div>
-
-                <div class="profile-divider"></div>
-
-                <!-- My own Messenger link -->
-                <div style="width:100%;">
-                    <div class="form-label" style="margin-bottom:8px;">My Messenger Link</div>
-                    <div class="input-wrap" style="margin-bottom:8px;">
-                        <i data-lucide="link" class="input-icon"></i>
-                        <input type="url" class="form-input" id="myMessengerLink" placeholder="m.me/yourpage" value="m.me/animart.admin">
-                    </div>
-                    <a id="messengerPreviewBtn" href="https://m.me/animart.admin" target="_blank" class="messenger-btn">
-                        <i data-lucide="message-circle"></i>
-                        Open My Messenger
-                    </a>
-                </div>
+                <div class="brand-name">Ani<span>Mart</span></div>
             </div>
 
-            <!-- RIGHT: Forms -->
-            <div class="right-panel">
+            <nav class="nav">
+                <div class="nav-label">Main</div>
+                <a href="dashboard.html" class="nav-link"><i
+                        data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+                <a href="sellers.html" class="nav-link"><i data-lucide="store"></i><span>Sellers &amp; Buyers</span></a>
+                <a href="premium.html" class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
 
-                <!-- Personal Info -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title-wrap">
-                            <div class="card-icon" style="background:rgba(126,255,197,0.1); color:var(--mint-dim);">
-                                <i data-lucide="user"></i>
-                            </div>
-                            <div>
-                                <div class="card-title">Personal Information</div>
-                                <div class="card-sub">Update your name, email and contact details</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">First Name</label>
-                            <div class="input-wrap">
-                                <i data-lucide="user" class="input-icon"></i>
-                                <input type="text" class="form-input" id="firstName" placeholder="Juan" value="Admin">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Last Name</label>
-                            <div class="input-wrap">
-                                <i data-lucide="user" class="input-icon"></i>
-                                <input type="text" class="form-input" id="lastName" placeholder="Dela Cruz" value="User">
-                            </div>
-                        </div>
-                        <div class="form-group full">
-                            <label class="form-label">Email Address</label>
-                            <div class="input-wrap">
-                                <i data-lucide="mail" class="input-icon"></i>
-                                <input type="email" class="form-input" id="email" placeholder="you@animart.ph" value="admin@animart.ph">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Contact Number</label>
-                            <div class="input-wrap">
-                                <i data-lucide="phone" class="input-icon"></i>
-                                <input type="tel" class="form-input" id="phone" placeholder="+63 9XX XXX XXXX" value="+63 912 345 6789">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Location</label>
-                            <div class="input-wrap">
-                                <i data-lucide="map-pin" class="input-icon"></i>
-                                <input type="text" class="form-input" id="location" placeholder="City, Province" value="Batangas City, Batangas">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="btn-row">
-                        <button class="btn btn-ghost" onclick="resetPersonalInfo()">Reset</button>
-                        <button class="btn btn-primary" onclick="savePersonalInfo()">Save Changes</button>
-                    </div>
+                <div class="nav-label">Admin</div>
+                <a href="announcements.html" class="nav-link"><i
+                        data-lucide="megaphone"></i><span>Announcements</span></a>
+                <a href="user.html" class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
+                <a href="customer-service.html" class="nav-link "><i data-lucide="message-circle"></i><span>Customer
+                        Service</span></a>
+                <div class="nav-bottom">
+                    <a href="profile.html" class="nav-link active"><i data-lucide="user-circle"></i><span>My
+                            Profile</span></a>
+                    <button class="nav-link logout" onclick="confirmLogout()"><i
+                            data-lucide="log-out"></i><span>Logout</span></button>
                 </div>
+            </nav>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main">
+
+            <!-- <div class="page-header">
+                <div>
+                    <h1>My Profile</h1>
+                    <p>Manage your account details and preferences.</p>
+                </div>
+            </div> -->
+
+            <div class="profile-layout">
+
+                <!-- LEFT: Profile Card -->
+
+                <div class="profile-card">
+
+                    <div class="avatar-wrap">
+
+                        <div class="avatar-img" id="avatarDisplay">
+                            --
+                        </div>
+
+
+                        <div class="avatar-edit" onclick="document.getElementById('avatarInput').click()"
+                            title="Change photo">
+
+                            <i data-lucide="camera"></i>
+
+                        </div>
+
+
+                        <input type="file" id="avatarInput" accept="image/*" style="display:none"
+                            onchange="handleAvatarChange(event)">
+
+                    </div>
+
+
+
+                    <!-- NAME -->
+
+                    <div class="profile-name" id="sidebarName">
+                        Loading...
+                    </div>
+
+
+                    <div class="profile-role">
+
+                        <i data-lucide="shield-check" style="width:10px;height:10px;"></i>
+
+                        Super Admin
+
+                    </div>
+
+
+
+
+                    <div class="profile-divider"></div>
+
+
+
+
+
+                    <!-- PROFILE DETAILS -->
+
+                    <div class="profile-meta">
+
+
+                        <div class="meta-row">
+
+                            <i data-lucide="mail"></i>
+
+                            <span id="sidebarEmail">
+                                Loading...
+                            </span>
+
+                        </div>
+
+
+
+
+                        <div class="meta-row">
+
+                            <i data-lucide="phone"></i>
+
+                            <span id="sidebarPhone">
+                                Loading...
+                            </span>
+
+                        </div>
+
+
+
+
+
+                        <div class="meta-row">
+
+                            <i data-lucide="map-pin"></i>
+
+                            <span id="sidebarLocation">
+                                Loading...
+                            </span>
+
+                        </div>
+
+
+
+
+
+                        <div class="meta-row">
+
+                            <i data-lucide="calendar"></i>
+
+                            <span id="sidebarCreated">
+                                Loading...
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+
+
+
+
+
+                    <div class="profile-divider"></div>
+
+
+
+
+
+
+                    <!-- MESSENGER -->
+
+
+                    <div style="width:100%;">
+
+
+                        <div class="form-label" style="margin-bottom:8px;">
+
+                            My Messenger Link
+
+                        </div>
+
+
+
+
+                        <div class="input-wrap" style="margin-bottom:8px;">
+
+
+                            <i data-lucide="link" class="input-icon"></i>
+
+
+
+                            <input type="url" class="form-input" id="myMessengerLink" placeholder="m.me/example">
+
+
+
+                        </div>
+
+
+
+
+
+                        <a id="messengerPreviewBtn" href="#" target="_blank" class="messenger-btn">
+
+
+                            <i data-lucide="message-circle"></i>
+
+                            Open My Messenger
+
+
+                        </a>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+
+
+                <!-- RIGHT PANEL -->
+
+                <div class="right-panel">
+
+
+
+
+
+
+
+                    <!-- PERSONAL INFORMATION CARD -->
+
+                    <div class="card">
+
+
+
+                        <div class="card-header">
+
+
+                            <div class="card-title-wrap">
+
+
+                                <div class="card-icon" style="background:rgba(126,255,197,0.1); color:var(--mint-dim);">
+
+
+                                    <i data-lucide="user"></i>
+
+
+                                </div>
+
+
+
+                                <div>
+
+
+                                    <div class="card-title">
+
+                                        Personal Information
+
+                                    </div>
+
+
+
+                                    <div class="card-sub">
+
+                                        Update your name, email and contact details
+
+                                    </div>
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
+                        </div>
+
+
+
+
+
+
+
+
+                        <div class="form-grid">
+
+
+
+
+
+
+                            <div class="form-group">
+
+
+                                <label class="form-label">
+
+                                    First Name
+
+                                </label>
+
+
+
+                                <div class="input-wrap">
+
+
+                                    <i data-lucide="user" class="input-icon"></i>
+
+
+
+                                    <input type="text" class="form-input" id="firstName" placeholder="First Name">
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
+
+
+
+
+
+
+
+
+                            <div class="form-group">
+
+
+                                <label class="form-label">
+
+                                    Last Name
+
+                                </label>
+
+
+
+                                <div class="input-wrap">
+
+
+                                    <i data-lucide="user" class="input-icon"></i>
+
+
+
+                                    <input type="text" class="form-input" id="lastName" placeholder="Last Name">
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
+
+
+
+
+
+
+
+
+                            <div class="form-group full">
+
+
+                                <label class="form-label">
+
+                                    Email Address
+
+                                </label>
+
+
+
+
+                                <div class="input-wrap">
+
+
+                                    <i data-lucide="mail" class="input-icon"></i>
+
+
+
+
+                                    <input type="email" class="form-input" id="email" placeholder="Email">
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
+
+
+
+
+
+
+
+                            <div class="form-group">
+
+
+                                <label class="form-label">
+
+                                    Contact Number
+
+                                </label>
+
+
+
+
+                                <div class="input-wrap">
+
+
+                                    <i data-lucide="phone" class="input-icon"></i>
+
+
+
+                                    <input type="tel" class="form-input" id="phone" placeholder="+63 9XX XXX XXXX">
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
+
+
+
+
+
+
+
+                            <div class="form-group">
+
+
+                                <label class="form-label">
+
+                                    Location
+
+                                </label>
+
+
+
+                                <div class="input-wrap">
+
+
+                                    <i data-lucide="map-pin" class="input-icon"></i>
+
+
+
+                                    <input type="text" class="form-input" id="location" placeholder="City, Province">
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
+
+
+
+
+                        </div>
+
+
+
+
+
+
+
+
+
+                        <div class="btn-row">
+
+
+                            <button class="btn btn-ghost" onclick="resetPersonalInfo()">
+
+                                Reset
+
+                            </button>
+
+
+
+
+
+                            <button class="btn btn-primary disabled" id="savePersonalBtn" disabled
+                                onclick="savePersonalInfo()">
+
+                                Save Changes
+
+                            </button>
+
+
+
+                        </div>
+
+
+
+
+
+
+                    </div>
+
+
+
+
 
                 <!-- Change Password -->
                 <div class="card">
@@ -585,7 +1269,8 @@
                             <label class="form-label">Current Password</label>
                             <div class="input-wrap">
                                 <i data-lucide="lock" class="input-icon"></i>
-                                <input type="password" class="form-input" id="currentPwd" placeholder="Enter current password">
+                                <input type="password" class="form-input" id="currentPwd"
+                                    placeholder="Enter current password">
                                 <button class="pwd-toggle" onclick="togglePwd('currentPwd', this)" type="button">
                                     <i data-lucide="eye"></i>
                                 </button>
@@ -595,7 +1280,8 @@
                             <label class="form-label">New Password</label>
                             <div class="input-wrap">
                                 <i data-lucide="key" class="input-icon"></i>
-                                <input type="password" class="form-input" id="newPwd" placeholder="New password" oninput="checkStrength(this.value)">
+                                <input type="password" class="form-input" id="newPwd" placeholder="New password"
+                                    oninput="checkStrength(this.value)">
                                 <button class="pwd-toggle" onclick="togglePwd('newPwd', this)" type="button">
                                     <i data-lucide="eye"></i>
                                 </button>
@@ -612,7 +1298,8 @@
                             <label class="form-label">Confirm New Password</label>
                             <div class="input-wrap">
                                 <i data-lucide="key" class="input-icon"></i>
-                                <input type="password" class="form-input" id="confirmPwd" placeholder="Repeat new password">
+                                <input type="password" class="form-input" id="confirmPwd"
+                                    placeholder="Repeat new password">
                                 <button class="pwd-toggle" onclick="togglePwd('confirmPwd', this)" type="button">
                                     <i data-lucide="eye"></i>
                                 </button>
@@ -622,228 +1309,171 @@
 
                     <div class="btn-row">
                         <button class="btn btn-ghost" onclick="clearPasswords()">Clear</button>
-                        <button class="btn btn-primary" onclick="savePassword()">Update Password</button>
+                        <button class="btn btn-primary disabled" id="updatePasswordBtn" disabled
+                            onclick="savePassword()">Update Password</button>
                     </div>
                 </div>
 
-                <!-- Messenger Contacts -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title-wrap">
-                            <div class="card-icon" style="background:rgba(0,132,255,0.1); color:#52a8ff;">
-                                <i data-lucide="message-circle"></i>
-                            </div>
-                            <div>
-                                <div class="card-title">Messenger Contacts</div>
-                                <div class="card-sub">Quick access to message sellers and buyers</div>
-                            </div>
-                        </div>
-                        <button class="btn btn-ghost" style="font-size:0.75rem;padding:6px 14px;" onclick="addMessengerContact()">+ Add Contact</button>
-                    </div>
+                </div><!-- end right-panel -->
 
-                    <div class="messenger-grid" id="messengerGrid">
-                        <!-- populated by JS -->
-                    </div>
-                </div>
-
-            </div>
-        </div>
+            </div><!-- end profile-layout -->
+    </div>
     </main>
-</div>
+    </div>
 
-<!-- Toast -->
-<div class="toast" id="toast">
-    <div class="toast-dot"></div>
-    <span id="toastMsg">Saved successfully!</span>
-</div>
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <div class="toast-dot"></div>
+        <span id="toastMsg">Saved successfully!</span>
+    </div>
 
-<script>
-// ── SAMPLE DATA ──
-const contacts = [
-    { name: "Juan Dela Cruz", role: "Seller", location: "Batangas", link: "https://m.me/juan.delacruz" },
-    { name: "Maria Lim", role: "Seller", location: "Laguna", link: "https://m.me/maria.lim" },
-    { name: "Ferdie Santos", role: "Buyer", location: "Quezon", link: "https://m.me/ferdie.santos" },
-    { name: "Liza Manalo", role: "Seller", location: "Cavite", link: "https://m.me/liza.manalo" },
-    { name: "Andres Cruz", role: "Buyer", location: "Rizal", link: "https://m.me/andres.cruz" },
-    { name: "Cardo Dalisay", role: "Seller", location: "Batangas", link: "https://m.me/cardo.dalisay" },
-];
 
-// ── INIT ──
-document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-    renderMessengerContacts();
 
-    // Live update sidebar from inputs
-    ['firstName','lastName'].forEach(id => {
-        document.getElementById(id).addEventListener('input', updateSidebarName);
-    });
-    document.getElementById('email').addEventListener('input', e => {
-        document.getElementById('sidebarEmail').textContent = e.target.value || '—';
-    });
-    document.getElementById('phone').addEventListener('input', e => {
-        document.getElementById('sidebarPhone').textContent = e.target.value || '—';
-    });
-    document.getElementById('location').addEventListener('input', e => {
-        document.getElementById('sidebarLocation').textContent = e.target.value || '—';
-    });
-    document.getElementById('myMessengerLink').addEventListener('input', e => {
-        const val = e.target.value.trim();
-        const href = val.startsWith('http') ? val : 'https://' + val;
-        document.getElementById('messengerPreviewBtn').href = href;
-    });
-});
+    <script>
+        // ── INIT ──
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
 
-function updateSidebarName() {
-    const fn = document.getElementById('firstName').value.trim();
-    const ln = document.getElementById('lastName').value.trim();
-    const full = [fn, ln].filter(Boolean).join(' ') || 'Admin User';
-    document.getElementById('sidebarName').textContent = full;
-    const initials = [fn[0], ln[0]].filter(Boolean).join('').toUpperCase() || 'AU';
-    const el = document.getElementById('avatarDisplay');
-    if (!el.querySelector('img')) el.textContent = initials;
-}
+            // Live update sidebar from inputs
+            ['firstName', 'lastName'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateSidebarName);
+            });
+            document.getElementById('email').addEventListener('input', e => {
+                document.getElementById('sidebarEmail').textContent = e.target.value || '—';
+            });
+            document.getElementById('phone').addEventListener('input', e => {
+                document.getElementById('sidebarPhone').textContent = e.target.value || '—';
+            });
+            document.getElementById('location').addEventListener('input', e => {
+                document.getElementById('sidebarLocation').textContent = e.target.value || '—';
+            });
+            document.getElementById('myMessengerLink').addEventListener('input', e => {
+                const val = e.target.value.trim();
+                const href = val.startsWith('http') ? val : 'https://' + val;
+                document.getElementById('messengerPreviewBtn').href = href;
+            });
+        });
 
-// ── AVATAR ──
-function handleAvatarChange(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const el = document.getElementById('avatarDisplay');
-        el.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-    };
-    reader.readAsDataURL(file);
-}
+        function updateSidebarName() {
+            const fn = document.getElementById('firstName').value.trim();
+            const ln = document.getElementById('lastName').value.trim();
+            const full = [fn, ln].filter(Boolean).join(' ') || 'Admin User';
+            document.getElementById('sidebarName').textContent = full;
+            const initials = [fn[0], ln[0]].filter(Boolean).join('').toUpperCase() || 'AU';
+            const el = document.getElementById('avatarDisplay');
+            if (!el.querySelector('img')) el.textContent = initials;
+        }
 
-// ── PASSWORD STRENGTH ──
-function checkStrength(val) {
-    const bars = [document.getElementById('sb1'), document.getElementById('sb2'), document.getElementById('sb3'), document.getElementById('sb4')];
-    const label = document.getElementById('strengthLabel');
-    bars.forEach(b => { b.className = 'strength-bar'; });
+        // ── AVATAR ──
+        function handleAvatarChange(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-    if (!val) { label.textContent = 'Enter a password'; label.style.color = 'var(--muted)'; return; }
+            // Client-side validation (image type + 2MB cap) before uploading.
+            const err = (typeof validateImageFile === 'function')
+                ? validateImageFile(file, 2 * 1024 * 1024)
+                : (file.size > 2 * 1024 * 1024 ? 'Image is too large. Please choose one under 2MB.' : null);
+            if (err) {
+                showToast(err, true);
+                event.target.value = '';
+                return;
+            }
 
-    let score = 0;
-    if (val.length >= 8) score++;
-    if (/[A-Z]/.test(val)) score++;
-    if (/[0-9]/.test(val)) score++;
-    if (/[^A-Za-z0-9]/.test(val)) score++;
+            // Instant local preview from the raw File (no base64). The object
+            // URL is revoked once the <img> has loaded to free memory.
+            const previewUrl = URL.createObjectURL(file);
+            const el = document.getElementById('avatarDisplay');
+            el.innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onload="URL.revokeObjectURL(this.src)">`;
 
-    const map = ['weak','medium','medium','strong'];
-    const labels = ['Too short','Fair','Good','Strong 💪'];
-    const colors = ['var(--danger)','#FBB824','#FBB824','var(--mint-dim)'];
+            // Upload the raw File to Storage and persist its public URL.
+            if (typeof saveProfilePicture === 'function') saveProfilePicture(file);
+        }
 
-    for (let i = 0; i < score; i++) bars[i].classList.add(map[score-1]);
-    label.textContent = labels[score - 1] || 'Too short';
-    label.style.color = colors[score - 1] || 'var(--danger)';
-}
+        // ── PASSWORD STRENGTH ──
+        function checkStrength(val) {
+            const bars = [document.getElementById('sb1'), document.getElementById('sb2'), document.getElementById('sb3'), document.getElementById('sb4')];
+            const label = document.getElementById('strengthLabel');
+            bars.forEach(b => { b.className = 'strength-bar'; });
 
-// ── PASSWORD TOGGLE ──
-function togglePwd(id, btn) {
-    const inp = document.getElementById(id);
-    const isHidden = inp.type === 'password';
-    inp.type = isHidden ? 'text' : 'password';
-    btn.innerHTML = isHidden
-        ? '<i data-lucide="eye-off"></i>'
-        : '<i data-lucide="eye"></i>';
-    lucide.createIcons();
-}
+            if (!val) { label.textContent = 'Enter a password'; label.style.color = 'var(--muted)'; return; }
 
-// ── SAVE PERSONAL INFO ──
-const _defaults = {
-    firstName: 'Admin', lastName: 'User',
-    email: 'admin@animart.ph', phone: '+63 912 345 6789', location: 'Batangas City, Batangas'
-};
+            let score = 0;
+            if (val.length >= 8) score++;
+            if (/[A-Z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
 
-function savePersonalInfo() {
-    const email = document.getElementById('email').value.trim();
-    if (!email.includes('@')) { showToast('Please enter a valid email address.', true); return; }
-    showToast('Profile updated successfully!');
-}
+            const map = ['weak', 'medium', 'medium', 'strong'];
+            const labels = ['Too short', 'Fair', 'Good', 'Strong 💪'];
+            const colors = ['var(--danger)', '#FBB824', '#FBB824', 'var(--mint-dim)'];
 
-function resetPersonalInfo() {
-    Object.entries(_defaults).forEach(([k, v]) => {
-        document.getElementById(k).value = v;
-    });
-    updateSidebarName();
-    document.getElementById('sidebarEmail').textContent = _defaults.email;
-    document.getElementById('sidebarPhone').textContent = _defaults.phone;
-    document.getElementById('sidebarLocation').textContent = _defaults.location;
-    showToast('Reset to saved values.');
-}
+            for (let i = 0; i < score; i++) bars[i].classList.add(map[score - 1]);
+            label.textContent = labels[score - 1] || 'Too short';
+            label.style.color = colors[score - 1] || 'var(--danger)';
+        }
 
-// ── SAVE PASSWORD ──
-function savePassword() {
-    const cur = document.getElementById('currentPwd').value;
-    const nw = document.getElementById('newPwd').value;
-    const cf = document.getElementById('confirmPwd').value;
+        // ── PASSWORD TOGGLE ──
+        function togglePwd(id, btn) {
+            const inp = document.getElementById(id);
+            const isHidden = inp.type === 'password';
+            inp.type = isHidden ? 'text' : 'password';
+            btn.innerHTML = isHidden
+                ? '<i data-lucide="eye-off"></i>'
+                : '<i data-lucide="eye"></i>';
+            lucide.createIcons();
+        }
 
-    if (!cur) { showToast('Please enter your current password.', true); return; }
-    if (nw.length < 8) { showToast('New password must be at least 8 characters.', true); return; }
-    if (nw !== cf) { showToast('Passwords do not match.', true); return; }
+        // ── SAVE PERSONAL INFO ──
+        const _defaults = {
+            firstName: 'Admin', lastName: 'User',
+            email: 'admin@animart.ph', phone: '+63 912 345 6789', location: 'Batangas City, Batangas'
+        };
 
-    clearPasswords();
-    showToast('Password updated successfully!');
-}
+        function savePersonalInfo() {
+            const email = document.getElementById('email').value.trim();
+            if (!email.includes('@')) { showToast('Please enter a valid email address.', true); return; }
+            showToast('Profile updated successfully!');
+        }
 
-function clearPasswords() {
-    ['currentPwd','newPwd','confirmPwd'].forEach(id => document.getElementById(id).value = '');
-    checkStrength('');
-}
+        function resetPersonalInfo() {
+            Object.entries(_defaults).forEach(([k, v]) => {
+                document.getElementById(k).value = v;
+            });
+            updateSidebarName();
+            document.getElementById('sidebarEmail').textContent = _defaults.email;
+            document.getElementById('sidebarPhone').textContent = _defaults.phone;
+            document.getElementById('sidebarLocation').textContent = _defaults.location;
+            showToast('Reset to saved values.');
+        }
 
-// ── MESSENGER CONTACTS ──
-function renderMessengerContacts() {
-    const grid = document.getElementById('messengerGrid');
-    grid.innerHTML = '';
-    contacts.forEach((c, i) => {
-        const initials = c.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
-        const card = document.createElement('a');
-        card.className = 'messenger-user-card';
-        card.href = c.link;
-        card.target = '_blank';
-        card.innerHTML = `
-            <div class="mu-avatar">${initials}</div>
-            <div>
-                <div class="mu-name">${c.name}</div>
-                <div class="mu-role">${c.role} · ${c.location}</div>
-            </div>
-            <div class="mu-messenger"><i data-lucide="message-circle"></i></div>
-        `;
-        grid.appendChild(card);
-    });
-    lucide.createIcons();
-}
+        // ── SAVE PASSWORD ──
+        // Real implementation lives in profile.js (savePassword) using Supabase auth.
 
-function addMessengerContact() {
-    const name = prompt('Full name of contact:');
-    if (!name) return;
-    const link = prompt('Messenger link (e.g. m.me/username):');
-    if (!link) return;
-    const role = prompt('Role (Seller / Buyer):') || 'Seller';
-    const location = prompt('Location:') || '—';
-    contacts.push({ name, role, location, link: link.startsWith('http') ? link : 'https://' + link });
-    renderMessengerContacts();
-    showToast(`${name} added to contacts!`);
-}
+        function clearPasswords() {
+            ['currentPwd', 'newPwd', 'confirmPwd'].forEach(id => document.getElementById(id).value = '');
+            checkStrength('');
+            if (typeof updatePasswordButtonState === 'function') updatePasswordButtonState();
+        }
 
-// ── TOAST ──
-let toastTimer;
-function showToast(msg, isError = false) {
-    const toast = document.getElementById('toast');
-    const dot = toast.querySelector('.toast-dot');
-    document.getElementById('toastMsg').textContent = msg;
-    dot.style.background = isError ? 'var(--danger)' : 'var(--mint)';
-    dot.style.boxShadow = isError ? '0 0 8px var(--danger)' : '0 0 8px var(--mint)';
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
-}
+        // ── TOAST ──
+        // showToast lives in profile.js (single definition, supports error styling).
 
-function confirmLogout() {
-    if (confirm("Are you sure you want to sign out?")) {
-        window.location.href = "../index.html";
-    }
-}
-</script>
+        function confirmLogout() {
+            if (confirm("Are you sure you want to sign out?")) {
+                window.location.href = "../index.html";
+            }
+        }
+
+
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="../config.js"></script>
+
+    <script src="../storage.js"></script>
+
+    <script src="profile.js"></script>
 </body>
+
 </html>

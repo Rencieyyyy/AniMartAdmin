@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  
+
   <meta charset="UTF-8">
   <title>AnImart</title>
   <link rel="icon" type="image/png" href="C:\Users\ASUS\Documents\ANIfarm\flutter_application_1\web\assets\animart.png">
@@ -9,55 +10,66 @@
   <style>
     /* Senior Dev Design System */
     :root {
-      --primary: #91E6C1; /* The requested Mint Green */
-      --dark: #1F2937;    /* The requested Charcoal for text/button */
+      --primary: #91E6C1;
+      /* The requested Mint Green */
+      --dark: #1F2937;
+      /* The requested Charcoal for text/button */
       --white: #FFFFFF;
       --gray-muted: #6B7280;
-      --bg-dirty: #F3F4F6; 
-  
+      --bg-dirty: #F3F4F6;
+
     }
 
     /* Reset and Base Styles */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-  font-family: 'Inter', sans-serif;
-  /* This off-white makes the white card "pop" instantly */
-  background-color: var(--bg-dirty); 
-  color: var(--dark);
-  height: 100vh;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+      font-family: 'Inter', sans-serif;
+      /* This off-white makes the white card "pop" instantly */
+      background-color: var(--bg-dirty);
+      color: var(--dark);
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
     /* The Main Two-Column Box with Shadow */
     .login-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  background-color: var(--white); /* Pure white card */
-  width: 90%;
-  max-width: 1000px;
-  border-radius: 28px;
-  
-  /* HIGH-END LAYERED SHADOW */
-  /* This uses three layers: a soft base, a deep center, and a sharp edge */
-  box-shadow:0 10px 15px -3px rgba(0, 0, 0, 0.1), 
-    0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    
-  overflow: hidden;
-}
-  .brand-section {
-  padding: 50px 64px 64px 64px;/* Increased top padding from 64px to 80px */
- background-color: var(--primary);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start; /* Changed from center to start for better top control */
-  align-items: center; 
-  text-align: center;
-  border-right: 1px solid #E5E7EB;
-}
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background-color: var(--white);
+      /* Pure white card */
+      width: 90%;
+      max-width: 1000px;
+      border-radius: 28px;
+
+      /* HIGH-END LAYERED SHADOW */
+      /* This uses three layers: a soft base, a deep center, and a sharp edge */
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+      overflow: hidden;
+    }
+
+    .brand-section {
+      padding: 50px 64px 64px 64px;
+      /* Increased top padding from 64px to 80px */
+      background-color: var(--primary);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      /* Changed from center to start for better top control */
+      align-items: center;
+      text-align: center;
+      border-right: 1px solid #E5E7EB;
+    }
+
     /* Placeholder for the real logo img */
     .brand-logo-placeholder {
       font-size: 3rem;
@@ -67,25 +79,28 @@
       line-height: 1;
     }
 
-    .brand-logo-placeholder span { color: var(--primary); }
-.brand-section h2 {
-  font-size: 2.1rem;
-  font-weight: 800;
-  line-height: 1.2;
-  /* Changed to your charcoal dark color for contrast */
-  color: var(--dark); 
-  margin-bottom: 14px;
-  letter-spacing: -0.02em;
-}
+    .brand-logo-placeholder span {
+      color: var(--primary);
+    }
 
-  .brand-section p {
-  /* Darker text to ensure it's readable on the mint background */
-  color: rgba(31, 41, 55, 0.8); 
-  max-width: 300px;
-  line-height: 1.6;
-  margin: 0 auto;
-  font-weight: 500;
-}
+    .brand-section h2 {
+      font-size: 2.1rem;
+      font-weight: 800;
+      line-height: 1.2;
+      /* Changed to your charcoal dark color for contrast */
+      color: var(--dark);
+      margin-bottom: 14px;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-section p {
+      /* Darker text to ensure it's readable on the mint background */
+      color: rgba(31, 41, 55, 0.8);
+      max-width: 300px;
+      line-height: 1.6;
+      margin: 0 auto;
+      font-weight: 500;
+    }
 
 
     /* --- Right Division: Login Form --- */
@@ -96,27 +111,29 @@
       justify-content: center;
     }
 
-   .brand-logo {
-  /* Slightly larger "Medium-Plus" size */
-  width: 180px; 
-  height: auto;
-  display: block;
-  object-fit: contain;
-  
-  /* Added a slightly stronger shadow to help the larger logo pop */
-  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.1));
-  
-  /* Ensures the logo doesn't get blurry when we increase size */
-  image-rendering: -webkit-optimize-contrast;
-}
-.logo-wrapper {
-  /* Using a negative margin is a senior dev trick to fine-tune position */
-  margin-top: -10px; 
-  margin-bottom: 28px;
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
+    .brand-logo {
+      /* Slightly larger "Medium-Plus" size */
+      width: 180px;
+      height: auto;
+      display: block;
+      object-fit: contain;
+
+      /* Added a slightly stronger shadow to help the larger logo pop */
+      filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.1));
+
+      /* Ensures the logo doesn't get blurry when we increase size */
+      image-rendering: -webkit-optimize-contrast;
+    }
+
+    .logo-wrapper {
+      /* Using a negative margin is a senior dev trick to fine-tune position */
+      margin-top: -10px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
     .login-section h1 {
       font-size: 1.875rem;
       font-weight: 700;
@@ -129,7 +146,11 @@
     }
 
     /* Form and Inputs */
-    .input-group { margin-bottom: 24px; text-align: left; }
+    .input-group {
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
     .input-group label {
       display: block;
       font-size: 0.875rem;
@@ -153,167 +174,189 @@
     .input-group input:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(145, 230, 193, 0.2); /* Soft mint halo */
+      box-shadow: 0 0 0 4px rgba(145, 230, 193, 0.2);
+      /* Soft mint halo */
     }
 
     /* The Primary Mint Green Button */
     .btn-submit {
-  width: 100%;
-  padding: 16px;
-  background-color: var(--primary); /* Your Mint Green */
-  color: var(--dark);
-  border: none;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease; /* Smooth transition */
-  box-shadow: 0 4px 14px 0 rgba(145, 230, 193, 0.39); /* Mint glow */
-}
+      width: 100%;
+      padding: 16px;
+      background-color: var(--primary);
+      /* Your Mint Green */
+      color: var(--dark);
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      /* Smooth transition */
+      box-shadow: 0 4px 14px 0 rgba(145, 230, 193, 0.39);
+      /* Mint glow */
+    }
 
     .btn-submit:hover {
-  background-color: #7ed9b0; /* Slightly darker mint */
-  transform: translateY(-2px); /* Lifts up slightly */
-  box-shadow: 0 6px 20px rgba(145, 230, 193, 0.5); /* Stronger glow */
-}
+      background-color: #7ed9b0;
+      /* Slightly darker mint */
+      transform: translateY(-2px);
+      /* Lifts up slightly */
+      box-shadow: 0 6px 20px rgba(145, 230, 193, 0.5);
+      /* Stronger glow */
+    }
+
     .btn-submit:active {
-  transform: translateY(0); /* Pushes back down on click */
-}
+      transform: translateY(0);
+      /* Pushes back down on click */
+    }
 
     /* Footer Links */
-    .form-footer { margin-top: 32px; text-align: center; font-size: 0.875rem; color: var(--gray-muted); }
-    .form-footer a { color: var(--dark); font-weight: 600; text-decoration: none; }
+    .form-footer {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--gray-muted);
+    }
+
+    .form-footer a {
+      color: var(--dark);
+      font-weight: 600;
+      text-decoration: none;
+    }
 
     /* --- Responsiveness (Crucial for Senior Dev) --- */
     @media (max-width: 768px) {
-      .login-container { grid-template-columns: 1fr; width: 100%; border-radius: 0; }
-      .brand-section { padding: 40px; text-align: center; align-items: center; border-right: none; border-bottom: 1px solid #E5E7EB;}
-      .login-section { padding: 40px; }
-      .brand-section h2 { font-size: 1.75rem; }
+      .login-container {
+        grid-template-columns: 1fr;
+        width: 100%;
+        border-radius: 0;
+      }
+
+      .brand-section {
+        padding: 40px;
+        text-align: center;
+        align-items: center;
+        border-right: none;
+        border-bottom: 1px solid #E5E7EB;
+      }
+
+      .login-section {
+        padding: 40px;
+      }
+
+      .brand-section h2 {
+        font-size: 1.75rem;
+      }
     }
+
     @media (max-width: 768px) {
-  .logo-wrapper {
-    justify-content: center; /* Centers logo on mobile stack */
-  }
-  .brand-logo {
-    height: 50px; /* Slightly smaller for mobile */
-  }
-}
-.form-options {
-  display: flex;
-  align-items: center;
-  justify-content: space-between; /* Pushes items to opposite sides */
-  margin-bottom: 32px;            /* Spacing before the button */
-  font-size: 0.875rem;
-}
+      .logo-wrapper {
+        justify-content: center;
+        /* Centers logo on mobile stack */
+      }
 
-.remember-me {
-  display: flex;
-  align-items: center;
-  gap: 8px;                       /* Space between checkbox and text */
-  cursor: pointer;
-  color: var(--gray-muted);
-  user-select: none;
-}
+      .brand-logo {
+        height: 50px;
+        /* Slightly smaller for mobile */
+      }
+    }
 
-.remember-me input {
-  cursor: pointer;
-  accent-color: var(--primary);   /* Colors the checkbox mint green */
-  width: 16px;
-  height: 16px;
-}
+    .form-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      /* Pushes items to opposite sides */
+      margin-bottom: 32px;
+      /* Spacing before the button */
+      font-size: 0.875rem;
+    }
 
-.forgot-link {
-  color: var(--dark);
-  text-decoration: none;
-  font-weight: 600;
-  transition: opacity 0.2s;
-}
+    .remember-me {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      /* Space between checkbox and text */
+      cursor: pointer;
+      color: var(--gray-muted);
+      user-select: none;
+    }
 
-.forgot-link:hover {
-  text-decoration: underline;
-  opacity: 0.8;
-}
+    .remember-me input {
+      cursor: pointer;
+      accent-color: var(--primary);
+      /* Colors the checkbox mint green */
+      width: 16px;
+      height: 16px;
+    }
+
+    .forgot-link {
+      color: var(--dark);
+      text-decoration: none;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+
+    .forgot-link:hover {
+      text-decoration: underline;
+      opacity: 0.8;
+    }
   </style>
 </head>
+
 <body>
   <div class="login-container">
-    
-   <div class="brand-section">
-  <div class="logo-wrapper">
-    <img src="assets\animart.png" alt="ANiImart Logo" class="brand-logo" loading="eager">
-  </div>
-  
-  <h2>The Modern MarketPlace for Farmers</h2>
-  <p>Direct from Farmers, You can Trust.</p>
-</div>
+
+    <div class="brand-section">
+      <div class="logo-wrapper">
+        <img src="assets\animart.png" alt="ANiImart Logo" class="brand-logo" loading="eager">
+      </div>
+
+      <h2>The Modern MarketPlace for Farmers</h2>
+      <p>Direct from Farmers, You can Trust.</p>
+    </div>
     <div class="login-section">
       <h1>Welcome Back</h1>
       <p class="header-p">Please enter your details to sign in.</p>
 
-     <form>
-  <div class="input-group">
-    <label>Email Address</label>
-    <input type="email" placeholder="Email or Contact No." required>
-  </div>
+      <form id="loginForm">
+        <div class="input-group">
+          <label>Email Address</label>
+          <input id="email" type="email" placeholder="Email or Contact No." required>
+        </div>
 
-  <div class="input-group">
-    <label>Password</label>
-    <input type="password" placeholder="••••••••" required>
-  </div>
+        <div class="input-group">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="••••••••" required>
+        </div>
 
-  <div class="form-options">
-    <label class="remember-me">
-      <input type="checkbox"> 
-      <span>Remember me</span>
-    </label>
-    <a href="#" class="forgot-link">Forgot Password?</a>
-  </div>
+        <div class="form-options">
+          <label class="remember-me">
+            <input type="checkbox">
+            <span>Remember me</span>
+          </label>
+          <a href="#" class="forgot-link">Forgot Password?</a>
+        </div>
 
-  <button type="submit" id="loginBtn" class="btn-submit">Sign In to Dashboard</button>
-</form>
+        <button type="submit" id="loginBtn" class="btn-submit">Sign In to Dashboard</button>
+      </form>
 
-  </div>
+    </div>
 
-  <script>
-    const adminEmail = "admin@animart.com";
-const adminPass = "admin123";
 
-document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.querySelector('form');
-    const loginBtn = document.getElementById('loginBtn');
 
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault(); 
 
-            const email = document.querySelector('input[type="email"]').value;
-            const pass = document.querySelector('input[type="password"]').value;
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
 
-            // 1. Check Credentials FIRST
-            if (email === adminEmail && pass === adminPass) {
-                
-                // 2. Visual Feedback (Only happens if credentials match)
-                loginBtn.innerText = "Authenticating...";
-                loginBtn.style.opacity = "0.7";
-                loginBtn.style.cursor = "not-allowed";
+    <script src="flutter_bootstrap.js" async>
 
-                // 3. Wait 1 second then Redirect
-                setTimeout(() => {
-                    window.location.href = "pages/dashboard.html";
-                }, 1000);
 
-            } else {
-                // 4. If wrong, show alert and STOP. Do not redirect.
-                alert("Invalid credentials. Try again.");
-            }
-        });
-    }
-});
-  </script>
 
-  <script src="flutter_bootstrap.js" async></script>
+
+    </script>
 </body>
+
 </html>
 </body>
+
 </html>

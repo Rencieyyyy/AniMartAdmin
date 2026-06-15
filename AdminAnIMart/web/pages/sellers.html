@@ -402,6 +402,14 @@
         }
         .detail-item-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
         .detail-item-value { font-size: 0.85rem; font-weight: 600; }
+        .messenger-box { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .messenger-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--mint); text-decoration: none; font-weight: 600;
+        }
+        .messenger-link:hover { text-decoration: underline; }
+        .messenger-link i { width: 15px; height: 15px; }
+        .messenger-icon { flex-shrink: 0; }
 
         .modal-actions { display: flex; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border); flex-wrap: wrap; }
         .modal-btn {
@@ -886,6 +894,15 @@ function viewUser(id) {
                     <span class="status-badge ${statusClass[u.status]}">${statusLabel[u.status]}</span>
                 </div>
             </div>
+        </div>
+        <div class="detail-item messenger-box" style="margin-bottom:18px;">
+            <div>
+                <div class="detail-item-label">My Messenger Link</div>
+                <div class="detail-item-value">
+                    <a href="#" target="_blank" rel="noopener" class="messenger-link">m.me/animart.admins</a>
+                </div>
+            </div>
+            <a href="#" target="_blank" rel="noopener" class="messenger-link messenger-icon"><i data-lucide="link"></i></a>
         </div>
         <div class="detail-grid">
             <div class="detail-item">
