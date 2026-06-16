@@ -483,6 +483,7 @@
 
         .plan-price {
             text-align: right;
+            display: flex; flex-direction: column; align-items: flex-end;
         }
 
         .plan-price .amount {
@@ -519,6 +520,45 @@
 
         .plan-active-count .label { font-size: 0.72rem; color: var(--muted); }
         .plan-active-count .count { font-size: 0.9rem; font-weight: 800; font-family: 'DM Mono', monospace; }
+
+        /* PLAN PRICING — badges, edit button, discount */
+        .card-badges {
+            position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 6px; z-index: 2;
+        }
+        .card-badges span {
+            border-radius: 20px; padding: 3px 11px; font-size: 0.56rem; font-weight: 800;
+            font-family: 'DM Mono', monospace; letter-spacing: 0.07em; white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .badge-popular { background: var(--gold); color: var(--dark); }
+        .badge-promo   { background: var(--danger); color: #fff; }
+
+        .price-edit-btn {
+            height: 26px; padding: 0 10px; border-radius: 7px;
+            border: 1px solid var(--border); background: var(--surface);
+            color: var(--muted); display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+            cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+            font-family: 'Sora', sans-serif; font-size: 0.68rem; font-weight: 600; white-space: nowrap;
+        }
+        .price-edit-btn:hover { color: var(--gold); border-color: rgba(255,209,102,0.35); }
+        .price-edit-btn svg { width: 13px; height: 13px; }
+
+        .plan-price .amount-old {
+            font-size: 0.72rem; color: var(--muted); text-decoration: line-through;
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* PRICE EDIT FORM */
+        .pf { display: flex; flex-direction: column; gap: 6px; font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+        .pf input[type="number"], .pf input[type="text"] {
+            background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px;
+            padding: 9px 12px; color: var(--text); font-family: 'Sora', sans-serif; font-size: 0.85rem; outline: none;
+            transition: border-color 0.15s;
+        }
+        .pf input:focus { border-color: rgba(255,209,102,0.4); }
+        .pf-check { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text); cursor: pointer; }
+        .pf-check input { width: 15px; height: 15px; accent-color: var(--gold); cursor: pointer; }
 
         /* MODAL */
         .modal-overlay {
@@ -831,6 +871,7 @@
                                 <th>Requested On</th>
                                 <th>Amount</th>
                                 <th>Status</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody id="rejected-tbody"></tbody>
@@ -847,7 +888,8 @@
 
         <div class="features-grid">
             <!-- BASIC -->
-            <div class="feature-card" style="--fc-glow: rgba(56,189,248,0.08);">
+            <div class="feature-card" data-plan="basic" style="--fc-glow: rgba(56,189,248,0.08);">
+                <div id="badge-basic" class="card-badges"></div>
                 <div class="plan-header">
                     <div>
                         <div class="plan-icon" style="background:rgba(56,189,248,0.12); color:#38BDF8; margin-bottom:10px;">
@@ -856,10 +898,7 @@
                         <div class="plan-name" style="color:#38BDF8;">Basic</div>
                         <div class="plan-tagline">For new sellers starting out</div>
                     </div>
-                    <div class="plan-price">
-                        <div class="amount" style="color:#38BDF8;">₱299</div>
-                        <span class="period">/ month</span>
-                    </div>
+                    <div class="plan-price" id="price-basic"></div>
                 </div>
                 <div class="plan-divider"></div>
                 <div class="feature-list">
@@ -878,8 +917,8 @@
             </div>
 
             <!-- PRO -->
-            <div class="feature-card" style="--fc-glow: rgba(255,209,102,0.09); border-color:rgba(255,209,102,0.2);">
-                <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--dark);border-radius:20px;padding:3px 12px;font-size:0.58rem;font-weight:800;font-family:'DM Mono',monospace;letter-spacing:0.08em;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:2;">POPULAR</div>
+            <div class="feature-card" data-plan="pro" style="--fc-glow: rgba(255,209,102,0.09); border-color:rgba(255,209,102,0.2);">
+                <div id="badge-pro" class="card-badges"></div>
                 <div class="plan-header">
                     <div>
                         <div class="plan-icon" style="background:var(--gold-glow); color:var(--gold); margin-bottom:10px;">
@@ -888,10 +927,7 @@
                         <div class="plan-name" style="color:var(--gold);">Pro</div>
                         <div class="plan-tagline">For serious livestock traders</div>
                     </div>
-                    <div class="plan-price">
-                        <div class="amount" style="color:var(--gold);">₱699</div>
-                        <span class="period">/ month</span>
-                    </div>
+                    <div class="plan-price" id="price-pro"></div>
                 </div>
                 <div class="plan-divider"></div>
                 <div class="feature-list">
@@ -910,7 +946,8 @@
             </div>
 
             <!-- ELITE -->
-            <div class="feature-card" style="--fc-glow: rgba(168,85,247,0.08); border-color:rgba(168,85,247,0.2);">
+            <div class="feature-card" data-plan="elite" style="--fc-glow: rgba(168,85,247,0.08); border-color:rgba(168,85,247,0.2);">
+                <div id="badge-elite" class="card-badges"></div>
                 <div class="plan-header">
                     <div>
                         <div class="plan-icon" style="background:rgba(168,85,247,0.12); color:#C084FC; margin-bottom:10px;">
@@ -919,10 +956,7 @@
                         <div class="plan-name" style="color:#C084FC;">Elite</div>
                         <div class="plan-tagline">Maximum visibility & control</div>
                     </div>
-                    <div class="plan-price">
-                        <div class="amount" style="color:#C084FC;">₱1,299</div>
-                        <span class="period">/ month</span>
-                    </div>
+                    <div class="plan-price" id="price-elite"></div>
                 </div>
                 <div class="plan-divider"></div>
                 <div class="feature-list">
@@ -954,6 +988,31 @@
             <button class="btn-secondary" onclick="closeModal('viewModal')">Close</button>
             <button class="btn-danger" id="modal-reject-btn">Reject</button>
             <button class="btn-primary" id="modal-approve-btn">Approve Request</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Edit Pricing -->
+<div class="modal-overlay" id="priceModal">
+    <div class="modal">
+        <h2 id="price-modal-title">Edit Pricing</h2>
+        <p>Update the base price, apply a discount, or set a promo badge.</p>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;">
+            <label class="pf">Base Price (₱)
+                <input type="number" id="pf-price" min="0" step="1" placeholder="299">
+            </label>
+            <label class="pf">Discount (%)
+                <input type="number" id="pf-discount" min="0" max="100" step="1" placeholder="0">
+            </label>
+            <label class="pf">Promo Label
+                <input type="text" id="pf-promo" maxlength="24" placeholder="e.g. HOLIDAY SALE">
+            </label>
+            <label class="pf-check"><input type="checkbox" id="pf-promo-active"> Show promo badge</label>
+            <label class="pf-check"><input type="checkbox" id="pf-popular"> Mark as POPULAR</label>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal('priceModal')">Cancel</button>
+            <button class="btn-primary" id="price-save-btn">Save Changes</button>
         </div>
     </div>
 </div>
@@ -1213,7 +1272,7 @@ function renderRejected() {
     tbody.innerHTML = '';
 
     if (rejectedData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px;font-size:0.82rem;">No rejected requests.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px;font-size:0.82rem;">No rejected requests.</td></tr>`;
         return;
     }
 
@@ -1228,10 +1287,30 @@ function renderRejected() {
             <td style="color:var(--muted);font-size:0.78rem;">${fmtDate(s.requestedAt)}</td>
             <td style="font-family:'DM Mono',monospace;">₱${s.amount.toLocaleString()}</td>
             <td><span class="status-badge badge-rejected"><span class="dot-pulse"></span> Rejected</span></td>
+            <td>
+                <button class="btn-view" style="font-size:0.72rem;padding:5px 11px;display:inline-flex;align-items:center;gap:5px;" onclick="undoSubscription('${s.id}')">
+                    <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i> Undo
+                </button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
     lucide.createIcons();
+}
+
+// Undo a rejection: move the subscription back to Pending for re-review.
+async function undoSubscription(id) {
+    const { data, error } = await supabaseClient
+        .from('subscriptions')
+        .update({ status: 'pending', started_at: null, expires_at: null })
+        .eq('id', id)
+        .select();
+
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    if (!data || data.length === 0) { showToast('Undo blocked — no permission (check RLS).', 'error'); return; }
+
+    showToast('Moved back to pending.', 'success');
+    await loadSubscriptions();
 }
 
 // ──────────────────────────────────────────────
@@ -1466,6 +1545,116 @@ function buildCharts() {
 }
 
 // ──────────────────────────────────────────────
+// PLAN PRICING (prices table — editable, discounts, promos)
+// ──────────────────────────────────────────────
+const PLAN_UI = {
+    basic: { color: '#38BDF8' },
+    pro:   { color: 'var(--gold)' },
+    elite: { color: '#C084FC' }
+};
+
+let pricesData = {};       // keyed by plan: { basic, pro, elite }
+let editingPlan = null;
+
+// Defaults so the cards always render (e.g. before prices_table.sql is run).
+const DEFAULT_PRICES = {
+    basic: { plan:'basic', name:'Basic', price:299,  discount_percent:0, promo_label:null, promo_active:false, is_popular:false, billing_period:'month' },
+    pro:   { plan:'pro',   name:'Pro',   price:699,  discount_percent:0, promo_label:null, promo_active:false, is_popular:true,  billing_period:'month' },
+    elite: { plan:'elite', name:'Elite', price:1299, discount_percent:0, promo_label:null, promo_active:false, is_popular:false, billing_period:'month' }
+};
+
+async function loadPrices() {
+    const { data, error } = await supabaseClient
+        .from('prices')
+        .select('plan, name, price, discount_percent, promo_label, promo_active, is_popular, billing_period');
+
+    // Start from defaults, then overlay whatever the DB returns.
+    pricesData = JSON.parse(JSON.stringify(DEFAULT_PRICES));
+    if (error) {
+        console.error('LOAD PRICES ERROR:', error);
+    } else {
+        (data || []).forEach(r => { pricesData[r.plan] = r; });
+    }
+    renderPrices();
+}
+
+function renderPrices() {
+    ['basic', 'pro', 'elite'].forEach(plan => {
+        const p = pricesData[plan];
+        const priceEl = document.getElementById('price-' + plan);
+        const badgeEl = document.getElementById('badge-' + plan);
+        if (!priceEl || !p) return;
+
+        const color = PLAN_UI[plan].color;
+        const base  = Number(p.price) || 0;
+        const disc  = Math.max(0, Math.min(100, Number(p.discount_percent) || 0));
+        const hasDisc = disc > 0;
+        const final = hasDisc ? Math.round(base * (1 - disc / 100)) : base;
+        const period = p.billing_period || 'month';
+
+        priceEl.innerHTML = `
+            ${hasDisc ? `<div class="amount-old">₱${base.toLocaleString()}</div>` : ''}
+            <div class="amount" style="color:${color};">₱${final.toLocaleString()}</div>
+            <span class="period">/ ${period}</span>
+            <button class="price-edit-btn" title="Edit pricing" onclick="openPriceEditor('${plan}')" style="margin-top:8px;"><i data-lucide="pencil"></i> Edit price</button>
+        `;
+
+        if (badgeEl) {
+            let html = '';
+            if (p.is_popular) html += `<span class="badge-popular">POPULAR</span>`;
+            if (p.promo_active && p.promo_label) {
+                html += `<span class="badge-promo">${p.promo_label}${hasDisc ? ' · -' + disc + '%' : ''}</span>`;
+            } else if (hasDisc) {
+                html += `<span class="badge-promo">-${disc}% OFF</span>`;
+            }
+            badgeEl.innerHTML = html;
+        }
+    });
+
+    lucide.createIcons();   // render the newly-injected pencil icons
+}
+
+function openPriceEditor(plan) {
+    const p = pricesData[plan];
+    if (!p) { showToast('Pricing not loaded yet. Run prices_table.sql.', 'error'); return; }
+    editingPlan = plan;
+
+    document.getElementById('price-modal-title').textContent = `Edit ${p.name || plan} Pricing`;
+    document.getElementById('pf-price').value        = p.price ?? 0;
+    document.getElementById('pf-discount').value     = p.discount_percent ?? 0;
+    document.getElementById('pf-promo').value        = p.promo_label ?? '';
+    document.getElementById('pf-promo-active').checked = !!p.promo_active;
+    document.getElementById('pf-popular').checked      = !!p.is_popular;
+    document.getElementById('price-save-btn').onclick  = savePrice;
+
+    document.getElementById('priceModal').classList.add('open');
+}
+
+async function savePrice() {
+    if (!editingPlan) return;
+
+    const price = Math.max(0, parseFloat(document.getElementById('pf-price').value) || 0);
+    let discount = parseFloat(document.getElementById('pf-discount').value) || 0;
+    discount = Math.max(0, Math.min(100, discount));
+    const promo_label  = document.getElementById('pf-promo').value.trim() || null;
+    const promo_active = document.getElementById('pf-promo-active').checked;
+    const is_popular   = document.getElementById('pf-popular').checked;
+
+    const { data, error } = await supabaseClient
+        .from('prices')
+        .update({ price, discount_percent: discount, promo_label, promo_active, is_popular, updated_at: new Date().toISOString() })
+        .eq('plan', editingPlan)
+        .select();
+
+    if (error) { showToast('Error saving price: ' + error.message, 'error'); return; }
+    if (!data || data.length === 0) { showToast('Update blocked — no permission (check RLS).', 'error'); return; }
+
+    closeModal('priceModal');
+    showToast('Pricing updated!', 'success');
+    await loadPrices();
+}
+
+// ──────────────────────────────────────────────
 // INIT
 // ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -1477,6 +1666,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Pull subscriptions from Supabase (renders + charts once resolved).
     loadSubscriptions();
+
+    // Load editable plan pricing (prices table).
+    loadPrices();
 
     // close modals on overlay click
     document.querySelectorAll('.modal-overlay').forEach(overlay => {

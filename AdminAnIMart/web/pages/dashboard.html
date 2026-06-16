@@ -474,6 +474,34 @@
             .stats-grid { grid-template-columns: 1fr; }
             .livestock-grid { grid-template-columns: 1fr 1fr; }
         }
+
+        /* APPROVAL CONFIRMATION MODAL */
+        .confirm-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px);
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+            opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; z-index: 1000;
+        }
+        .confirm-overlay.show { opacity: 1; visibility: visible; }
+        .confirm-box {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+            padding: 26px 24px 22px; max-width: 380px; width: 100%; text-align: center;
+            transform: translateY(12px) scale(0.98); transition: transform 0.2s;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+        }
+        .confirm-overlay.show .confirm-box { transform: translateY(0) scale(1); }
+        .confirm-box h3 { font-size: 1.05rem; font-weight: 800; color: var(--text); margin-bottom: 8px; letter-spacing: -0.02em; }
+        .confirm-box p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin-bottom: 22px; }
+        .confirm-actions { display: flex; gap: 10px; }
+        .confirm-actions button {
+            flex: 1; padding: 9px 16px; border-radius: 9px; font-size: 0.82rem; font-weight: 700;
+            font-family: 'Sora', sans-serif; cursor: pointer; border: 1px solid transparent; transition: all 0.15s;
+        }
+        .cb-cancel { background: transparent; color: var(--muted); border-color: var(--border); }
+        .cb-cancel:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+        .cb-approve { background: rgba(126,255,197,0.15); color: var(--mint-dim); border-color: rgba(126,255,197,0.45); }
+        .cb-approve:hover { background: rgba(126,255,197,0.25); }
+        .cb-reject { background: rgba(255,107,107,0.15); color: var(--danger); border-color: rgba(255,107,107,0.45); }
+        .cb-reject:hover { background: rgba(255,107,107,0.25); }
     </style>
 </head>
 <body>
@@ -697,6 +725,7 @@ async function loadPendingApprovals() {
     // (restricted/blocked are managed on the Sellers & Buyers page).
     const HANDLED = ['approved', 'rejected', 'restricted', 'blocked'];
     const pending = (data || []).filter(u => !HANDLED.includes(u.status));
+    pendingApprovalsData = pending;   // for the confirmation dialog
 
     if (badge) {
         badge.textContent = pending.length + ' NEW';
@@ -726,12 +755,50 @@ async function loadPendingApprovals() {
                 <div style="font-size:0.7rem;color:var(--muted);">${role} · ${location}</div>
             </div>
             <div class="approval-actions" style="display:flex;gap:6px;flex-shrink:0;">
-                <button title="Approve" onclick="approvalDecision('${u.id}','approved')" style="background:rgba(126,255,197,0.12);color:var(--mint-dim);border:1px solid rgba(126,255,197,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✓</button>
-                <button title="Reject" onclick="approvalDecision('${u.id}','rejected')" style="background:rgba(255,107,107,0.1);color:var(--danger);border:1px solid rgba(255,107,107,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✕</button>
+                <button title="Approve" onclick="confirmApproval('${u.id}','approved')" style="background:rgba(126,255,197,0.12);color:var(--mint-dim);border:1px solid rgba(126,255,197,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✓</button>
+                <button title="Reject" onclick="confirmApproval('${u.id}','rejected')" style="background:rgba(255,107,107,0.1);color:var(--danger);border:1px solid rgba(255,107,107,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✕</button>
             </div>
         `;
         list.appendChild(div);
     });
+}
+
+// ── APPROVAL CONFIRMATION ──
+let pendingApprovalsData = [];
+let pendingApprovalId = null;
+let pendingApprovalDecision = null;
+
+function confirmApproval(id, decision) {
+    pendingApprovalId = id;
+    pendingApprovalDecision = decision;
+
+    const u = pendingApprovalsData.find(x => String(x.id) === String(id));
+    const name = (u && u.name) ? u.name : 'this account';
+    const isApprove = decision === 'approved';
+
+    document.getElementById('ac-title').textContent = isApprove ? 'Approve this account?' : 'Reject this account?';
+    document.getElementById('ac-text').textContent  = isApprove
+        ? `${name} will be approved and marked as verified.`
+        : `${name}'s registration will be rejected.`;
+
+    const btn = document.getElementById('ac-confirm');
+    btn.className = isApprove ? 'cb-approve' : 'cb-reject';
+    btn.textContent = isApprove ? 'Yes, Approve' : 'Yes, Reject';
+
+    document.getElementById('approvalConfirm').classList.add('show');
+}
+
+function closeApprovalConfirm() {
+    document.getElementById('approvalConfirm').classList.remove('show');
+}
+
+function executeApprovalDecision() {
+    closeApprovalConfirm();
+    if (pendingApprovalId && pendingApprovalDecision) {
+        approvalDecision(pendingApprovalId, pendingApprovalDecision);
+    }
+    pendingApprovalId = null;
+    pendingApprovalDecision = null;
 }
 
 // Approve/reject straight from the dashboard. Persists to the users table
@@ -908,7 +975,28 @@ function confirmLogout() {
         window.location.href = "../index.html";
     }
 }
+
+// Dismiss the approval confirmation on backdrop click or Esc.
+document.addEventListener('click', e => {
+    if (e.target && e.target.id === 'approvalConfirm') closeApprovalConfirm();
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeApprovalConfirm();
+});
 </script>
+
+<!-- Approval Confirmation Modal -->
+<div class="confirm-overlay" id="approvalConfirm">
+    <div class="confirm-box">
+        <h3 id="ac-title">Approve this account?</h3>
+        <p id="ac-text"></p>
+        <div class="confirm-actions">
+            <button class="cb-cancel" onclick="closeApprovalConfirm()">Cancel</button>
+            <button id="ac-confirm" class="cb-approve" onclick="executeApprovalDecision()">Confirm</button>
+        </div>
+    </div>
+</div>
+
 <!-- Highlight the current page's link in the sidebar -->
 <script>
 (function () {
