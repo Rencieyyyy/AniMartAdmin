@@ -682,7 +682,7 @@ async function loadPendingApprovals() {
 
     const { data, error } = await supabaseClient
         .from('users')
-        .select('id, name, location, address, status, created_at, seller_profiles(shop_name)')
+        .select('id, name, address, status, created_at, seller_profiles(shop_name)')
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -693,7 +693,10 @@ async function loadPendingApprovals() {
     }
 
     // Anything not approved/rejected counts as pending (mirrors User Approvals).
-    const pending = (data || []).filter(u => u.status !== 'approved' && u.status !== 'rejected');
+    // Only brand-new accounts awaiting review — never approved/rejected/restricted/blocked
+    // (restricted/blocked are managed on the Sellers & Buyers page).
+    const HANDLED = ['approved', 'rejected', 'restricted', 'blocked'];
+    const pending = (data || []).filter(u => !HANDLED.includes(u.status));
 
     if (badge) {
         badge.textContent = pending.length + ' NEW';
@@ -709,7 +712,7 @@ async function loadPendingApprovals() {
     pending.forEach(u => {
         const isSeller = Array.isArray(u.seller_profiles) && u.seller_profiles.length > 0;
         const role     = isSeller ? 'Seller' : 'Buyer';
-        const location = u.location || u.address || '—';
+        const location = u.address || '—';
         const name     = u.name || '(no name)';
         const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 

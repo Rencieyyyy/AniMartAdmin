@@ -746,7 +746,7 @@
                 </select>
                 <div class="search-wrap">
                     <i data-lucide="search" class="search-icon"></i>
-                    <input type="text" id="searchInput" placeholder="Search name or location…" oninput="renderAll()">
+                    <input type="text" id="searchInput" placeholder="Search name or address…" oninput="renderAll()">
                 </div>
             </div>
         </div>
@@ -770,7 +770,7 @@
             <div class="list-header">
                 <span class="lh-name">Name</span>
                 <span class="lh-role">Role</span>
-                <span class="lh-loc">Location</span>
+                <span class="lh-loc">Address</span>
                 <span class="lh-email">Email</span>
                 <span class="lh-time">Submitted</span>
                 <span class="lh-actions">Actions</span>
@@ -782,7 +782,7 @@
             <div class="list-header">
                 <span class="lh-name">Name</span>
                 <span class="lh-role">Role</span>
-                <span class="lh-loc">Location</span>
+                <span class="lh-loc">Address</span>
                 <span class="lh-email">Email</span>
                 <span class="lh-time">Submitted</span>
                 <span class="lh-actions">Actions</span>
@@ -794,7 +794,7 @@
             <div class="list-header">
                 <span class="lh-name">Name</span>
                 <span class="lh-role">Role</span>
-                <span class="lh-loc">Location</span>
+                <span class="lh-loc">Address</span>
                 <span class="lh-email">Email</span>
                 <span class="lh-time">Submitted</span>
                 <span class="lh-actions">Actions</span>
@@ -874,7 +874,7 @@ let detailUserId = null;
 async function loadUsers() {
     const { data, error } = await supabaseClient
         .from('users')
-        .select('id, name, email, phone, location, address, status, is_verified, valid_id_type, valid_id_url, business_name, created_at, seller_profiles(shop_name)')
+        .select('id, name, email, phone, address, status, is_verified, valid_id_type, valid_id_url, business_name, created_at, seller_profiles(shop_name)')
         .order('created_at', { ascending: true });
 
     if (error) {
@@ -890,7 +890,7 @@ async function loadUsers() {
             name:      row.name || '(no name)',
             email:     row.email || '—',
             phone:     row.phone || '—',
-            location:  row.location || row.address || '—',
+            location:  row.address || '—',
             role:      isSeller ? 'Seller' : 'Buyer',
             business:  row.business_name
                         || (isSeller && row.seller_profiles[0] ? row.seller_profiles[0].shop_name : null)
@@ -908,12 +908,15 @@ async function loadUsers() {
         };
     });
 
-    // Anything not explicitly approved/rejected is treated as pending, so newly
-    // created rows (status 'pending', null, '', or anything unexpected) still
-    // surface for review instead of silently disappearing.
-    approved = mapped.filter(u => u.status === 'approved');
+    // Approval status and account state share one `status` column. A user must
+    // be approved before they can be restricted/blocked on the Sellers & Buyers
+    // page, so those count as "approved" here — they stay visible in the Approved
+    // tab and aren't affected by restrict/block. Pending = a brand-new account
+    // awaiting review only (status 'pending', null, or '').
+    const APPROVED_STATES = ['approved', 'restricted', 'blocked'];
+    approved = mapped.filter(u => APPROVED_STATES.includes(u.status));
     rejected = mapped.filter(u => u.status === 'rejected');
-    pending  = mapped.filter(u => u.status !== 'approved' && u.status !== 'rejected');
+    pending  = mapped.filter(u => u.status !== 'rejected' && !APPROVED_STATES.includes(u.status));
 
     renderAll();
 }
@@ -1299,7 +1302,7 @@ function openDetail(id) {
                 <div class="d-val">${user.phone}</div>
             </div>
             <div class="detail-item">
-                <div class="d-label">Location</div>
+                <div class="d-label">Address</div>
                 <div class="d-val">${user.location}</div>
             </div>
             <div class="detail-item">

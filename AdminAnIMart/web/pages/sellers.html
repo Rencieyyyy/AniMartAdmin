@@ -153,17 +153,29 @@
         .search-wrap {
             position: relative; flex: 1; min-width: 220px; max-width: 380px;
         }
-        .search-wrap svg {
+        .search-wrap > svg {
             position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
             width: 15px; height: 15px; color: var(--muted); pointer-events: none;
         }
         .search-input {
             width: 100%; background: var(--surface);
             border: 1px solid var(--border); border-radius: 10px;
-            padding: 9px 12px 9px 36px;
+            padding: 9px 36px 9px 36px;
             font-family: 'Sora', sans-serif; font-size: 0.82rem;
             color: var(--text); outline: none; transition: border-color 0.18s;
         }
+        /* In-field clear button — only shown when the search box has text. */
+        .search-clear {
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            display: none; align-items: center; justify-content: center;
+            width: 20px; height: 20px; padding: 0;
+            background: transparent; border: none; border-radius: 6px;
+            color: var(--muted); cursor: pointer;
+            transition: color 0.15s, background 0.15s;
+        }
+        .search-clear:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+        .search-clear svg { width: 14px; height: 14px; }
+        .search-wrap.has-text .search-clear { display: flex; }
         .search-input::placeholder { color: var(--muted); }
         .search-input:focus { border-color: rgba(126,255,197,0.35); }
 
@@ -454,8 +466,8 @@
 
         /* ─── TOAST ─── */
         .toast-container {
-            position: fixed; bottom: 24px; right: 24px;
-            z-index: 999; display: flex; flex-direction: column; gap: 8px;
+            position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+            z-index: 999; display: flex; flex-direction: column; gap: 8px; align-items: center;
         }
         .toast {
             background: var(--surface-2); border: 1px solid var(--border);
@@ -475,8 +487,8 @@
         .toast-danger svg { color: var(--danger); }
 
         @keyframes slideIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
+            from { opacity: 0; transform: translateY(-16px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(14px); }
@@ -536,7 +548,7 @@
                 <h1>User Management</h1>
                 <p>Manage all sellers and buyers on the platform.</p>
             </div>
-            <button class="btn btn-primary" onclick="showToast('Export feature coming soon.','warn')">
+            <button class="btn btn-primary" onclick="exportCSV()">
                 <i data-lucide="download"></i> Export CSV
             </button>
         </div>
@@ -607,24 +619,24 @@
         <div class="toolbar">
             <div class="search-wrap">
                 <i data-lucide="search"></i>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search name, email, location…" oninput="applyFilters()">
-            </div>
-            <select class="filter-select" id="filterStatus" onchange="applyFilters()">
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="restricted">Restricted</option>
-                <option value="blocked">Blocked</option>
-            </select>
-            <select class="filter-select" id="filterSort" onchange="applyFilters()">
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="name-az">Name A→Z</option>
-                <option value="name-za">Name Z→A</option>
-            </select>
-            <div class="toolbar-right">
-                <button class="btn btn-ghost" onclick="clearFilters()">
-                    <i data-lucide="x"></i> Clear
+                <input type="text" class="search-input" id="searchInput" placeholder="Search name, email, address…" oninput="applyFilters()">
+                <button type="button" class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Clear search" title="Clear search">
+                    <i data-lucide="x"></i>
                 </button>
+            </div>
+            <div class="toolbar-right">
+                <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="restricted">Restricted</option>
+                    <option value="blocked">Blocked</option>
+                </select>
+                <select class="filter-select" id="filterSort" onchange="applyFilters()">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="name-az">Name A→Z</option>
+                    <option value="name-za">Name Z→A</option>
+                </select>
             </div>
         </div>
 
@@ -636,7 +648,7 @@
                         <tr>
                             <th onclick="sortBy('name')">User <span class="sort-icon">↕</span></th>
                             <th onclick="sortBy('type')">Type <span class="sort-icon">↕</span></th>
-                            <th onclick="sortBy('location')">Location <span class="sort-icon">↕</span></th>
+                            <th onclick="sortBy('location')">Address <span class="sort-icon">↕</span></th>
                             <th onclick="sortBy('joined')">Joined <span class="sort-icon">↕</span></th>
                             <th onclick="sortBy('status')">Status <span class="sort-icon">↕</span></th>
                             <th>Actions</th>
@@ -686,31 +698,13 @@
 <!-- TOAST CONTAINER -->
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
 <script>
 // ─── DATA ───
-const rawUsers = [
-    { id:1, name:"Cardo Dalisay", email:"cardo.d@gmail.com", type:"seller", location:"Batangas City", joined:"2024-01-15", status:"active", listings:12, phone:"09171234567" },
-    { id:2, name:"Nena Reyes", email:"nena.r@yahoo.com", type:"seller", location:"Santa Rosa, Laguna", joined:"2024-02-03", status:"active", listings:7, phone:"09281234567" },
-    { id:3, name:"Ferdie Santos", email:"ferdie.s@gmail.com", type:"buyer", location:"Lucena, Quezon", joined:"2024-02-18", status:"restricted", listings:0, phone:"09091234567" },
-    { id:4, name:"Liza Manalo", email:"liza.m@gmail.com", type:"seller", location:"Bacoor, Cavite", joined:"2024-03-05", status:"active", listings:19, phone:"09151234567" },
-    { id:5, name:"Andres Cruz", email:"andres.c@outlook.com", type:"buyer", location:"Antipolo, Rizal", joined:"2024-03-22", status:"active", listings:0, phone:"09261234567" },
-    { id:6, name:"Maria Dela Cruz", email:"maria.d@gmail.com", type:"seller", location:"Tarlac City", joined:"2024-04-10", status:"blocked", listings:3, phone:"09181234567" },
-    { id:7, name:"Jose Rizal Jr.", email:"jose.r@gmail.com", type:"buyer", location:"Calamba, Laguna", joined:"2024-04-25", status:"active", listings:0, phone:"09271234567" },
-    { id:8, name:"Ana Gonzales", email:"ana.g@gmail.com", type:"seller", location:"Imus, Cavite", joined:"2024-05-08", status:"active", listings:8, phone:"09111234567" },
-    { id:9, name:"Ben Magtanggol", email:"ben.m@gmail.com", type:"buyer", location:"Malolos, Bulacan", joined:"2024-05-20", status:"active", listings:0, phone:"09221234567" },
-    { id:10, name:"Clarissa Umali", email:"clarissa.u@gmail.com", type:"seller", location:"Lipa City, Batangas", joined:"2024-06-01", status:"restricted", listings:5, phone:"09331234567" },
-    { id:11, name:"Dante Abad", email:"dante.a@gmail.com", type:"buyer", location:"Tagaytay, Cavite", joined:"2024-06-15", status:"active", listings:0, phone:"09441234567" },
-    { id:12, name:"Elena Panganiban", email:"elena.p@gmail.com", type:"seller", location:"San Pablo, Laguna", joined:"2024-07-02", status:"active", listings:14, phone:"09551234567" },
-    { id:13, name:"Rolando Torres", email:"rolando.t@gmail.com", type:"buyer", location:"Cabanatuan, Nueva Ecija", joined:"2024-07-19", status:"blocked", listings:0, phone:"09661234567" },
-    { id:14, name:"Susana Villanueva", email:"susana.v@gmail.com", type:"seller", location:"Dasmariñas, Cavite", joined:"2024-08-05", status:"active", listings:22, phone:"09771234567" },
-    { id:15, name:"Timoteo Bautista", email:"timoteo.b@gmail.com", type:"buyer", location:"Sta. Rosa, Nueva Ecija", joined:"2024-08-22", status:"active", listings:0, phone:"09881234567" },
-    { id:16, name:"Violeta Espino", email:"violeta.e@gmail.com", type:"seller", location:"General Trias, Cavite", joined:"2024-09-10", status:"active", listings:9, phone:"09991234567" },
-    { id:17, name:"Wilson Ocampo", email:"wilson.o@gmail.com", type:"buyer", location:"Biñan, Laguna", joined:"2024-09-28", status:"active", listings:0, phone:"09121234567" },
-    { id:18, name:"Xyza Medrano", email:"xyza.m@gmail.com", type:"seller", location:"Lemery, Batangas", joined:"2024-10-15", status:"restricted", listings:2, phone:"09231234567" },
-];
-
-let users = JSON.parse(JSON.stringify(rawUsers));
-let filteredUsers = [...users];
+// Live from the Supabase `users` table (loaded by loadUsers below).
+let users = [];
+let filteredUsers = [];
 let currentTab = 'all';
 let currentPage = 1;
 const perPage = 8;
@@ -719,12 +713,47 @@ let sortDir = 'desc';
 let pendingAction = null;
 let pendingUserId = null;
 
-// ─── INIT ───
-document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
+// The marketplace-management page only deals with these account states. The DB
+// stores an approved account as 'approved'; the UI shows it as 'active'.
+//   approved  <-> active   |   restricted <-> restricted   |   blocked <-> blocked
+function dbStatusToUi(s) { return s === 'approved' ? 'active' : s; }
+function uiStatusToDb(s) { return s === 'active' ? 'approved' : s; }
+
+async function loadUsers() {
+    const { data, error } = await supabaseClient
+        .from('users')
+        .select('id, name, email, phone, address, is_seller, status, created_at, plan, messenger')
+        .in('status', ['approved', 'restricted', 'blocked'])
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('LOAD USERS ERROR:', error);
+        showToast('Failed to load users: ' + error.message, 'danger');
+        users = [];
+    } else {
+        users = (data || []).map(row => ({
+            id:       String(row.id),                 // uuid -> string (used in onclick handlers)
+            name:     row.name || '(no name)',
+            email:    row.email || '—',
+            phone:    row.phone || '—',
+            location: row.address || '—',             // "Address" column
+            type:     row.is_seller ? 'seller' : 'buyer',
+            joined:   row.created_at || null,
+            status:   dbStatusToUi(row.status),       // approved -> active
+            plan:     row.plan || '—',
+            messenger: row.messenger || ''
+        }));
+    }
+
     updateStats();
     updateTabCounts();
     applyFilters();
+}
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    loadUsers();
 });
 
 function updateStats() {
@@ -752,9 +781,13 @@ function switchTab(tab, btn) {
 }
 
 function applyFilters() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
+    const searchEl = document.getElementById('searchInput');
+    const q = searchEl.value.toLowerCase();
     const status = document.getElementById('filterStatus').value;
     const sort = document.getElementById('filterSort').value;
+
+    // Show the in-field clear (×) only when something is typed.
+    searchEl.closest('.search-wrap').classList.toggle('has-text', searchEl.value.length > 0);
 
     let data = users.filter(u => {
         if (currentTab !== 'all' && u.type !== currentTab) return false;
@@ -791,6 +824,14 @@ function clearFilters() {
     document.getElementById('searchInput').value = '';
     document.getElementById('filterStatus').value = 'all';
     document.getElementById('filterSort').value = 'newest';
+    applyFilters();
+}
+
+// Clears just the search box (the in-field × button) and re-applies filters.
+function clearSearch() {
+    const el = document.getElementById('searchInput');
+    el.value = '';
+    el.focus();
     applyFilters();
 }
 
@@ -842,11 +883,11 @@ function rowHTML(u) {
         <td><span class="status-badge ${u.status === 'active' ? 'status-active' : u.status === 'restricted' ? 'status-restricted' : 'status-blocked'}">${statusLabel[u.status]}</span></td>
         <td>
             <div class="actions-cell">
-                <button class="icon-btn view-btn" title="View Profile" onclick="viewUser(${u.id})">
+                <button class="icon-btn view-btn" title="View Profile" onclick="viewUser('${u.id}')">
                     <i data-lucide="eye"></i>
                 </button>
-                ${u.status !== 'restricted' ? `<button class="icon-btn restrict-btn" title="Restrict Account" onclick="triggerAction(${u.id},'restrict')"><i data-lucide="shield-alert"></i></button>` : `<button class="icon-btn success-btn" title="Lift Restriction" onclick="triggerAction(${u.id},'activate')" style="color:var(--mint-dim)"><i data-lucide="shield-check"></i></button>`}
-                ${u.status !== 'blocked' ? `<button class="icon-btn block-btn" title="Block Account" onclick="triggerAction(${u.id},'block')"><i data-lucide="ban"></i></button>` : `<button class="icon-btn unblock-btn" title="Unblock Account" onclick="triggerAction(${u.id},'activate')"><i data-lucide="shield-check"></i></button>`}
+                ${u.status !== 'restricted' ? `<button class="icon-btn restrict-btn" title="Restrict Account" onclick="triggerAction('${u.id}','restrict')"><i data-lucide="shield-alert"></i></button>` : `<button class="icon-btn restrict-btn" title="Lift Restriction" onclick="triggerAction('${u.id}','activate')" style="color:var(--warning)"><i data-lucide="shield-alert"></i></button>`}
+                ${u.status !== 'blocked' ? `<button class="icon-btn block-btn" title="Block Account" onclick="triggerAction('${u.id}','block')"><i data-lucide="ban"></i></button>` : `<button class="icon-btn unblock-btn" title="Unblock Account" onclick="triggerAction('${u.id}','activate')" style="color:var(--danger)"><i data-lucide="ban"></i></button>`}
             </div>
         </td>
     </tr>`;
@@ -895,18 +936,19 @@ function viewUser(id) {
                 </div>
             </div>
         </div>
+        ${u.messenger ? `
         <div class="detail-item messenger-box" style="margin-bottom:18px;">
             <div>
-                <div class="detail-item-label">My Messenger Link</div>
+                <div class="detail-item-label">Messenger Link</div>
                 <div class="detail-item-value">
-                    <a href="#" target="_blank" rel="noopener" class="messenger-link">m.me/animart.admins</a>
+                    <a href="${u.messenger.startsWith('http') ? u.messenger : 'https://' + u.messenger}" target="_blank" rel="noopener" class="messenger-link">${u.messenger}</a>
                 </div>
             </div>
-            <a href="#" target="_blank" rel="noopener" class="messenger-link messenger-icon"><i data-lucide="link"></i></a>
-        </div>
+            <a href="${u.messenger.startsWith('http') ? u.messenger : 'https://' + u.messenger}" target="_blank" rel="noopener" class="messenger-link messenger-icon"><i data-lucide="link"></i></a>
+        </div>` : ''}
         <div class="detail-grid">
             <div class="detail-item">
-                <div class="detail-item-label">Location</div>
+                <div class="detail-item-label">Address</div>
                 <div class="detail-item-value">${u.location}</div>
             </div>
             <div class="detail-item">
@@ -918,12 +960,8 @@ function viewUser(id) {
                 <div class="detail-item-value">${u.type.charAt(0).toUpperCase()+u.type.slice(1)}</div>
             </div>
             <div class="detail-item">
-                <div class="detail-item-label">${u.type === 'seller' ? 'Active Listings' : 'Purchases'}</div>
-                <div class="detail-item-value">${u.type === 'seller' ? u.listings + ' listings' : 'N/A'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-item-label">User ID</div>
-                <div class="detail-item-value" style="font-family:'DM Mono',monospace;font-size:0.75rem;">USR-${String(u.id).padStart(5,'0')}</div>
+                <div class="detail-item-label">Plan</div>
+                <div class="detail-item-value">${u.plan}</div>
             </div>
             <div class="detail-item">
                 <div class="detail-item-label">Phone</div>
@@ -932,8 +970,8 @@ function viewUser(id) {
         </div>
         <div class="modal-actions">
             <button class="modal-btn modal-btn-ghost" onclick="closeModal('viewModal')"><i data-lucide="x"></i> Close</button>
-            ${u.status !== 'restricted' ? `<button class="modal-btn modal-btn-warn" onclick="closeModal('viewModal');triggerAction(${u.id},'restrict')"><i data-lucide="shield-alert"></i> Restrict</button>` : `<button class="modal-btn modal-btn-success" onclick="closeModal('viewModal');triggerAction(${u.id},'activate')"><i data-lucide="shield-check"></i> Lift Restriction</button>`}
-            ${u.status !== 'blocked' ? `<button class="modal-btn modal-btn-danger" onclick="closeModal('viewModal');triggerAction(${u.id},'block')"><i data-lucide="ban"></i> Block Account</button>` : `<button class="modal-btn modal-btn-success" onclick="closeModal('viewModal');triggerAction(${u.id},'activate')"><i data-lucide="shield-check"></i> Unblock Account</button>`}
+            ${u.status !== 'restricted' ? `<button class="modal-btn modal-btn-warn" onclick="closeModal('viewModal');triggerAction('${u.id}','restrict')"><i data-lucide="shield-alert"></i> Restrict</button>` : `<button class="modal-btn modal-btn-success" onclick="closeModal('viewModal');triggerAction('${u.id}','activate')"><i data-lucide="shield-check"></i> Lift Restriction</button>`}
+            ${u.status !== 'blocked' ? `<button class="modal-btn modal-btn-danger" onclick="closeModal('viewModal');triggerAction('${u.id}','block')"><i data-lucide="ban"></i> Block Account</button>` : `<button class="modal-btn modal-btn-success" onclick="closeModal('viewModal');triggerAction('${u.id}','activate')"><i data-lucide="shield-check"></i> Unblock Account</button>`}
         </div>
     `;
     openModal('viewModal');
@@ -988,17 +1026,33 @@ function triggerAction(id, action) {
     lucide.createIcons({ nodes: [iconEl] });
 }
 
-function executeAction() {
+async function executeAction() {
     if (!pendingAction || !pendingUserId) return;
     const user = users.find(u=>u.id===pendingUserId);
     const cfg = actionConfig[pendingAction];
-    user.status = cfg.newStatus;
+
+    // Persist the new status to the DB (active -> approved, restricted, blocked).
+    const { data, error } = await supabaseClient
+        .from('users')
+        .update({ status: uiStatusToDb(cfg.newStatus) })
+        .eq('id', pendingUserId)
+        .select();
+
     closeModal('confirmModal');
-    updateStats();
-    updateTabCounts();
-    applyFilters();
+
+    if (error) {
+        console.error('STATUS UPDATE ERROR:', error);
+        showToast('Failed: ' + error.message, 'danger');
+        return;
+    }
+    if (!data || data.length === 0) {
+        showToast('Action blocked — no permission (check RLS).', 'danger');
+        return;
+    }
+
     showToast(cfg.toastMsg(user), cfg.toastType);
     pendingAction = null; pendingUserId = null;
+    await loadUsers();   // re-pull so the table + stats reflect the change
 }
 
 // ─── MODAL HELPERS ───
@@ -1017,6 +1071,51 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
 });
 
+// ─── EXPORT CSV ───
+// Exports the users currently shown (after tab / search / status filters).
+function exportCSV() {
+    if (!filteredUsers.length) {
+        showToast('Nothing to export.', 'warn');
+        return;
+    }
+
+    const statusLabel = { active:'Active', restricted:'Restricted', blocked:'Blocked' };
+    const headers = ['Name','Email','Phone','Address','Type','Status','Plan','Messenger','Joined'];
+
+    // Quote a value if it contains a comma, quote, or newline.
+    const esc = v => {
+        const s = (v === null || v === undefined) ? '' : String(v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+
+    const rows = filteredUsers.map(u => [
+        u.name,
+        u.email,
+        u.phone,
+        u.location,
+        u.type.charAt(0).toUpperCase() + u.type.slice(1),
+        statusLabel[u.status] || u.status,
+        u.plan,
+        u.messenger || '',
+        u.joined ? new Date(u.joined).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' }) : ''
+    ].map(esc).join(','));
+
+    const csv = [headers.join(','), ...rows].join('\r\n');
+
+    // BOM so Excel opens UTF-8 correctly.
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `animart-users-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(`Exported ${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''} to CSV.`, 'success');
+}
+
 // ─── TOAST ───
 function showToast(msg, type='success') {
     const icons = { success:'check-circle', warn:'alert-triangle', danger:'x-circle' };
@@ -1026,7 +1125,7 @@ function showToast(msg, type='success') {
     toast.innerHTML = `<i data-lucide="${icons[type] || 'info'}"></i><span>${msg}</span>`;
     container.appendChild(toast);
     lucide.createIcons({ nodes: [toast] });
-    setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateX(20px)'; toast.style.transition='all 0.3s'; setTimeout(()=>toast.remove(), 300); }, 3000);
+    setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateY(-16px)'; toast.style.transition='all 0.3s'; setTimeout(()=>toast.remove(), 300); }, 3000);
 }
 
 function confirmLogout() {

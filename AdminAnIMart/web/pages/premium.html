@@ -369,6 +369,8 @@
         .badge-expired .dot-pulse { background: var(--muted); }
         .badge-pending { background: var(--gold-glow); color: var(--gold); border: 1px solid rgba(255,209,102,0.25); }
         .badge-pending .dot-pulse { background: var(--gold); animation: pulse 2s infinite; }
+        .badge-rejected { background: rgba(255,107,107,0.12); color: var(--danger); border: 1px solid rgba(255,107,107,0.2); }
+        .badge-rejected .dot-pulse { background: var(--danger); }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
@@ -706,9 +708,9 @@
                 <div class="stat-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);">
                     <i data-lucide="banknote"></i>
                 </div>
-                <div class="stat-label">Monthly Revenue</div>
-                <div class="stat-value">₱18,400</div>
-                <div class="stat-trend mint"><i data-lucide="trending-up"></i> +34% vs last mo</div>
+                <div class="stat-label">Active Revenue</div>
+                <div class="stat-value" id="stat-revenue">₱0</div>
+                <div class="stat-trend mint"><i data-lucide="trending-up"></i> from active plans</div>
             </div>
         </div>
 
@@ -743,6 +745,10 @@
             <button class="tab-btn" onclick="switchTab('expired', this)">
                 <i data-lucide="calendar-x" style="width:14px;height:14px;"></i>
                 Expired <span class="tab-count" id="tc-expired">7</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('rejected', this)">
+                <i data-lucide="x-circle" style="width:14px;height:14px;"></i>
+                Rejected <span class="tab-count" id="tc-rejected">0</span>
             </button>
         </div>
 
@@ -809,6 +815,30 @@
             </div>
         </div>
 
+        <!-- REJECTED PANEL -->
+        <div class="panel hidden" id="panel-rejected">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Rejected Premium Requests</div>
+                    <span class="card-badge" style="background:rgba(255,107,107,0.1);color:var(--danger);border-color:rgba(255,107,107,0.2);">REJECTED</span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Seller</th>
+                                <th>Plan</th>
+                                <th>Requested On</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rejected-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- PREMIUM FEATURES -->
         <div class="section-title" style="margin-top: 32px;">
             <i data-lucide="sparkles"></i>
@@ -843,13 +873,13 @@
                 </div>
                 <div class="plan-active-count">
                     <span class="label">Active subscribers</span>
-                    <span class="count" style="color:#38BDF8;">8</span>
+                    <span class="count" id="count-basic" style="color:#38BDF8;">0</span>
                 </div>
             </div>
 
             <!-- PRO -->
             <div class="feature-card" style="--fc-glow: rgba(255,209,102,0.09); border-color:rgba(255,209,102,0.2);">
-                <div style="position:absolute;top:14px;right:14px;background:var(--gold-glow);color:var(--gold);border:1px solid rgba(255,209,102,0.25);border-radius:6px;padding:2px 9px;font-size:0.62rem;font-weight:700;font-family:'DM Mono',monospace;">POPULAR</div>
+                <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--dark);border-radius:20px;padding:3px 12px;font-size:0.58rem;font-weight:800;font-family:'DM Mono',monospace;letter-spacing:0.08em;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:2;">POPULAR</div>
                 <div class="plan-header">
                     <div>
                         <div class="plan-icon" style="background:var(--gold-glow); color:var(--gold); margin-bottom:10px;">
@@ -875,7 +905,7 @@
                 </div>
                 <div class="plan-active-count">
                     <span class="label">Active subscribers</span>
-                    <span class="count" style="color:var(--gold);">7</span>
+                    <span class="count" id="count-pro" style="color:var(--gold);">0</span>
                 </div>
             </div>
 
@@ -906,7 +936,7 @@
                 </div>
                 <div class="plan-active-count">
                     <span class="label">Active subscribers</span>
-                    <span class="count" style="color:#C084FC;">3</span>
+                    <span class="count" id="count-elite" style="color:#C084FC;">0</span>
                 </div>
             </div>
         </div>
@@ -946,36 +976,91 @@
     <span id="toast-msg">Action completed.</span>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
 <script>
 // ──────────────────────────────────────────────
-// DATA
+// DATA — live from the `subscriptions` table (joined to users)
+// DB plan -> UI key/label:  basic->Basic, premium->Pro, superpremium->Elite
 // ──────────────────────────────────────────────
-const pendingRequests = [
-    { id: 1, name: "Cardo Dalisay", location: "Batangas", plan: "pro", planLabel: "Pro", amount: 699, date: "May 10, 2025", listings: 23, since: "2024-01", gc: "Ref#GC-2091" },
-    { id: 2, name: "Nena Reyes",    location: "Laguna",   plan: "basic", planLabel: "Basic", amount: 299, date: "May 9, 2025",  listings: 5,  since: "2025-01", gc: "Ref#GC-2085" },
-    { id: 3, name: "Ferdie Santos", location: "Quezon",   plan: "elite", planLabel: "Elite", amount: 1299, date: "May 9, 2025", listings: 41, since: "2023-06", gc: "Ref#GC-2079" },
-    { id: 4, name: "Liza Manalo",   location: "Cavite",   plan: "pro", planLabel: "Pro", amount: 699, date: "May 8, 2025",  listings: 18, since: "2024-08", gc: "Ref#GC-2074" },
-    { id: 5, name: "Andres Cruz",   location: "Rizal",    plan: "basic", planLabel: "Basic", amount: 299, date: "May 7, 2025",  listings: 3,  since: "2025-03", gc: "Ref#GC-2068" },
-];
+const PLAN_MAP = {
+    basic:        { key: 'basic', label: 'Basic' },
+    premium:      { key: 'pro',   label: 'Pro'   },
+    superpremium: { key: 'elite', label: 'Elite' }
+};
 
-const activeSubscriptions = [
-    { name: "Remy Garcia",   plan: "elite", planLabel: "Elite", started: "Apr 1, 2025",  expires: "Jun 30, 2025", daysLeft: 50, totalDays: 91, amount: 1299 },
-    { name: "Joy Santos",    plan: "pro",   planLabel: "Pro",   started: "Apr 15, 2025", expires: "May 14, 2025", daysLeft: 3,  totalDays: 30, amount: 699 },
-    { name: "Bong Villanueva", plan: "pro", planLabel: "Pro",   started: "May 1, 2025",  expires: "May 31, 2025", daysLeft: 20, totalDays: 30, amount: 699 },
-    { name: "Clara Ramos",   plan: "basic", planLabel: "Basic", started: "May 5, 2025",  expires: "Jun 4, 2025",  daysLeft: 24, totalDays: 30, amount: 299 },
-    { name: "Tony Dimacali", plan: "elite", planLabel: "Elite", started: "Mar 1, 2025",  expires: "May 31, 2025", daysLeft: 20, totalDays: 91, amount: 1299 },
-    { name: "Ana Perez",     plan: "basic", planLabel: "Basic", started: "Apr 20, 2025", expires: "May 20, 2025", daysLeft: 9,  totalDays: 30, amount: 299 },
-];
+const MS_DAY = 86400000;
 
-const expiredSubscriptions = [
-    { name: "Marco Bautista", plan: "pro",   planLabel: "Pro",   duration: "1 month",  expired: "Apr 30, 2025", amount: 699 },
-    { name: "Gina Flores",    plan: "basic", planLabel: "Basic", duration: "1 month",  expired: "Apr 15, 2025", amount: 299 },
-    { name: "Raul Navarro",   plan: "elite", planLabel: "Elite", duration: "3 months", expired: "Mar 31, 2025", amount: 3897 },
-    { name: "Tessie Aguilar", plan: "pro",   planLabel: "Pro",   duration: "1 month",  expired: "Apr 1, 2025",  amount: 699 },
-    { name: "Danny Ocampo",   plan: "basic", planLabel: "Basic", duration: "1 month",  expired: "Mar 20, 2025", amount: 299 },
-    { name: "Irma Cruz",      plan: "pro",   planLabel: "Pro",   duration: "3 months", expired: "Feb 28, 2025", amount: 2097 },
-    { name: "Sam Dela Rosa",  plan: "basic", planLabel: "Basic", duration: "1 month",  expired: "Feb 10, 2025", amount: 299 },
-];
+let allSubs      = [];
+let pendingData  = [];
+let activeData   = [];
+let expiredData  = [];
+let rejectedData = [];
+
+function mapSub(row) {
+    const u  = row.users || {};
+    const pm = PLAN_MAP[row.plan] || { key: 'basic', label: row.plan || 'Basic' };
+    return {
+        id:          row.id,
+        name:        u.name || '(no name)',
+        address:     u.address || '—',
+        memberSince: u.created_at || null,
+        plan:        pm.key,
+        planLabel:   pm.label,
+        amount:      Number(row.price) || 0,
+        status:      row.status,
+        startedAt:   row.started_at,
+        expiresAt:   row.expires_at,
+        requestedAt: row.requested_at,
+        paymentRef:  row.payment_reference || '—'
+    };
+}
+
+function fmtDate(d) {
+    return d ? new Date(d).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' }) : '—';
+}
+
+// Safety net: flip any approved subscription whose expires_at has passed to
+// 'expired' before we read. The pg_cron job (expire_subscriptions_cron.sql)
+// does this server-side on a schedule; this keeps the page correct in between.
+async function expirePastDue() {
+    const { error } = await supabaseClient
+        .from('subscriptions')
+        .update({ status: 'expired' })
+        .eq('status', 'approved')
+        .lt('expires_at', new Date().toISOString());
+    if (error) console.error('AUTO-EXPIRE ERROR:', error);
+}
+
+async function loadSubscriptions() {
+    await expirePastDue();
+
+    const { data, error } = await supabaseClient
+        .from('subscriptions')
+        .select('id, user_id, plan, price, started_at, expires_at, requested_at, status, payment_reference, users(name, address, created_at)')
+        .order('requested_at', { ascending: false });
+
+    if (error) {
+        console.error('LOAD SUBSCRIPTIONS ERROR:', error);
+        showToast('Failed to load subscriptions: ' + error.message, 'error');
+        allSubs = [];
+    } else {
+        allSubs = (data || []).map(mapSub);
+    }
+
+    pendingData  = allSubs.filter(s => s.status === 'pending');
+    activeData   = allSubs.filter(s => s.status === 'approved');
+    expiredData  = allSubs.filter(s => s.status === 'expired');
+    rejectedData = allSubs.filter(s => s.status === 'rejected');
+
+    renderPending();
+    renderActive();
+    renderExpired();
+    renderRejected();
+    updateCounts();
+    updatePlanInsights();
+    buildCharts();
+}
 
 // ──────────────────────────────────────────────
 // HELPERS
@@ -993,8 +1078,6 @@ function planBadge(plan, label) {
 // ──────────────────────────────────────────────
 // RENDER PENDING
 // ──────────────────────────────────────────────
-let pendingData = [...pendingRequests];
-
 function renderPending() {
     const list = document.getElementById('pending-list');
     list.innerHTML = '';
@@ -1016,11 +1099,11 @@ function renderPending() {
             <div class="req-info">
                 <div class="req-name">${r.name}</div>
                 <div class="req-meta">
-                    <i data-lucide="map-pin" style="width:11px;height:11px;"></i> ${r.location}
+                    <i data-lucide="map-pin" style="width:11px;height:11px;"></i> ${r.address}
                     <span class="dot"></span>
                     ${planBadge(r.plan, r.planLabel)}
                     <span class="dot"></span>
-                    Requested ${r.date}
+                    Requested ${fmtDate(r.requestedAt)}
                 </div>
             </div>
             <div class="req-amount">
@@ -1028,15 +1111,14 @@ function renderPending() {
                 <span>/ month</span>
             </div>
             <div class="req-actions">
-                <button class="btn-view" onclick="openViewModal(${r.id})">View</button>
-                <button class="btn-approve" onclick="approveRequest(${r.id})"><i data-lucide="check" style="width:12px;height:12px;"></i> Approve</button>
-                <button class="btn-reject" onclick="openRejectModal(${r.id})"><i data-lucide="x" style="width:12px;height:12px;"></i> Reject</button>
+                <button class="btn-view" onclick="openViewModal('${r.id}')">View</button>
+                <button class="btn-approve" onclick="approveRequest('${r.id}')"><i data-lucide="check" style="width:12px;height:12px;"></i> Approve</button>
+                <button class="btn-reject" onclick="openRejectModal('${r.id}')"><i data-lucide="x" style="width:12px;height:12px;"></i> Reject</button>
             </div>
         `;
         list.appendChild(div);
     });
 
-    updateCounts();
     lucide.createIcons();
 }
 
@@ -1046,10 +1128,25 @@ function renderPending() {
 function renderActive() {
     const tbody = document.getElementById('active-tbody');
     tbody.innerHTML = '';
-    activeSubscriptions.forEach(s => {
-        const pct = Math.round((s.daysLeft / s.totalDays) * 100);
-        const barColor = s.daysLeft <= 5 ? '#FB923C' : 'var(--gold)';
-        const nearExpiry = s.daysLeft <= 5;
+
+    if (activeData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px;font-size:0.82rem;">No active premium subscriptions.</td></tr>`;
+        return;
+    }
+
+    const now = Date.now();
+    activeData.forEach(s => {
+        const start = s.startedAt ? new Date(s.startedAt).getTime() : null;
+        const end   = s.expiresAt ? new Date(s.expiresAt).getTime() : null;
+
+        let pct = 0, daysLeft = 0;
+        if (start && end && end > start) {
+            pct = Math.max(0, Math.min(100, Math.round(((end - now) / (end - start)) * 100)));
+            daysLeft = Math.max(0, Math.ceil((end - now) / MS_DAY));
+        }
+        const nearExpiry = daysLeft <= 5;
+        const barColor = nearExpiry ? '#FB923C' : 'var(--gold)';
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
@@ -1057,10 +1154,10 @@ function renderActive() {
                 ${s.name}
             </td>
             <td>${planBadge(s.plan, s.planLabel)}</td>
-            <td style="color:var(--muted);font-size:0.78rem;">${s.started}</td>
+            <td style="color:var(--muted);font-size:0.78rem;">${fmtDate(s.startedAt)}</td>
             <td>
-                <div class="expiry-info ${nearExpiry ? 'expiry-near' : ''}">${s.expires}</div>
-                <div style="font-size:0.68rem;color:var(--muted);">${s.daysLeft} days left</div>
+                <div class="expiry-info ${nearExpiry ? 'expiry-near' : ''}">${fmtDate(s.expiresAt)}</div>
+                <div style="font-size:0.68rem;color:var(--muted);">${daysLeft} days left</div>
             </td>
             <td style="min-width:120px;">
                 <div style="font-size:0.7rem;color:var(--muted);margin-bottom:4px;">${pct}% remaining</div>
@@ -1082,7 +1179,13 @@ function renderActive() {
 function renderExpired() {
     const tbody = document.getElementById('expired-tbody');
     tbody.innerHTML = '';
-    expiredSubscriptions.forEach(s => {
+
+    if (expiredData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px;font-size:0.82rem;">No expired subscriptions.</td></tr>`;
+        return;
+    }
+
+    expiredData.forEach(s => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
@@ -1090,15 +1193,41 @@ function renderExpired() {
                 ${s.name}
             </td>
             <td>${planBadge(s.plan, s.planLabel)}</td>
-            <td style="color:var(--muted);font-size:0.78rem;">${s.duration}</td>
-            <td style="color:var(--muted);font-size:0.78rem;">${s.expired}</td>
+            <td style="color:var(--muted);font-size:0.78rem;">1 month</td>
+            <td style="color:var(--muted);font-size:0.78rem;">${fmtDate(s.expiresAt)}</td>
             <td style="font-family:'DM Mono',monospace;">₱${s.amount.toLocaleString()}</td>
             <td><span class="status-badge badge-expired"><span class="dot-pulse"></span> Expired</span></td>
             <td>
-                <button class="btn-view" style="font-size:0.72rem;padding:5px 11px;" onclick="showToast('Renewal reminder sent to ' + '${s.name}', 'success')">
+                <button class="btn-view" style="font-size:0.72rem;padding:5px 11px;" onclick="showToast('Renewal reminder sent to ${s.name.replace(/'/g, "\\'")}', 'success')">
                     Remind
                 </button>
             </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    lucide.createIcons();
+}
+
+function renderRejected() {
+    const tbody = document.getElementById('rejected-tbody');
+    tbody.innerHTML = '';
+
+    if (rejectedData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px;font-size:0.82rem;">No rejected requests.</td></tr>`;
+        return;
+    }
+
+    rejectedData.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>
+                <span class="avatar-sm" style="color:var(--danger);">${initials(s.name)}</span>
+                ${s.name}
+            </td>
+            <td>${planBadge(s.plan, s.planLabel)}</td>
+            <td style="color:var(--muted);font-size:0.78rem;">${fmtDate(s.requestedAt)}</td>
+            <td style="font-family:'DM Mono',monospace;">₱${s.amount.toLocaleString()}</td>
+            <td><span class="status-badge badge-rejected"><span class="dot-pulse"></span> Rejected</span></td>
         `;
         tbody.appendChild(tr);
     });
@@ -1116,12 +1245,27 @@ function switchTab(name, btn) {
 }
 
 function updateCounts() {
-    document.getElementById('tc-pending').textContent = pendingData.length;
-    document.getElementById('tc-active').textContent = activeSubscriptions.length;
-    document.getElementById('tc-expired').textContent = expiredSubscriptions.length;
+    document.getElementById('tc-pending').textContent  = pendingData.length;
+    document.getElementById('tc-active').textContent   = activeData.length;
+    document.getElementById('tc-expired').textContent  = expiredData.length;
+    document.getElementById('tc-rejected').textContent = rejectedData.length;
     countUp('stat-pending', pendingData.length);
-    countUp('stat-active', activeSubscriptions.length);
-    countUp('stat-expired', expiredSubscriptions.length);
+    countUp('stat-active', activeData.length);
+    countUp('stat-expired', expiredData.length);
+}
+
+// Active-plan subscriber counts (feature cards) + active revenue stat.
+function updatePlanInsights() {
+    const counts = { basic: 0, pro: 0, elite: 0 };
+    let revenue = 0;
+    activeData.forEach(s => {
+        if (counts[s.plan] !== undefined) counts[s.plan]++;
+        revenue += s.amount;
+    });
+    document.getElementById('count-basic').textContent = counts.basic;
+    document.getElementById('count-pro').textContent   = counts.pro;
+    document.getElementById('count-elite').textContent = counts.elite;
+    document.getElementById('stat-revenue').textContent = '₱' + revenue.toLocaleString();
 }
 
 function countUp(id, target) {
@@ -1147,15 +1291,15 @@ function openViewModal(id) {
     activeRequestId = id;
 
     document.getElementById('modal-title').textContent = r.name + ' — Premium Request';
-    document.getElementById('modal-subtitle').textContent = `Submitted on ${r.date}. Review details before approving.`;
+    document.getElementById('modal-subtitle').textContent = `Submitted on ${fmtDate(r.requestedAt)}. Review details before approving.`;
 
     document.getElementById('modal-details').innerHTML = `
         <div class="modal-detail-row"><span class="key">Plan Requested</span><span class="val">${planBadge(r.plan, r.planLabel)}</span></div>
         <div class="modal-detail-row"><span class="key">Monthly Fee</span><span class="val" style="font-family:'DM Mono',monospace;">₱${r.amount.toLocaleString()}</span></div>
-        <div class="modal-detail-row"><span class="key">Location</span><span class="val">${r.location}</span></div>
-        <div class="modal-detail-row"><span class="key">Member Since</span><span class="val">${r.since}</span></div>
-        <div class="modal-detail-row"><span class="key">Current Listings</span><span class="val">${r.listings} listings</span></div>
-        <div class="modal-detail-row"><span class="key">Payment Reference</span><span class="val" style="font-family:'DM Mono',monospace;">${r.gc}</span></div>
+        <div class="modal-detail-row"><span class="key">Address</span><span class="val">${r.address}</span></div>
+        <div class="modal-detail-row"><span class="key">Member Since</span><span class="val">${fmtDate(r.memberSince)}</span></div>
+        <div class="modal-detail-row"><span class="key">Current Listings</span><span class="val">0 listings</span></div>
+        <div class="modal-detail-row"><span class="key">Payment Reference</span><span class="val" style="font-family:'DM Mono',monospace;">${r.paymentRef}</span></div>
     `;
 
     document.getElementById('modal-approve-btn').onclick = () => { approveRequest(id); closeModal('viewModal'); };
@@ -1178,22 +1322,39 @@ function closeModal(id) {
 // ──────────────────────────────────────────────
 // ACTIONS
 // ──────────────────────────────────────────────
-function approveRequest(id) {
-    const idx = pendingData.findIndex(x => x.id === id);
-    if (idx === -1) return;
-    const r = pendingData[idx];
-    showToast(`${r.name}'s ${r.planLabel} plan approved!`, 'success');
-    pendingData.splice(idx, 1);
-    renderPending();
+// Approving stamps started_at = now and expires_at = +30 days (1-month plan).
+async function approveRequest(id) {
+    const r = pendingData.find(x => x.id === id);
+    const started = new Date();
+    const expires = new Date(started.getTime() + 30 * MS_DAY);
+
+    const { data, error } = await supabaseClient
+        .from('subscriptions')
+        .update({ status: 'approved', started_at: started.toISOString(), expires_at: expires.toISOString() })
+        .eq('id', id)
+        .select();
+
+    if (error) { showToast('Error approving: ' + error.message, 'error'); return; }
+    if (!data || data.length === 0) { showToast('Approve blocked — no permission (check RLS).', 'error'); return; }
+
+    showToast(`${r ? r.name + "'s " + r.planLabel : 'Subscription'} plan approved!`, 'success');
+    await loadSubscriptions();
 }
 
-function rejectRequest(id) {
-    const idx = pendingData.findIndex(x => x.id === id);
-    if (idx === -1) return;
-    const r = pendingData[idx];
-    showToast(`${r.name}'s request rejected.`, 'error');
-    pendingData.splice(idx, 1);
-    renderPending();
+async function rejectRequest(id) {
+    const r = pendingData.find(x => x.id === id);
+
+    const { data, error } = await supabaseClient
+        .from('subscriptions')
+        .update({ status: 'rejected' })
+        .eq('id', id)
+        .select();
+
+    if (error) { showToast('Error rejecting: ' + error.message, 'error'); return; }
+    if (!data || data.length === 0) { showToast('Reject blocked — no permission (check RLS).', 'error'); return; }
+
+    showToast(`${r ? r.name + "'s" : 'The'} request rejected.`, 'error');
+    await loadSubscriptions();
 }
 
 // ──────────────────────────────────────────────
@@ -1212,37 +1373,43 @@ function showToast(msg, type = 'success') {
 // ──────────────────────────────────────────────
 // CHARTS
 // ──────────────────────────────────────────────
-function initCharts() {
+let revenueChartInstance = null;
+let planChartInstance = null;
+
+function buildCharts() {
     Chart.defaults.color = '#7D8590';
     Chart.defaults.font.family = "'Sora', sans-serif";
     Chart.defaults.font.size = 11;
 
-    new Chart(document.getElementById('revenueChart'), {
+    // ---- Revenue trend: last 6 months, stacked by plan (paid plans only) ----
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) months.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    const labels = months.map(d => d.toLocaleDateString('en-PH', { month: 'short' }));
+    const buckets = { basic: Array(6).fill(0), pro: Array(6).fill(0), elite: Array(6).fill(0) };
+
+    allSubs.forEach(s => {
+        if (s.status !== 'approved' && s.status !== 'expired') return;   // paid plans only
+        const ds = s.startedAt || s.requestedAt;
+        if (!ds) return;
+        const d = new Date(ds);
+        for (let i = 0; i < 6; i++) {
+            if (d.getFullYear() === months[i].getFullYear() && d.getMonth() === months[i].getMonth()) {
+                if (buckets[s.plan]) buckets[s.plan][i] += s.amount;
+                break;
+            }
+        }
+    });
+
+    if (revenueChartInstance) revenueChartInstance.destroy();
+    revenueChartInstance = new Chart(document.getElementById('revenueChart'), {
         type: 'bar',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            labels,
             datasets: [
-                {
-                    label: 'Basic (₱)',
-                    data: [897, 1196, 898, 1495, 1794, 1196],
-                    backgroundColor: 'rgba(56,189,248,0.7)',
-                    borderRadius: 6,
-                    borderSkipped: false,
-                },
-                {
-                    label: 'Pro (₱)',
-                    data: [2796, 3495, 4194, 4893, 4893, 4194],
-                    backgroundColor: 'rgba(255,209,102,0.75)',
-                    borderRadius: 6,
-                    borderSkipped: false,
-                },
-                {
-                    label: 'Elite (₱)',
-                    data: [1299, 2598, 2598, 3897, 5196, 3897],
-                    backgroundColor: 'rgba(192,132,252,0.7)',
-                    borderRadius: 6,
-                    borderSkipped: false,
-                }
+                { label: 'Basic (₱)', data: buckets.basic, backgroundColor: 'rgba(56,189,248,0.7)',  borderRadius: 6, borderSkipped: false },
+                { label: 'Pro (₱)',   data: buckets.pro,   backgroundColor: 'rgba(255,209,102,0.75)', borderRadius: 6, borderSkipped: false },
+                { label: 'Elite (₱)', data: buckets.elite, backgroundColor: 'rgba(192,132,252,0.7)',  borderRadius: 6, borderSkipped: false }
             ]
         },
         options: {
@@ -1265,12 +1432,17 @@ function initCharts() {
         }
     });
 
-    new Chart(document.getElementById('planChart'), {
+    // ---- Plan distribution doughnut: active subscriptions by plan ----
+    const dist = { basic: 0, pro: 0, elite: 0 };
+    activeData.forEach(s => { if (dist[s.plan] !== undefined) dist[s.plan]++; });
+
+    if (planChartInstance) planChartInstance.destroy();
+    planChartInstance = new Chart(document.getElementById('planChart'), {
         type: 'doughnut',
         data: {
             labels: ['Basic', 'Pro', 'Elite'],
             datasets: [{
-                data: [8, 7, 3],
+                data: [dist.basic, dist.pro, dist.elite],
                 backgroundColor: ['rgba(56,189,248,0.8)', 'rgba(255,209,102,0.85)', 'rgba(192,132,252,0.8)'],
                 borderColor: ['#161B22'],
                 borderWidth: 3,
@@ -1303,10 +1475,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dateBadge').textContent =
         now.toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
 
-    renderPending();
-    renderActive();
-    renderExpired();
-    initCharts();
+    // Pull subscriptions from Supabase (renders + charts once resolved).
+    loadSubscriptions();
 
     // close modals on overlay click
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
