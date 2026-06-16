@@ -531,9 +531,10 @@
             background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.2);
             display: flex; align-items: center; justify-content: center;
             margin: 0 auto 16px;
+            color: var(--danger);
         }
 
-        .delete-icon-wrap svg { width: 22px; height: 22px; color: var(--danger); }
+        .delete-icon-wrap svg { width: 22px; height: 22px; color: currentColor; }
 
         /* PUBLISHED / DRAFT TOGGLE */
         .toggle-group {
@@ -669,18 +670,21 @@
 
         <!-- FILTER BAR -->
         <div class="filter-bar">
-            <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
-            <button class="filter-btn" onclick="setFilter('general', this)">
+            <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+            <button class="filter-btn" data-filter="general" onclick="setFilter('general', this)">
                 <i data-lucide="info" style="width:12px;height:12px;"></i> General
             </button>
-            <button class="filter-btn" onclick="setFilter('urgent', this)">
+            <button class="filter-btn" data-filter="urgent" onclick="setFilter('urgent', this)">
                 <i data-lucide="alert-triangle" style="width:12px;height:12px;"></i> Urgent
             </button>
-            <button class="filter-btn" onclick="setFilter('event', this)">
+            <button class="filter-btn" data-filter="event" onclick="setFilter('event', this)">
                 <i data-lucide="calendar" style="width:12px;height:12px;"></i> Event
             </button>
-            <button class="filter-btn" onclick="setFilter('promo', this)">
+            <button class="filter-btn" data-filter="promo" onclick="setFilter('promo', this)">
                 <i data-lucide="tag" style="width:12px;height:12px;"></i> Promo
+            </button>
+            <button class="filter-btn" id="trashToggle" onclick="toggleTrashView()" style="margin-left:6px;">
+                <i data-lucide="trash-2" style="width:12px;height:12px;"></i> <span id="trashToggleLabel">Deleted</span>
             </button>
             <div class="search-wrap">
                 <i data-lucide="search" class="search-icon"></i>
@@ -756,18 +760,18 @@
 <div class="modal-overlay" id="deleteModal">
     <div class="modal modal-delete">
         <div class="modal-body" style="text-align:center; padding: 32px 28px;">
-            <div class="delete-icon-wrap">
-                <i data-lucide="trash-2"></i>
+            <div class="delete-icon-wrap" id="delete-modal-iconwrap">
+                <i data-lucide="trash-2" id="delete-modal-icon"></i>
             </div>
-            <h2 style="font-size:1rem; margin-bottom:8px;">Delete Announcement?</h2>
-            <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">
+            <h2 id="delete-modal-title" style="font-size:1rem; margin-bottom:8px;">Delete Announcement?</h2>
+            <p id="delete-modal-text" style="font-size:0.82rem; color:var(--muted); line-height:1.6;">
                 This will permanently remove the announcement and all its comments.<br>This action cannot be undone.
             </p>
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
             <button class="btn-danger" id="confirm-delete-btn">
-                <i data-lucide="trash-2"></i> Delete
+                <i data-lucide="trash-2" id="delete-modal-btn-icon"></i> <span id="delete-modal-btn-label">Delete</span>
             </button>
         </div>
     </div>
@@ -802,76 +806,19 @@
     <span id="toast-msg">Done.</span>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────
-let announcements = [
-    {
-        id: 1,
-        type: 'urgent',
-        title: 'Scheduled Maintenance – May 15, 2025',
-        body: 'AniMart will undergo scheduled system maintenance on May 15, 2025 from 12:00 AM to 4:00 AM. All listings and transactions will be temporarily unavailable. We apologize for the inconvenience.',
-        status: 'published',
-        audience: 'all',
-        date: 'May 10, 2025',
-        views: 892,
-        comments: [
-            { id: 1, name: 'Cardo Dalisay', role: 'Seller', avatar: 'CD', color: '#38BDF8', time: '2h ago', body: 'Thanks for the heads up! Will make sure to complete my transactions before then.', likes: 14 },
-            { id: 2, name: 'Nena Reyes',    role: 'Buyer',  avatar: 'NR', color: '#7EFFC5', time: '1h ago', body: 'Hope the maintenance goes smoothly. Looking forward to the improvements!', likes: 7 },
-            { id: 3, name: 'Ferdie Santos', role: 'Seller', avatar: 'FS', color: '#FBB824', time: '45m ago', body: 'Noted po! Will inform my buyers as well about the downtime.', likes: 3 },
-        ]
-    },
-    {
-        id: 2,
-        type: 'promo',
-        title: 'Zero Commission Weekend – May 17–18!',
-        body: 'Celebrate the long weekend with FREE commission on all completed livestock transactions this Saturday and Sunday. That\'s right — AniMart takes zero commission. Happy selling!',
-        status: 'published',
-        audience: 'sellers',
-        date: 'May 9, 2025',
-        views: 1240,
-        comments: [
-            { id: 1, name: 'Bong Villanueva', role: 'Seller', avatar: 'BV', color: '#C084FC', time: '3h ago', body: 'Grabe naman! This is amazing. Will definitely be listing more this weekend!', likes: 22 },
-            { id: 2, name: 'Clara Ramos',     role: 'Seller', avatar: 'CR', color: '#FB923C', time: '2h ago', body: 'Salamat AniMart! This really helps us small farmers.', likes: 18 },
-        ]
-    },
-    {
-        id: 3,
-        type: 'event',
-        title: 'AniMart Livestock Fair – June 2025',
-        body: 'Join us at the first ever AniMart Livestock Fair on June 20–22, 2025 at Batangas City Sports Complex. Top sellers will be featured, with prizes for best-in-category livestock. Registration opens May 20.',
-        status: 'published',
-        audience: 'all',
-        date: 'May 7, 2025',
-        views: 567,
-        comments: [
-            { id: 1, name: 'Liza Manalo', role: 'Seller', avatar: 'LM', color: '#38BDF8', time: '1d ago', body: 'So excited for this! Will be bringing our best Angus cattle. 🐂', likes: 11 },
-        ]
-    },
-    {
-        id: 4,
-        type: 'general',
-        title: 'New Messaging Feature Now Live',
-        body: 'Premium sellers can now directly message buyers through the AniMart platform. The new messaging feature supports photos, voice notes, and live negotiation tools. Available exclusively to Pro and Elite members.',
-        status: 'published',
-        audience: 'premium',
-        date: 'May 5, 2025',
-        views: 431,
-        comments: []
-    },
-    {
-        id: 5,
-        type: 'general',
-        title: 'Tips for Better Listing Photos',
-        body: 'Great photos sell faster! Here are some tips: (1) Use natural lighting. (2) Take photos from multiple angles. (3) Include a size reference. (4) Ensure the background is clean. Sellers with quality photos see 3x more inquiries.',
-        status: 'draft',
-        audience: 'sellers',
-        date: 'May 3, 2025',
-        views: 0,
-        comments: []
-    },
-];
+// Announcements are loaded from the Supabase `announcements` table by
+// loadAnnouncements() (see below). The page starts empty and fills in once
+// the fetch resolves.
+let announcements = [];
 
 let currentFilter = 'all';
+// 'active' = normal list, 'deleted' = trash (soft-deleted announcements).
+let viewMode = 'active';
 let editingId = null;
 let formStatus = 'published';
 let deleteTargetId = null;
@@ -891,15 +838,82 @@ function audienceLabel(a) {
     return { all: 'All Users', sellers: 'Sellers', buyers: 'Buyers', premium: 'Premium' }[a] || a;
 }
 
+// ── LOAD FROM DATABASE ────────────────────────────────────────────────────
+// The `announcements` table holds: id, title, body, status, created_at,
+// image_url, admin_id. The card UI also wants a `type` (general/urgent/event/
+// promo) — that lives in the related `announcement_tags` table, so we pull it
+// via an embedded select and map it onto each row. Columns the UI shows but
+// the DB doesn't track yet (audience, views, comments) get sensible defaults.
+const VALID_TYPES = ['general', 'urgent', 'event', 'promo'];
+
+// The DB `status` column has a CHECK constraint allowing only 'Active' / 'Pending'.
+// The UI toggle speaks 'published' / 'draft', so translate in both directions:
+//   Published <-> Active   |   Draft <-> Pending
+function dbStatusToUi(s) { return s === 'Pending' ? 'draft' : 'published'; }
+function uiStatusToDb(s) { return s === 'draft' ? 'Pending' : 'Active'; }
+
+function mapAnnouncementRow(row) {
+    const tags = row.announcement_tags || [];
+    let type = 'general';
+    for (const t of tags) {
+        const tag = (t.tag || '').toLowerCase();
+        if (VALID_TYPES.includes(tag)) { type = tag; break; }
+    }
+
+    const status = dbStatusToUi(row.status);
+
+    return {
+        id: row.id,
+        type,
+        title: row.title || '(untitled)',
+        body: row.body || '',
+        status,
+        deleted: !!row.deleted_at,
+        audience: row.audience || 'all',
+        date: row.created_at
+            ? new Date(row.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+            : '',
+        views: 0,
+        comments: [],
+        image_url: row.image_url || null
+    };
+}
+
+async function loadAnnouncements() {
+    if (typeof supabaseClient === 'undefined') {
+        console.error('Supabase client not loaded.');
+        return;
+    }
+
+    const { data, error } = await supabaseClient
+        .from('announcements')
+        .select('*, announcement_tags(tag)')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('LOAD ANNOUNCEMENTS ERROR:', error);
+        showToast('Failed to load announcements: ' + error.message, 'error');
+        announcements = [];
+    } else {
+        announcements = (data || []).map(mapAnnouncementRow);
+    }
+
+    renderAnnouncements();
+}
+
 // ── RENDER ────────────────────────────────────────────────────────────────
 function renderAnnouncements() {
     const grid = document.getElementById('ann-grid');
     const q = document.getElementById('searchInput').value.toLowerCase();
 
     let filtered = announcements.filter(a => {
-        const matchFilter = currentFilter === 'all' || a.type === currentFilter;
         const matchSearch = !q || a.title.toLowerCase().includes(q) || a.body.toLowerCase().includes(q);
-        return matchFilter && matchSearch;
+        if (viewMode === 'deleted') {
+            // Trash view: show ALL soft-deleted announcements regardless of category.
+            return a.deleted && matchSearch;
+        }
+        const matchFilter = currentFilter === 'all' || a.type === currentFilter;
+        return !a.deleted && matchFilter && matchSearch;
     });
 
     grid.innerHTML = '';
@@ -907,8 +921,8 @@ function renderAnnouncements() {
     if (filtered.length === 0) {
         grid.innerHTML = `
             <div class="empty-state">
-                <i data-lucide="megaphone"></i>
-                <p>No announcements found.</p>
+                <i data-lucide="${viewMode === 'deleted' ? 'trash-2' : 'megaphone'}"></i>
+                <p>${viewMode === 'deleted' ? 'No deleted announcements.' : 'No announcements found.'}</p>
             </div>`;
         lucide.createIcons();
         return;
@@ -919,6 +933,22 @@ function renderAnnouncements() {
         const card = document.createElement('div');
         card.className = 'ann-card';
         card.style.animationDelay = (idx * 0.07) + 's';
+
+        // Trash view swaps Edit/Delete for Restore/Delete-Permanently.
+        const actionsHtml = viewMode === 'deleted'
+            ? `<button class="icon-btn edit" title="Restore" onclick="confirmRestore('${ann.id}')">
+                   <i data-lucide="rotate-ccw"></i>
+               </button>
+               <button class="icon-btn delete" title="Delete permanently" onclick="openDeleteModal('${ann.id}')">
+                   <i data-lucide="trash-2"></i>
+               </button>`
+            : `<button class="icon-btn edit" title="Edit" onclick="openEditModal('${ann.id}')">
+                   <i data-lucide="pencil"></i>
+               </button>
+               <button class="icon-btn delete" title="Move to Deleted" onclick="confirmSoftDelete('${ann.id}')">
+                   <i data-lucide="trash-2"></i>
+               </button>`;
+
         card.innerHTML = `
             <div class="ann-card-top">
                 <div class="ann-type-icon" style="background:${tc.bg}; color:${tc.color};">
@@ -944,18 +974,13 @@ function renderAnnouncements() {
                     <div class="ann-stat">
                         <i data-lucide="eye"></i> ${ann.views.toLocaleString()}
                     </div>
-                    <div class="ann-stat" onclick="openComments(${ann.id})" title="View comments">
+                    <div class="ann-stat" onclick="openComments('${ann.id}')" title="View comments">
                         <i data-lucide="message-circle"></i> ${ann.comments.length}
                         ${ann.comments.length > 0 ? '<span style="color:var(--mint);font-size:0.65rem;margin-left:2px;">View</span>' : ''}
                     </div>
                 </div>
                 <div class="ann-actions">
-                    <button class="icon-btn edit" title="Edit" onclick="openEditModal(${ann.id})">
-                        <i data-lucide="pencil"></i>
-                    </button>
-                    <button class="icon-btn delete" title="Delete" onclick="openDeleteModal(${ann.id})">
-                        <i data-lucide="trash-2"></i>
-                    </button>
+                    ${actionsHtml}
                 </div>
             </div>
         `;
@@ -968,10 +993,11 @@ function renderAnnouncements() {
 
 // ── STATS ─────────────────────────────────────────────────────────────────
 function updateStats() {
-    const total = announcements.length;
-    const published = announcements.filter(a => a.status === 'published').length;
-    const drafts = announcements.filter(a => a.status === 'draft').length;
-    const totalComments = announcements.reduce((s, a) => s + a.comments.length, 0);
+    const active = announcements.filter(a => !a.deleted);
+    const total = active.length;
+    const published = active.filter(a => a.status === 'published').length;
+    const drafts = active.filter(a => a.status === 'draft').length;
+    const totalComments = active.reduce((s, a) => s + a.comments.length, 0);
 
     animCount('stat-total', total);
     animCount('stat-published', published);
@@ -997,6 +1023,8 @@ function animCount(id, target) {
 // ── FILTER ────────────────────────────────────────────────────────────────
 function setFilter(f, btn) {
     currentFilter = f;
+    // Selecting a category always leaves the trash view and returns to active.
+    viewMode = 'active';
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     renderAnnouncements();
@@ -1048,7 +1076,32 @@ function updateCharCount() {
     document.getElementById('char-used').textContent = len;
 }
 
-function saveAnnouncement() {
+// Look up the logged-in admin's UUID (announcements.admin_id is NOT NULL).
+// Goes through the SECURITY DEFINER function current_admin_id() so the lookup
+// isn't blocked by RLS on the admins table (a direct select returns null there).
+async function getCurrentAdminId() {
+    const { data, error } = await supabaseClient.rpc('current_admin_id');
+    if (error) { console.error('CURRENT ADMIN ID ERROR:', error); return null; }
+    return data || null;
+}
+
+// The card "type" (general/urgent/event/promo) is stored in announcement_tags.
+// We keep a single tag per announcement: clear existing rows, then insert the
+// chosen one.
+async function syncAnnouncementTag(announcementId, tag) {
+    await supabaseClient
+        .from('announcement_tags')
+        .delete()
+        .eq('announcement_id', announcementId);
+
+    const { error } = await supabaseClient
+        .from('announcement_tags')
+        .insert({ announcement_id: announcementId, tag });
+
+    if (error) console.error('TAG SYNC ERROR:', error);
+}
+
+async function saveAnnouncement() {
     const title = document.getElementById('f-title').value.trim();
     const body  = document.getElementById('f-body').value.trim();
     const type  = document.getElementById('f-type').value;
@@ -1057,37 +1110,227 @@ function saveAnnouncement() {
     if (!title) { showToast('Please enter a title.', 'error'); return; }
     if (!body)  { showToast('Please enter content.', 'error'); return; }
 
-    const now = new Date().toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' });
+    const saveBtn = document.querySelector('#formModal .btn-primary');
+    if (saveBtn) saveBtn.disabled = true;
 
-    if (editingId) {
-        const ann = announcements.find(a => a.id === editingId);
-        ann.title    = title;
-        ann.body     = body;
-        ann.type     = type;
-        ann.status   = formStatus;
-        ann.audience = audience;
-        showToast('Announcement updated!', 'success');
+    try {
+        if (editingId) {
+            // ── UPDATE existing announcement ──
+            // .select() returns the affected rows. RLS does NOT raise an error
+            // when it blocks a write — it just changes 0 rows — so we treat an
+            // empty result as a permission failure instead of a silent no-op.
+            const { data, error } = await supabaseClient
+                .from('announcements')
+                .update({ title, body, status: uiStatusToDb(formStatus), audience })
+                .eq('id', editingId)
+                .select();
+
+            if (error) { showToast('Error updating: ' + error.message, 'error'); return; }
+            if (!data || data.length === 0) {
+                showToast('Update blocked — no permission to edit (check RLS).', 'error');
+                return;
+            }
+
+            await syncAnnouncementTag(editingId, type);
+            showToast('Announcement updated!', 'success');
+        } else {
+            // ── INSERT new announcement ──
+            const adminId = await getCurrentAdminId();
+            if (!adminId) {
+                showToast('Could not verify your admin account. Please re-login.', 'error');
+                return;
+            }
+            const insertData = { title, body, status: uiStatusToDb(formStatus), audience, admin_id: adminId };
+
+            const { data, error } = await supabaseClient
+                .from('announcements')
+                .insert(insertData)
+                .select()
+                .single();
+
+            if (error) { showToast('Error posting: ' + error.message, 'error'); return; }
+
+            await syncAnnouncementTag(data.id, type);
+            showToast('Announcement posted!', 'success');
+        }
+
+        closeModal('formModal');
+        await loadAnnouncements();
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
+    }
+}
+
+// ── TRASH / SOFT DELETE ───────────────────────────────────────────────────
+// Switch between the normal list and the "Deleted" (trash) view. The Deleted
+// button acts like the category buttons: it's part of the same single-select
+// group, so turning it on clears the category highlight and vice versa. The
+// label stays "Deleted" — only the highlight indicates which view is active.
+function toggleTrashView() {
+    const trashBtn = document.getElementById('trashToggle');
+
+    // Clear highlight from every filter button first.
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+
+    if (viewMode === 'deleted') {
+        // Leaving trash → go back to active and re-highlight the category.
+        viewMode = 'active';
+        const active = document.querySelector(`.filter-btn[data-filter="${currentFilter}"]`);
+        if (active) active.classList.add('active');
     } else {
-        announcements.unshift({
-            id: Date.now(),
-            type, title, body, status: formStatus, audience,
-            date: now, views: 0, comments: []
-        });
-        showToast('Announcement posted!', 'success');
+        // Entering trash → only the Deleted button is highlighted.
+        viewMode = 'deleted';
+        trashBtn.classList.add('active');
     }
 
-    closeModal('formModal');
     renderAnnouncements();
 }
 
-// ── DELETE MODAL ──────────────────────────────────────────────────────────
+// Move an announcement to the trash (recoverable) by stamping deleted_at.
+async function softDeleteAnnouncement(id) {
+    const { data, error } = await supabaseClient
+        .from('announcements')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id)
+        .select();
+
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    if (!data || data.length === 0) {
+        showToast('Delete blocked — no permission (check RLS).', 'error');
+        return;
+    }
+
+    await loadAnnouncements();
+    showToast('Moved to Deleted.', 'error');
+}
+
+// Restore a trashed announcement by clearing deleted_at.
+async function restoreAnnouncement(id) {
+    const { data, error } = await supabaseClient
+        .from('announcements')
+        .update({ deleted_at: null })
+        .eq('id', id)
+        .select();
+
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    if (!data || data.length === 0) {
+        showToast('Restore blocked — no permission (check RLS).', 'error');
+        return;
+    }
+
+    await loadAnnouncements();
+    showToast('Announcement restored.', 'success');
+}
+
+// Configure the shared confirm modal. `danger` (default true) styles it red
+// for destructive actions; false uses the mint style (e.g. restore).
+// The icon placeholders are rebuilt fresh each call so lucide re-renders them
+// (it replaces <i data-lucide> with <svg> on first render, so mutating the
+// attribute afterwards wouldn't update the icon).
+function setDeleteModalContent({ title, text, btnLabel, icon = 'trash-2', danger = true }) {
+    document.getElementById('delete-modal-title').textContent = title;
+    document.getElementById('delete-modal-text').innerHTML = text;
+
+    const wrap = document.getElementById('delete-modal-iconwrap');
+    wrap.innerHTML = `<i data-lucide="${icon}"></i>`;
+    wrap.style.background  = danger ? 'rgba(255,107,107,0.12)' : 'rgba(126,255,197,0.12)';
+    wrap.style.borderColor = danger ? 'rgba(255,107,107,0.2)'  : 'rgba(126,255,197,0.25)';
+    wrap.style.color       = danger ? 'var(--danger)'          : 'var(--mint-dim)';
+
+    const btn = document.getElementById('confirm-delete-btn');
+    btn.className = danger ? 'btn-danger' : 'btn-primary';
+    btn.innerHTML = `<i data-lucide="${icon}"></i> <span>${btnLabel}</span>`;
+
+    lucide.createIcons();
+}
+
+// ── DELETE CONFIRMATION (move to trash) ───────────────────────────────────
+// Asks before moving an announcement to the Deleted view. Reuses the shared
+// modal but with reversible wording (it can be restored from the trash).
+function confirmSoftDelete(id) {
+    setDeleteModalContent({
+        title: 'Delete this announcement?',
+        text: 'It will be moved to <b>Deleted</b>, where you can restore it or remove it permanently.',
+        btnLabel: 'Delete',
+        icon: 'trash-2',
+        danger: true
+    });
+    const btn = document.getElementById('confirm-delete-btn');
+    btn.onclick = async () => {
+        btn.disabled = true;
+        try {
+            closeModal('deleteModal');
+            await softDeleteAnnouncement(id);
+        } finally {
+            btn.disabled = false;
+        }
+    };
+    document.getElementById('deleteModal').classList.add('open');
+    lucide.createIcons();
+}
+
+// ── RESTORE CONFIRMATION ──────────────────────────────────────────────────
+// Asks before restoring a trashed announcement back to the active list.
+function confirmRestore(id) {
+    setDeleteModalContent({
+        title: 'Restore this announcement?',
+        text: 'It will be moved back to the active list and visible again.',
+        btnLabel: 'Restore',
+        icon: 'rotate-ccw',
+        danger: false
+    });
+    const btn = document.getElementById('confirm-delete-btn');
+    btn.onclick = async () => {
+        btn.disabled = true;
+        try {
+            closeModal('deleteModal');
+            await restoreAnnouncement(id);
+        } finally {
+            btn.disabled = false;
+        }
+    };
+    document.getElementById('deleteModal').classList.add('open');
+    lucide.createIcons();
+}
+
+// ── DELETE MODAL (permanent) ──────────────────────────────────────────────
 function openDeleteModal(id) {
     deleteTargetId = id;
-    document.getElementById('confirm-delete-btn').onclick = () => {
-        announcements = announcements.filter(a => a.id !== deleteTargetId);
-        closeModal('deleteModal');
-        renderAnnouncements();
-        showToast('Announcement deleted.', 'error');
+    setDeleteModalContent({
+        title: 'Delete permanently?',
+        text: 'This will permanently remove the announcement and all its comments.<br>This action cannot be undone.',
+        btnLabel: 'Delete Permanently',
+        icon: 'trash-2',
+        danger: true
+    });
+    const btn = document.getElementById('confirm-delete-btn');
+    btn.onclick = async () => {
+        btn.disabled = true;
+        try {
+            // Remove dependent tags first (in case the FK has no ON DELETE CASCADE).
+            await supabaseClient
+                .from('announcement_tags')
+                .delete()
+                .eq('announcement_id', deleteTargetId);
+
+            const { data, error } = await supabaseClient
+                .from('announcements')
+                .delete()
+                .eq('id', deleteTargetId)
+                .select();
+
+            if (error) { showToast('Error deleting: ' + error.message, 'error'); return; }
+            if (!data || data.length === 0) {
+                showToast('Delete blocked — no permission to delete (check RLS).', 'error');
+                return;
+            }
+
+            closeModal('deleteModal');
+            await loadAnnouncements();
+            showToast('Announcement deleted.', 'error');
+        } finally {
+            btn.disabled = false;
+        }
     };
     document.getElementById('deleteModal').classList.add('open');
     lucide.createIcons();
@@ -1140,10 +1383,10 @@ function renderCommentsList(ann) {
             </div>
             <div class="comment-body">${c.body}</div>
             <div class="comment-actions">
-                <button class="comment-like" id="like-${ann.id}-${c.id}" onclick="toggleLike(${ann.id}, ${c.id}, this)">
+                <button class="comment-like" id="like-${ann.id}-${c.id}" onclick="toggleLike('${ann.id}', '${c.id}', this)">
                     <i data-lucide="thumbs-up"></i> ${c.likes}
                 </button>
-                <button class="comment-delete-btn" onclick="deleteComment(${ann.id}, ${c.id})">
+                <button class="comment-delete-btn" onclick="deleteComment('${ann.id}', '${c.id}')">
                     <i data-lucide="trash-2"></i> Remove
                 </button>
             </div>
@@ -1195,7 +1438,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dateBadge').textContent =
         new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
 
-    renderAnnouncements();
+    // Pull real announcements from Supabase (renders once the fetch resolves).
+    loadAnnouncements();
 
     // Close modals on overlay click
     document.querySelectorAll('.modal-overlay').forEach(o => {
@@ -1210,6 +1454,16 @@ function confirmLogout() {
         window.location.href = "../index.html";
     }
 }
+</script>
+<!-- Highlight the current page's link in the sidebar -->
+<script>
+(function () {
+    var here = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+    document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {
+        var href = (link.getAttribute('href') || '').split('/').pop().toLowerCase();
+        link.classList.toggle('active', !!href && href === here);
+    });
+})();
 </script>
 </body>
 </html>

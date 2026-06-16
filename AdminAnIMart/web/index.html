@@ -300,6 +300,88 @@
       text-decoration: underline;
       opacity: 0.8;
     }
+
+    /* --- Wrong Credentials Popup --- */
+    .login-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(31, 41, 55, 0.55);
+      backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+      z-index: 1000;
+    }
+
+    .login-modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .login-modal {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 32px 28px 26px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+      transform: translateY(14px) scale(0.97);
+      transition: transform 0.25s ease;
+    }
+
+    .login-modal-overlay.show .login-modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .login-modal-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #FEE2E2;
+      color: #DC2626;
+      font-size: 1.9rem;
+      font-weight: 800;
+      line-height: 56px;
+      margin: 0 auto 18px;
+    }
+
+    .login-modal h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 10px;
+    }
+
+    .login-modal p {
+      font-size: 0.9rem;
+      color: var(--gray-muted);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .login-modal button {
+      width: 100%;
+      padding: 14px;
+      background-color: var(--primary);
+      color: var(--dark);
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .login-modal button:hover {
+      background-color: #7ed9b0;
+      transform: translateY(-1px);
+    }
   </style>
 </head>
 
@@ -344,6 +426,44 @@
 
 
 
+
+    <!-- Wrong Credentials Popup -->
+    <div class="login-modal-overlay" id="loginErrorModal" onclick="closeLoginError(event)">
+      <div class="login-modal" role="dialog" aria-modal="true" aria-labelledby="loginErrorTitle">
+        <div class="login-modal-icon">!</div>
+        <h3 id="loginErrorTitle">Login Failed</h3>
+        <p id="loginErrorText">Wrong email or password. Please check your credentials and try again.</p>
+        <button type="button" onclick="closeLoginError()">Try Again</button>
+      </div>
+    </div>
+
+    <script>
+      // Shows the wrong-credentials popup. Optional custom message; defaults to
+      // the usual "wrong email or password" text.
+      function showLoginError(message) {
+        const modal = document.getElementById("loginErrorModal");
+        if (!modal) {
+          alert(message || "Wrong email or password.");
+          return;
+        }
+        if (message) {
+          document.getElementById("loginErrorText").innerText = message;
+        }
+        modal.classList.add("show");
+      }
+
+      function closeLoginError(event) {
+        // From the overlay click, only close when the backdrop itself was clicked.
+        if (event && event.target.id !== "loginErrorModal") return;
+        document.getElementById("loginErrorModal").classList.remove("show");
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          document.getElementById("loginErrorModal").classList.remove("show");
+        }
+      });
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>

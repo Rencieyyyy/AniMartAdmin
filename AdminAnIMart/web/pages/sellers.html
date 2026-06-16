@@ -1033,5 +1033,15 @@ function confirmLogout() {
     if (confirm("Are you sure you want to sign out?")) window.location.href = "../index.html";
 }
 </script>
+<!-- Highlight the current page's link in the sidebar -->
+<script>
+(function () {
+    var here = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+    document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {
+        var href = (link.getAttribute('href') || '').split('/').pop().toLowerCase();
+        link.classList.toggle('active', !!href && href === here);
+    });
+})();
+</script>
 </body>
 </html>

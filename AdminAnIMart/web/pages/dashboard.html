@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
 
     <style>
         :root {
@@ -138,6 +140,7 @@
 
       
 
+        .nav-link.active { background: var(--mint); color: var(--dark); font-weight: 700; }
         .nav-link.active svg { color: var(--dark); }
 
         .nav-link.logout { color: var(--danger); margin-top: auto; }
@@ -659,7 +662,7 @@
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">Pending Approvals</div>
-                    <span class="card-badge">5 NEW</span>
+                    <span class="card-badge" id="approvals-badge">5 NEW</span>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
                     <div id="approvals-list"></div>
@@ -671,13 +674,104 @@
 </div>
 
 <script>
-const approvals = [
-    { name: "Cardo Dalisay", role: "Seller", location: "Batangas" },
-    { name: "Nena Reyes", role: "Seller", location: "Laguna" },
-    { name: "Ferdie Santos", role: "Buyer", location: "Quezon" },
-    { name: "Liza Manalo", role: "Seller", location: "Cavite" },
-    { name: "Andres Cruz", role: "Buyer", location: "Rizal" }
-];
+// ── PENDING APPROVALS (live from the users table) ──────────────────────────
+async function loadPendingApprovals() {
+    const list  = document.getElementById('approvals-list');
+    const badge = document.getElementById('approvals-badge');
+    if (!list) return;
+
+    const { data, error } = await supabaseClient
+        .from('users')
+        .select('id, name, location, address, status, created_at, seller_profiles(shop_name)')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('LOAD PENDING APPROVALS ERROR:', error);
+        list.innerHTML = `<div style="padding:14px;color:var(--danger);font-size:0.8rem;">Failed to load: ${error.message}</div>`;
+        if (badge) badge.style.display = 'none';
+        return;
+    }
+
+    // Anything not approved/rejected counts as pending (mirrors User Approvals).
+    const pending = (data || []).filter(u => u.status !== 'approved' && u.status !== 'rejected');
+
+    if (badge) {
+        badge.textContent = pending.length + ' NEW';
+        badge.style.display = pending.length ? '' : 'none';
+    }
+
+    if (pending.length === 0) {
+        list.innerHTML = `<div style="padding:16px;color:var(--muted);font-size:0.8rem;text-align:center;">No pending approvals.</div>`;
+        return;
+    }
+
+    list.innerHTML = '';
+    pending.forEach(u => {
+        const isSeller = Array.isArray(u.seller_profiles) && u.seller_profiles.length > 0;
+        const role     = isSeller ? 'Seller' : 'Buyer';
+        const location = u.location || u.address || '—';
+        const name     = u.name || '(no name)';
+        const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+        const div = document.createElement('div');
+        div.id = 'approval-' + u.id;
+        div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);';
+        div.innerHTML = `
+            <span class="avatar" style="flex-shrink:0;">${initials}</span>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:0.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+                <div style="font-size:0.7rem;color:var(--muted);">${role} · ${location}</div>
+            </div>
+            <div class="approval-actions" style="display:flex;gap:6px;flex-shrink:0;">
+                <button title="Approve" onclick="approvalDecision('${u.id}','approved')" style="background:rgba(126,255,197,0.12);color:var(--mint-dim);border:1px solid rgba(126,255,197,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✓</button>
+                <button title="Reject" onclick="approvalDecision('${u.id}','rejected')" style="background:rgba(255,107,107,0.1);color:var(--danger);border:1px solid rgba(255,107,107,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✕</button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+// Approve/reject straight from the dashboard. Persists to the users table
+// (same fields as User Approvals), shows an Approved/Rejected indicator on the
+// row, then removes it and refreshes the "N NEW" badge.
+async function approvalDecision(id, decision) {
+    const patch = decision === 'approved'
+        ? { status: 'approved', is_verified: true }
+        : { status: 'rejected', is_verified: false };
+
+    const { data, error } = await supabaseClient
+        .from('users')
+        .update(patch)
+        .eq('id', id)
+        .select();
+
+    const row = document.getElementById('approval-' + id);
+    const actions = row ? row.querySelector('.approval-actions') : null;
+
+    if (error || !data || data.length === 0) {
+        console.error('APPROVAL DECISION ERROR:', error);
+        if (actions) {
+            actions.innerHTML = `<span style="font-size:0.68rem;color:var(--danger);font-weight:700;">Failed (check permissions)</span>`;
+        }
+        return;
+    }
+
+    // Inline indication of the result before the row clears.
+    if (actions) {
+        actions.innerHTML = decision === 'approved'
+            ? `<span style="font-size:0.68rem;font-weight:700;color:var(--mint-dim);background:rgba(126,255,197,0.12);border:1px solid rgba(126,255,197,0.25);border-radius:20px;padding:3px 10px;">✓ Approved</span>`
+            : `<span style="font-size:0.68rem;font-weight:700;color:var(--danger);background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.25);border-radius:20px;padding:3px 10px;">✕ Rejected</span>`;
+    }
+
+    // Fade the row out, then reload so the badge/count stay accurate.
+    setTimeout(() => {
+        if (row) {
+            row.style.transition = 'opacity 0.4s ease';
+            row.style.opacity = '0';
+        }
+        setTimeout(loadPendingApprovals, 420);
+    }, 1000);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -703,25 +797,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }, step);
     });
 
-    // Approvals list
-    const list = document.getElementById('approvals-list');
-    approvals.forEach(a => {
-        const initials = a.name.split(' ').map(n => n[0]).join('').slice(0,2);
-        const div = document.createElement('div');
-        div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);';
-        div.innerHTML = `
-            <span class="avatar" style="flex-shrink:0;">${initials}</span>
-            <div style="flex:1;min-width:0;">
-                <div style="font-size:0.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.name}</div>
-                <div style="font-size:0.7rem;color:var(--muted);">${a.role} · ${a.location}</div>
-            </div>
-            <div style="display:flex;gap:6px;flex-shrink:0;">
-                <button onclick="this.closest('div[style]').remove()" style="background:rgba(126,255,197,0.12);color:var(--mint-dim);border:1px solid rgba(126,255,197,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✓</button>
-                <button onclick="this.closest('div[style]').remove()" style="background:rgba(255,107,107,0.1);color:var(--danger);border:1px solid rgba(255,107,107,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✕</button>
-            </div>
-        `;
-        list.appendChild(div);
-    });
+    // Pending approvals — fetched live from the same `users` table used by the
+    // User Approvals page.
+    loadPendingApprovals();
 
     // Charts
     Chart.defaults.color = '#7D8590';
@@ -827,6 +905,16 @@ function confirmLogout() {
         window.location.href = "../index.html";
     }
 }
+</script>
+<!-- Highlight the current page's link in the sidebar -->
+<script>
+(function () {
+    var here = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+    document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {
+        var href = (link.getAttribute('href') || '').split('/').pop().toLowerCase();
+        link.classList.toggle('active', !!href && href === here);
+    });
+})();
 </script>
 </body>
 </html>

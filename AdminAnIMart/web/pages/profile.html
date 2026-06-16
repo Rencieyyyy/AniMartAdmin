@@ -639,6 +639,95 @@
             flex-shrink: 0;
         }
 
+        /* ─── MODAL ─── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 26px 24px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+            transform: translateY(14px) scale(0.97);
+            transition: transform 0.25s ease;
+            text-align: center;
+        }
+
+        .modal-overlay.show .modal {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: rgba(255, 107, 107, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .modal-icon svg {
+            width: 24px;
+            height: 24px;
+            color: var(--danger);
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .modal-text {
+            font-size: 0.85rem;
+            color: var(--muted);
+            line-height: 1.5;
+            margin-bottom: 22px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #ff5252;
+            transform: translateY(-1px);
+        }
+
         /* ─── ANIMATIONS ─── */
         @keyframes fadeUp {
             from {
@@ -1321,6 +1410,21 @@
     </main>
     </div>
 
+    <!-- Logout Confirmation Modal -->
+    <div class="modal-overlay" id="logoutModal" onclick="closeLogoutModal(event)">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="logoutModalTitle">
+            <div class="modal-icon">
+                <i data-lucide="log-out"></i>
+            </div>
+            <div class="modal-title" id="logoutModalTitle">Sign Out</div>
+            <div class="modal-text">Are you sure you want to sign out of your admin account?</div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeLogoutModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="doLogout()">Sign Out</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast">
         <div class="toast-dot"></div>
@@ -1334,19 +1438,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
 
-            // Live update sidebar from inputs
-            ['firstName', 'lastName'].forEach(id => {
-                document.getElementById(id).addEventListener('input', updateSidebarName);
-            });
-            document.getElementById('email').addEventListener('input', e => {
-                document.getElementById('sidebarEmail').textContent = e.target.value || '—';
-            });
-            document.getElementById('phone').addEventListener('input', e => {
-                document.getElementById('sidebarPhone').textContent = e.target.value || '—';
-            });
-            document.getElementById('location').addEventListener('input', e => {
-                document.getElementById('sidebarLocation').textContent = e.target.value || '—';
-            });
+            // NOTE: The sidebar (name / email / phone / location) intentionally does
+            // NOT update live as you type. It reflects only saved values and is
+            // refreshed by loadAdminProfile() after a successful "Save Changes".
             document.getElementById('myMessengerLink').addEventListener('input', e => {
                 const val = e.target.value.trim();
                 const href = val.startsWith('http') ? val : 'https://' + val;
@@ -1369,7 +1463,7 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            // Client-side validation (image type + 2MB cap) before uploading.
+            // Client-side validation (image type + 2MB cap) before queuing.
             const err = (typeof validateImageFile === 'function')
                 ? validateImageFile(file, 2 * 1024 * 1024)
                 : (file.size > 2 * 1024 * 1024 ? 'Image is too large. Please choose one under 2MB.' : null);
@@ -1379,14 +1473,12 @@
                 return;
             }
 
-            // Instant local preview from the raw File (no base64). The object
-            // URL is revoked once the <img> has loaded to free memory.
-            const previewUrl = URL.createObjectURL(file);
-            const el = document.getElementById('avatarDisplay');
-            el.innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onload="URL.revokeObjectURL(this.src)">`;
-
-            // Upload the raw File to Storage and persist its public URL.
-            if (typeof saveProfilePicture === 'function') saveProfilePicture(file);
+            // Do NOT preview or upload yet. Queue the file; it is uploaded only
+            // when the admin clicks "Save Changes" (see savePersonalInfo in
+            // profile.js). Enabling the Save button reflects the pending change.
+            window.pendingAvatarFile = file;
+            if (typeof updateSaveButtonState === 'function') updateSaveButtonState();
+            showToast('Picture selected. Click "Save Changes" to apply.');
         }
 
         // ── PASSWORD STRENGTH ──
@@ -1458,11 +1550,39 @@
         // ── TOAST ──
         // showToast lives in profile.js (single definition, supports error styling).
 
+        // ── LOGOUT MODAL ──
         function confirmLogout() {
-            if (confirm("Are you sure you want to sign out?")) {
-                window.location.href = "../index.html";
-            }
+            const modal = document.getElementById("logoutModal");
+            modal.classList.add("show");
+            lucide.createIcons();
         }
+
+        // Close on Cancel, on the X-area, or when clicking the dimmed backdrop.
+        function closeLogoutModal(event) {
+            // When triggered by the overlay click, only close if the backdrop
+            // itself (not the modal card) was clicked.
+            if (event && event.target.id !== "logoutModal") return;
+            document.getElementById("logoutModal").classList.remove("show");
+        }
+
+        async function doLogout() {
+            // End the Supabase session before leaving, when available.
+            try {
+                if (typeof supabaseClient !== "undefined") {
+                    await supabaseClient.auth.signOut();
+                }
+            } catch (e) {
+                console.error("SIGN OUT ERROR:", e);
+            }
+            window.location.href = "../index.html";
+        }
+
+        // Allow Esc to dismiss the logout modal.
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                document.getElementById("logoutModal").classList.remove("show");
+            }
+        });
 
 
     </script>
@@ -1474,6 +1594,17 @@
     <script src="../storage.js"></script>
 
     <script src="profile.js"></script>
+
+    <!-- Highlight the current page's link in the sidebar -->
+    <script>
+    (function () {
+        var here = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+        document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {
+            var href = (link.getAttribute('href') || '').split('/').pop().toLowerCase();
+            link.classList.toggle('active', !!href && href === here);
+        });
+    })();
+    </script>
 </body>
 
 </html>

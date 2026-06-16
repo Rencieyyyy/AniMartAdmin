@@ -552,6 +552,14 @@
         /* ── CONFIRM MODAL ── */
         .confirm-modal { max-width: 400px; }
 
+        /* Base shape for the confirm action button. The JS sets only the
+           background/color/border per action, so these stay applied. */
+        #confirmActionBtn {
+            border-radius: 9px; padding: 8px 20px;
+            font-size: 0.8rem; font-weight: 700;
+            font-family: 'Sora', sans-serif; cursor: pointer;
+        }
+
         .confirm-icon {
             width: 52px; height: 52px; border-radius: 14px;
             display: flex; align-items: center; justify-content: center;
@@ -682,9 +690,6 @@
             </div>
         </div>
 
-        <!-- TEMP DIAGNOSTIC (remove once working) -->
-        <div id="diagBanner" style="display:none; margin-bottom:18px; padding:14px 16px; border-radius:10px; font-family:'DM Mono',monospace; font-size:0.8rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;"></div>
-
         <!-- STATS -->
         <div class="stats-grid">
             <div class="stat-card pending" style="animation-delay:0.05s">
@@ -751,10 +756,10 @@
             <span class="bulk-count" id="bulkCount">0</span>
             <span class="bulk-muted">users selected</span>
             <div class="bulk-bar-actions">
-                <button class="btn-approve" onclick="bulkAction('approve')">
+                <button class="btn-approve" onclick="openBulk('approve')">
                     <i data-lucide="check"></i> Approve All
                 </button>
-                <button class="btn-reject" onclick="bulkAction('reject')">
+                <button class="btn-reject" onclick="openBulk('reject')">
                     <i data-lucide="x"></i> Reject All
                 </button>
             </div>
@@ -867,28 +872,6 @@ let detailUserId = null;
 // SUPABASE LOAD
 // ─────────────────────────────────────────────────
 async function loadUsers() {
-    // ---- TEMP DIAGNOSTIC ----
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    const loginEmail = session && session.user ? session.user.email : '(NOT LOGGED IN)';
-
-    // Plain query WITHOUT the seller_profiles embed, to isolate the cause.
-    const plain = await supabaseClient.from('users').select('id,name,email,status');
-
-    const diag = document.getElementById('diagBanner');
-    if (diag) {
-        const ok = loginEmail !== '(NOT LOGGED IN)' && !plain.error && (plain.data || []).length > 0;
-        diag.style.display    = 'block';
-        diag.style.background  = ok ? 'rgba(126,255,197,0.08)' : 'rgba(255,107,107,0.1)';
-        diag.style.border      = '1px solid ' + (ok ? 'rgba(126,255,197,0.35)' : 'rgba(255,107,107,0.35)');
-        diag.style.color       = ok ? 'var(--mint-dim)' : 'var(--danger)';
-        diag.textContent =
-            'DIAGNOSTIC (temporary)\n' +
-            'logged in as : ' + loginEmail + '\n' +
-            'rows returned: ' + (plain.data ? plain.data.length : 0) + '\n' +
-            'error        : ' + (plain.error ? (plain.error.code + ' — ' + plain.error.message) : 'none');
-    }
-    // ---- END DIAGNOSTIC ----
-
     const { data, error } = await supabaseClient
         .from('users')
         .select('id, name, email, phone, location, address, status, is_verified, valid_id_type, valid_id_url, business_name, created_at, seller_profiles(shop_name)')
@@ -995,7 +978,7 @@ function renderList(type, data) {
         if (isPending) {
             actionsCell = `
                 <button class="btn-view-detail" onclick="openDetail('${u.id}')"><i data-lucide="eye"></i> View</button>
-                <button class="btn-approve" onclick="doApprove('${u.id}')"><i data-lucide="check"></i> Approve</button>
+                <button class="btn-approve" onclick="openApprove('${u.id}')"><i data-lucide="check"></i> Approve</button>
                 <button class="btn-reject" onclick="openReject('${u.id}')"><i data-lucide="x"></i> Reject</button>`;
         } else {
             const fromTab = isApproved ? 'approved' : 'rejected';
@@ -1004,7 +987,7 @@ function renderList(type, data) {
                 : `<span class="status-tag st-rejected"><span class="dot"></span> Rejected</span>`;
             actionsCell = `
                 ${tag}
-                <button class="btn-undo" onclick="undoAction('${u.id}', '${fromTab}')"><i data-lucide="rotate-ccw"></i> Undo</button>`;
+                <button class="btn-undo" onclick="openUndo('${u.id}', '${fromTab}')"><i data-lucide="rotate-ccw"></i> Undo</button>`;
         }
 
         const checkboxHTML = isPending ? `<input type="checkbox" class="user-checkbox" id="chk-${u.id}" onchange="toggleSelect('${u.id}', this)">` : '';
@@ -1085,6 +1068,26 @@ function setCount(id, target) {
 // ─────────────────────────────────────────────────
 // ACTIONS
 // ─────────────────────────────────────────────────
+function openApprove(id) {
+    const user = pending.find(u => u.id === id);
+    if (!user) return;
+
+    document.getElementById('confirmIcon').innerHTML = `
+        <div style="width:52px;height:52px;border-radius:14px;background:rgba(126,255,197,0.12);border:1px solid rgba(126,255,197,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+            <i data-lucide="user-check" style="width:22px;height:22px;color:var(--mint-dim);"></i>
+        </div>`;
+    document.getElementById('confirmTitle').textContent = `Approve ${user.name}?`;
+    document.getElementById('confirmDesc').textContent  = `This will approve ${user.name}'s registration and mark the account as verified. You can undo this afterward.`;
+
+    const btn = document.getElementById('confirmActionBtn');
+    btn.textContent = 'Yes, Approve';
+    btn.style.cssText = 'background:rgba(126,255,197,0.15);color:var(--mint-dim);border:1px solid rgba(126,255,197,0.5);';
+    btn.onclick = () => { doApprove(id); closeModal('confirmModal'); };
+
+    document.getElementById('confirmModal').classList.add('open');
+    lucide.createIcons();
+}
+
 async function doApprove(id) {
     const user = pending.find(u => u.id === id);
 
@@ -1118,7 +1121,7 @@ function openReject(id) {
 
     const btn = document.getElementById('confirmActionBtn');
     btn.textContent = 'Yes, Reject';
-    btn.style.cssText = 'background:rgba(255,107,107,0.15);color:var(--danger);border:1px solid rgba(255,107,107,0.25);';
+    btn.style.cssText = 'background:rgba(255,107,107,0.15);color:var(--danger);border:1px solid rgba(255,107,107,0.5);';
     btn.onclick = () => { doReject(id); closeModal('confirmModal'); };
 
     document.getElementById('confirmModal').classList.add('open');
@@ -1143,6 +1146,27 @@ async function doReject(id) {
     closeModal('detailModal');
     showToast(`${user ? user.name : 'User'} was rejected.`, 'error');
     await loadUsers();
+}
+
+function openUndo(id, from) {
+    const arr = from === 'approved' ? approved : rejected;
+    const user = arr.find(u => u.id === id);
+    if (!user) return;
+
+    document.getElementById('confirmIcon').innerHTML = `
+        <div style="width:52px;height:52px;border-radius:14px;background:rgba(251,184,36,0.12);border:1px solid rgba(251,184,36,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+            <i data-lucide="rotate-ccw" style="width:22px;height:22px;color:var(--warn);"></i>
+        </div>`;
+    document.getElementById('confirmTitle').textContent = `Move ${user.name} back to pending?`;
+    document.getElementById('confirmDesc').textContent  = `This will undo the ${from} status and return ${user.name} to the pending list for review.`;
+
+    const btn = document.getElementById('confirmActionBtn');
+    btn.textContent = 'Yes, Undo';
+    btn.style.cssText = 'background:rgba(251,184,36,0.15);color:var(--warn);border:1px solid rgba(251,184,36,0.25);';
+    btn.onclick = () => { undoAction(id, from); closeModal('confirmModal'); };
+
+    document.getElementById('confirmModal').classList.add('open');
+    lucide.createIcons();
 }
 
 async function undoAction(id, from) {
@@ -1181,6 +1205,38 @@ function updateBulkBar() {
     } else {
         bar.classList.remove('visible');
     }
+}
+
+function openBulk(action) {
+    const count = selectedIds.size;
+    if (!count) return;
+
+    const isApprove = action === 'approve';
+    const noun = count === 1 ? 'account' : 'accounts';
+
+    document.getElementById('confirmIcon').innerHTML = isApprove
+        ? `<div style="width:52px;height:52px;border-radius:14px;background:rgba(126,255,197,0.12);border:1px solid rgba(126,255,197,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+               <i data-lucide="user-check" style="width:22px;height:22px;color:var(--mint-dim);"></i>
+           </div>`
+        : `<div style="width:52px;height:52px;border-radius:14px;background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+               <i data-lucide="user-x" style="width:22px;height:22px;color:var(--danger);"></i>
+           </div>`;
+
+    document.getElementById('confirmTitle').textContent =
+        `${isApprove ? 'Approve' : 'Reject'} ${count} ${noun}?`;
+    document.getElementById('confirmDesc').textContent = isApprove
+        ? `This will approve and verify all ${count} selected ${noun}. You can undo each one afterward.`
+        : `This will reject all ${count} selected ${noun}. You can undo each one afterward.`;
+
+    const btn = document.getElementById('confirmActionBtn');
+    btn.textContent = isApprove ? `Yes, Approve All` : `Yes, Reject All`;
+    btn.style.cssText = isApprove
+        ? 'background:rgba(126,255,197,0.15);color:var(--mint-dim);border:1px solid rgba(126,255,197,0.5);'
+        : 'background:rgba(255,107,107,0.15);color:var(--danger);border:1px solid rgba(255,107,107,0.5);';
+    btn.onclick = () => { bulkAction(action); closeModal('confirmModal'); };
+
+    document.getElementById('confirmModal').classList.add('open');
+    lucide.createIcons();
 }
 
 async function bulkAction(action) {
@@ -1284,7 +1340,7 @@ function openDetail(id) {
         <button class="btn-reject" onclick="closeModal('detailModal'); openReject('${user.id}')">
             <i data-lucide="x"></i> Reject
         </button>
-        <button class="btn-approve" onclick="doApprove('${user.id}'); closeModal('detailModal');">
+        <button class="btn-approve" onclick="closeModal('detailModal'); openApprove('${user.id}')">
             <i data-lucide="check"></i> Approve
         </button>
     `;
@@ -1332,6 +1388,16 @@ document.addEventListener('DOMContentLoaded', () => {
 function confirmLogout() {
     if (confirm('Are you sure you want to sign out?')) window.location.href = '../index.html';
 }
+</script>
+<!-- Highlight the current page's link in the sidebar -->
+<script>
+(function () {
+    var here = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+    document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {
+        var href = (link.getAttribute('href') || '').split('/').pop().toLowerCase();
+        link.classList.toggle('active', !!href && href === here);
+    });
+})();
 </script>
 </body>
 </html>
