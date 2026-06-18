@@ -873,9 +873,64 @@ function mapAnnouncementRow(row) {
         date: row.created_at
             ? new Date(row.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
             : '',
-        views: 0,
+        // views_count / likes_count are denormalized counters on the row,
+        // maintained app-side from the announcement_views / announcement_likes
+        // tables. Read them directly (default 0 if null).
+        views: Number(row.views_count) || 0,
+        likes: Number(row.likes_count) || 0,
         comments: [],
         image_url: row.image_url || null
+    };
+}
+
+// ── COMMENTS ──────────────────────────────────────────────────────────────
+// The `announcement_comments` table holds: id, announcement_id, user_id, text,
+// created_at. The author's display name / type comes from the related `users`
+// row (name, is_seller) via an embedded select. The card UI wants extra cosmetic
+// fields (avatar initials, a colour, a relative timestamp) that aren't stored —
+// we derive those here. There's no `likes` column in the DB, so likes start at 0
+// and only live for the current session.
+const COMMENT_COLORS = ['#7EFFC5', '#38BDF8', '#FBB824', '#FF6B6B', '#A78BFA', '#34D399'];
+
+function commentColor(seed) {
+    let h = 0;
+    for (const ch of String(seed)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return COMMENT_COLORS[h % COMMENT_COLORS.length];
+}
+
+function commentInitials(name) {
+    const parts = String(name).trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
+
+function relativeTime(iso) {
+    if (!iso) return '';
+    const then = new Date(iso);
+    const secs = Math.floor((Date.now() - then.getTime()) / 1000);
+    if (secs < 60) return 'just now';
+    const mins = Math.floor(secs / 60);
+    if (mins < 60) return mins + 'm ago';
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return days + 'd ago';
+    return then.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+}
+
+function mapCommentRow(row) {
+    const u = row.users || {};
+    const name = u.name || 'Unknown user';
+    return {
+        id: String(row.id),
+        name,
+        role: u.is_seller ? 'Seller' : 'Buyer',
+        avatar: commentInitials(name),
+        color: commentColor(row.user_id || row.id),
+        time: relativeTime(row.created_at),
+        body: row.text || '',
+        likes: 0,
+        liked: false
     };
 }
 
@@ -894,11 +949,67 @@ async function loadAnnouncements() {
         console.error('LOAD ANNOUNCEMENTS ERROR:', error);
         showToast('Failed to load announcements: ' + error.message, 'error');
         announcements = [];
+        renderAnnouncements();
+        return;
+    }
+
+    announcements = (data || []).map(mapAnnouncementRow);
+
+    // Pull every comment in one query and attach it to its announcement. The
+    // author name / type is embedded from the related `users` row. Oldest first
+    // so each thread reads top-to-bottom.
+    const { data: commentRows, error: commentsError } = await supabaseClient
+        .from('announcement_comments')
+        .select('id, announcement_id, user_id, text, created_at, users(name, is_seller)')
+        .order('created_at', { ascending: true });
+
+    if (commentsError) {
+        console.error('LOAD COMMENTS ERROR:', commentsError);
     } else {
-        announcements = (data || []).map(mapAnnouncementRow);
+        const byAnnouncement = {};
+        for (const row of (commentRows || [])) {
+            (byAnnouncement[row.announcement_id] ||= []).push(mapCommentRow(row));
+        }
+        for (const ann of announcements) {
+            ann.comments = byAnnouncement[ann.id] || [];
+        }
+    }
+
+    // Views and likes are tracked one-row-per-user in announcement_views /
+    // announcement_likes (the *_count columns on announcements aren't kept in
+    // sync, which is why they read 0 here). Count the log rows per announcement,
+    // same as comments. Needs the admin read policies in
+    // announcement_engagement_rls.sql — without them these return 0 rows.
+    const [viewCounts, likeCounts] = await Promise.all([
+        countByAnnouncement('announcement_views'),
+        countByAnnouncement('announcement_likes')
+    ]);
+    for (const ann of announcements) {
+        if (viewCounts) ann.views = viewCounts[ann.id] || 0;
+        if (likeCounts) ann.likes = likeCounts[ann.id] || 0;
     }
 
     renderAnnouncements();
+}
+
+// Count rows in a log table grouped by announcement_id. Returns a map
+// { announcement_id: count } or null if the query failed (so the caller can
+// keep the existing fallback value instead of zeroing everything out).
+async function countByAnnouncement(table) {
+    const { data, error } = await supabaseClient
+        .from(table)
+        .select('announcement_id');
+
+    if (error) {
+        console.error('LOAD ' + table + ' ERROR:', error);
+        return null;
+    }
+
+    const counts = {};
+    for (const row of (data || [])) {
+        counts[row.announcement_id] = (counts[row.announcement_id] || 0) + 1;
+    }
+    return counts;
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
@@ -971,8 +1082,11 @@ function renderAnnouncements() {
             </div>
             <div class="ann-card-footer">
                 <div class="ann-stats">
-                    <div class="ann-stat">
+                    <div class="ann-stat" title="Views">
                         <i data-lucide="eye"></i> ${ann.views.toLocaleString()}
+                    </div>
+                    <div class="ann-stat" title="Likes">
+                        <i data-lucide="heart"></i> ${ann.likes.toLocaleString()}
                     </div>
                     <div class="ann-stat" onclick="openComments('${ann.id}')" title="View comments">
                         <i data-lucide="message-circle"></i> ${ann.comments.length}
@@ -1386,7 +1500,7 @@ function renderCommentsList(ann) {
                 <button class="comment-like" id="like-${ann.id}-${c.id}" onclick="toggleLike('${ann.id}', '${c.id}', this)">
                     <i data-lucide="thumbs-up"></i> ${c.likes}
                 </button>
-                <button class="comment-delete-btn" onclick="deleteComment('${ann.id}', '${c.id}')">
+                <button class="comment-delete-btn" data-del="${c.id}" onclick="deleteComment('${ann.id}', '${c.id}')">
                     <i data-lucide="trash-2"></i> Remove
                 </button>
             </div>
@@ -1407,8 +1521,36 @@ function toggleLike(annId, commentId, btn) {
     lucide.createIcons();
 }
 
-function deleteComment(annId, commentId) {
+// Permanently delete a comment from `announcement_comments`. Like the other
+// writes on this page, RLS doesn't error when it blocks a delete — it just
+// affects 0 rows — so we .select() the deleted row and treat an empty result
+// as "no permission" rather than a silent success. Allowed by the
+// "Admins delete announcement_comments" policy (announcement_comments_rls.sql).
+async function deleteComment(annId, commentId) {
     const ann = announcements.find(a => a.id === annId);
+    if (!ann) return;
+
+    const btn = document.querySelector(`#comments-list [data-del="${commentId}"]`);
+    if (btn) btn.disabled = true;
+
+    const { data, error } = await supabaseClient
+        .from('announcement_comments')
+        .delete()
+        .eq('id', commentId)
+        .select();
+
+    if (error) {
+        console.error('DELETE COMMENT ERROR:', error);
+        showToast('Error removing comment: ' + error.message, 'error');
+        if (btn) btn.disabled = false;
+        return;
+    }
+    if (!data || data.length === 0) {
+        showToast('Remove blocked — no permission (check RLS).', 'error');
+        if (btn) btn.disabled = false;
+        return;
+    }
+
     ann.comments = ann.comments.filter(c => c.id !== commentId);
     renderCommentsList(ann);
     renderAnnouncements();
