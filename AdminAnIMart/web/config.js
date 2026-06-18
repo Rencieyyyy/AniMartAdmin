@@ -7,41 +7,92 @@ const supabaseClient = window.supabase.createClient(
 );
 
 
+// Formal message shown when a valid Supabase account that is NOT an admin tries
+// to enter the portal (either at login or by navigating directly to a page).
+const ACCESS_DENIED_MESSAGE =
+    "Access denied. This account does not have permission to access the AniMart admin portal.";
+
+
+// Looks up the admins row for the currently signed-in user.
+// Returns the row, or null when there is no session or the account is not an admin.
+async function getAdminForCurrentUser(){
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if(!user) return null;
+
+    const { data } = await supabaseClient
+        .from("admins")
+        .select("id, email")
+        .eq("email", user.email)
+        .maybeSingle();
+
+    return data || null;
+}
+
+
+function denyAccess(){
+    if (typeof showLoginError === "function") {
+        showLoginError(ACCESS_DENIED_MESSAGE);
+    } else {
+        alert(ACCESS_DENIED_MESSAGE);
+    }
+}
+
+
 const loginForm = document.getElementById("loginForm");
 
-if (loginForm) loginForm.addEventListener("submit", async function(e){
 
-    e.preventDefault(); // STOP page refresh
+if (loginForm) {
 
+    // ── LOGIN PAGE ──
 
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    loginForm.addEventListener("submit", async function(e){
 
-
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-
-        email: email,
-        password: password
-
-    });
+        e.preventDefault(); // STOP page refresh
 
 
-    if(error){
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
 
-        // Show the styled wrong-credentials popup with the usual message.
-        // Supabase returns "Invalid login credentials" for a bad email/password.
-        console.log(error);
-        if (typeof showLoginError === "function") {
-            showLoginError("Wrong email or password. Please check your credentials and try again.");
-        } else {
-            alert("Wrong email or password. Please check your credentials and try again.");
+
+        const { error } = await supabaseClient.auth.signInWithPassword({
+
+            email: email,
+            password: password
+
+        });
+
+
+        if(error){
+
+            // Bad email/password — Supabase returns "Invalid login credentials".
+            console.log(error);
+            if (typeof showLoginError === "function") {
+                showLoginError("Wrong email or password. Please check your credentials and try again.");
+            } else {
+                alert("Wrong email or password. Please check your credentials and try again.");
+            }
+            return;
+
         }
 
-    }else{
+
+        // Auth succeeded, but a valid Supabase user is not necessarily an admin.
+        // Require a matching admins row before granting access; otherwise revoke
+        // the session we just created and deny entry.
+        const admin = await getAdminForCurrentUser();
+
+        if(!admin){
+
+            await supabaseClient.auth.signOut();
+            denyAccess();
+            return;
+
+        }
 
 
+        // Admin confirmed → enter the dashboard.
         const loginBtn = document.getElementById("loginBtn");
-
 
         loginBtn.innerText = "Authenticating...";
         loginBtn.style.opacity = "0.7";
@@ -54,8 +105,37 @@ if (loginForm) loginForm.addEventListener("submit", async function(e){
 
         },1000);
 
+    });
 
+
+    // If a protected page bounced a non-admin back here, surface the message.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("denied") === "1") {
+        denyAccess();
     }
 
+} else {
 
-});
+    // ── PROTECTED PAGES ──
+    // Defense-in-depth: a signed-out or non-admin session that lands on any
+    // admin page directly is signed out and bounced back to the login screen.
+
+    document.addEventListener("DOMContentLoaded", async () => {
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+
+        if(!user){
+            window.location.replace("../index.html");
+            return;
+        }
+
+        const admin = await getAdminForCurrentUser();
+
+        if(!admin){
+            await supabaseClient.auth.signOut();
+            window.location.replace("../index.html?denied=1");
+        }
+
+    });
+
+}

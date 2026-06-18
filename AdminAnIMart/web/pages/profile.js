@@ -173,7 +173,7 @@ async function loadAdminProfile() {
 
             .eq("email", user.email)
 
-            .single();
+            .maybeSingle();
 
 
 
