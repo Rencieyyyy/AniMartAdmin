@@ -14,6 +14,7 @@ create table if not exists public.prices (
     discount_percent numeric not null default 0,      -- 0-100 (0 = no discount)
     promo_label      text,                            -- e.g. 'HOLIDAY SALE'
     promo_active     boolean not null default false,  -- show the promo badge?
+    promo_deadline   timestamptz,                     -- when set & passed, discount/promo auto-clears (see add_promo_deadline_column.sql)
     is_popular       boolean not null default false,  -- show the POPULAR ribbon?
     billing_period   text    not null default 'month',
     sort_order       int     not null default 0,

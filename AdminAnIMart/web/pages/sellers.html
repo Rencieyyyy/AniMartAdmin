@@ -700,6 +700,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="logout-modal.js"></script>
 <script>
 // ─── DATA ───
 // Live from the Supabase `users` table (loaded by loadUsers below).
@@ -1128,9 +1129,7 @@ function showToast(msg, type='success') {
     setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateY(-16px)'; toast.style.transition='all 0.3s'; setTimeout(()=>toast.remove(), 300); }, 3000);
 }
 
-function confirmLogout() {
-    if (confirm("Are you sure you want to sign out?")) window.location.href = "../index.html";
-}
+// Logout is handled by the shared styled modal in logout-modal.js.
 </script>
 <!-- Highlight the current page's link in the sidebar -->
 <script>

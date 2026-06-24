@@ -533,6 +533,13 @@
         }
         .badge-popular { background: var(--gold); color: var(--dark); }
         .badge-promo   { background: var(--danger); color: #fff; }
+        .promo-ends    { margin-top: 6px; font-size: 0.6rem; font-weight: 600; color: var(--danger); font-family: 'DM Mono', monospace; letter-spacing: 0.02em; }
+        /* SELLERS-BY-TIER legend under the doughnut */
+        .tier-legend { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+        .tier-legend .tl-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; }
+        .tier-legend .tl-top { display: flex; align-items: center; gap: 5px; font-size: 0.66rem; color: var(--muted); font-weight: 600; }
+        .tier-legend .tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .tier-legend .tl-count { font-size: 1rem; font-weight: 800; font-family: 'DM Mono', monospace; color: var(--text); }
 
         .price-edit-btn {
             height: 26px; padding: 0 10px; border-radius: 7px;
@@ -551,12 +558,14 @@
 
         /* PRICE EDIT FORM */
         .pf { display: flex; flex-direction: column; gap: 6px; font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-        .pf input[type="number"], .pf input[type="text"] {
+        .pf input[type="number"], .pf input[type="text"], .pf input[type="datetime-local"] {
             background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px;
             padding: 9px 12px; color: var(--text); font-family: 'Sora', sans-serif; font-size: 0.85rem; outline: none;
             transition: border-color 0.15s;
         }
         .pf input:focus { border-color: rgba(255,209,102,0.4); }
+        .pf input[type="datetime-local"] { color-scheme: dark; }
+        .pf-hint { font-size: 0.62rem; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; margin-top: 2px; }
         .pf-check { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text); cursor: pointer; }
         .pf-check input { width: 15px; height: 15px; accent-color: var(--gold); cursor: pointer; }
 
@@ -765,10 +774,11 @@
             </div>
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Plan Distribution</div>
-                    <span class="card-badge">ACTIVE</span>
+                    <div class="card-title">Sellers by Tier</div>
+                    <span class="card-badge">ALL SELLERS</span>
                 </div>
                 <div class="chart-wrap"><canvas id="planChart"></canvas></div>
+                <div class="tier-legend" id="tier-legend"></div>
             </div>
         </div>
 
@@ -1007,6 +1017,10 @@
             <label class="pf">Promo Label
                 <input type="text" id="pf-promo" maxlength="24" placeholder="e.g. HOLIDAY SALE">
             </label>
+            <label class="pf">Promo Deadline
+                <input type="datetime-local" id="pf-deadline">
+                <span class="pf-hint">When this passes, the discount is removed and the price restores to the base price automatically. Leave blank for no deadline.</span>
+            </label>
             <label class="pf-check"><input type="checkbox" id="pf-promo-active"> Show promo badge</label>
             <label class="pf-check"><input type="checkbox" id="pf-popular"> Mark as POPULAR</label>
         </div>
@@ -1037,6 +1051,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="logout-modal.js"></script>
+<script src="tier-stats.js"></script>
 <script>
 // ──────────────────────────────────────────────
 // DATA — live from the `subscriptions` table (joined to users)
@@ -1055,6 +1071,7 @@ let pendingData  = [];
 let activeData   = [];
 let expiredData  = [];
 let rejectedData = [];
+let tierCounts   = { free: 0, basic: 0, pro: 0, elite: 0, totalSellers: 0 };
 
 function mapSub(row) {
     const u  = row.users || {};
@@ -1112,13 +1129,29 @@ async function loadSubscriptions() {
     expiredData  = allSubs.filter(s => s.status === 'expired');
     rejectedData = allSubs.filter(s => s.status === 'rejected');
 
+    // Seller tier breakdown (Free / Basic / Pro / Elite) — shared with the dashboard.
+    tierCounts = await computeSellerTierCounts(supabaseClient);
+
     renderPending();
     renderActive();
     renderExpired();
     renderRejected();
     updateCounts();
     updatePlanInsights();
+    renderTierLegend();
     buildCharts();
+}
+
+// Renders the Free/Basic/Pro/Elite count chips under the doughnut.
+function renderTierLegend() {
+    const el = document.getElementById('tier-legend');
+    if (!el) return;
+    el.innerHTML = TIER_META.map(t => `
+        <div class="tl-item">
+            <div class="tl-top"><span class="tl-dot" style="background:${t.color};"></span>${t.label}</div>
+            <div class="tl-count">${tierCounts[t.key] ?? 0}</div>
+        </div>
+    `).join('');
 }
 
 // ──────────────────────────────────────────────
@@ -1511,18 +1544,15 @@ function buildCharts() {
         }
     });
 
-    // ---- Plan distribution doughnut: active subscriptions by plan ----
-    const dist = { basic: 0, pro: 0, elite: 0 };
-    activeData.forEach(s => { if (dist[s.plan] !== undefined) dist[s.plan]++; });
-
+    // ---- Sellers-by-tier doughnut: Free + active subscriptions by plan ----
     if (planChartInstance) planChartInstance.destroy();
     planChartInstance = new Chart(document.getElementById('planChart'), {
         type: 'doughnut',
         data: {
-            labels: ['Basic', 'Pro', 'Elite'],
+            labels: TIER_META.map(t => t.label),
             datasets: [{
-                data: [dist.basic, dist.pro, dist.elite],
-                backgroundColor: ['rgba(56,189,248,0.8)', 'rgba(255,209,102,0.85)', 'rgba(192,132,252,0.8)'],
+                data: TIER_META.map(t => tierCounts[t.key] || 0),
+                backgroundColor: TIER_META.map(t => `rgba(${t.rgb},0.8)`),
                 borderColor: ['#161B22'],
                 borderWidth: 3,
                 hoverOffset: 6
@@ -1558,15 +1588,15 @@ let editingPlan = null;
 
 // Defaults so the cards always render (e.g. before prices_table.sql is run).
 const DEFAULT_PRICES = {
-    basic: { plan:'basic', name:'Basic', price:299,  discount_percent:0, promo_label:null, promo_active:false, is_popular:false, billing_period:'month' },
-    pro:   { plan:'pro',   name:'Pro',   price:699,  discount_percent:0, promo_label:null, promo_active:false, is_popular:true,  billing_period:'month' },
-    elite: { plan:'elite', name:'Elite', price:1299, discount_percent:0, promo_label:null, promo_active:false, is_popular:false, billing_period:'month' }
+    basic: { plan:'basic', name:'Basic', price:299,  discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'month' },
+    pro:   { plan:'pro',   name:'Pro',   price:699,  discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:true,  billing_period:'month' },
+    elite: { plan:'elite', name:'Elite', price:1299, discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'month' }
 };
 
 async function loadPrices() {
     const { data, error } = await supabaseClient
         .from('prices')
-        .select('plan, name, price, discount_percent, promo_label, promo_active, is_popular, billing_period');
+        .select('plan, name, price, discount_percent, promo_label, promo_active, promo_deadline, is_popular, billing_period');
 
     // Start from defaults, then overlay whatever the DB returns.
     pricesData = JSON.parse(JSON.stringify(DEFAULT_PRICES));
@@ -1575,7 +1605,32 @@ async function loadPrices() {
     } else {
         (data || []).forEach(r => { pricesData[r.plan] = r; });
     }
+
+    // Safety net: restore any promo whose deadline has already passed. A pg_cron
+    // job (add_promo_deadline_column.sql) does the same server-side, but this
+    // catches anything due while the panel is open / before the cron next fires.
+    await restoreExpiredPromos();
+
     renderPrices();
+}
+
+// Clears the discount/promo on any plan whose promo_deadline is in the past,
+// restoring it to its base price. Persists the change so the mobile app sees it.
+async function restoreExpiredPromos() {
+    const now = Date.now();
+    const expired = Object.values(pricesData).filter(p =>
+        p.promo_deadline &&
+        new Date(p.promo_deadline).getTime() <= now &&
+        (Number(p.discount_percent) > 0 || p.promo_active || p.promo_label)
+    );
+    if (expired.length === 0) return;
+
+    for (const p of expired) {
+        const restored = { discount_percent: 0, promo_label: null, promo_active: false, promo_deadline: null, updated_at: new Date().toISOString() };
+        const { error } = await supabaseClient.from('prices').update(restored).eq('plan', p.plan);
+        if (error) { console.error('RESTORE PROMO ERROR:', error); continue; }
+        Object.assign(pricesData[p.plan], restored);
+    }
 }
 
 function renderPrices() {
@@ -1592,10 +1647,20 @@ function renderPrices() {
         const final = hasDisc ? Math.round(base * (1 - disc / 100)) : base;
         const period = p.billing_period || 'month';
 
+        // Show when an active promo will auto-restore to the base price.
+        let deadlineNote = '';
+        if (p.promo_deadline && (hasDisc || p.promo_active)) {
+            const ends = new Date(p.promo_deadline);
+            if (!isNaN(ends)) {
+                deadlineNote = `<div class="promo-ends">Promo ends ${ends.toLocaleString('en-PH', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' })}</div>`;
+            }
+        }
+
         priceEl.innerHTML = `
             ${hasDisc ? `<div class="amount-old">₱${base.toLocaleString()}</div>` : ''}
             <div class="amount" style="color:${color};">₱${final.toLocaleString()}</div>
             <span class="period">/ ${period}</span>
+            ${deadlineNote}
             <button class="price-edit-btn" title="Edit pricing" onclick="openPriceEditor('${plan}')" style="margin-top:8px;"><i data-lucide="pencil"></i> Edit price</button>
         `;
 
@@ -1614,6 +1679,22 @@ function renderPrices() {
     lucide.createIcons();   // render the newly-injected pencil icons
 }
 
+// <input type="datetime-local"> works in local time with no timezone; these
+// bridge it to the timestamptz (ISO/UTC) stored in the prices table.
+function isoToLocalInput(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d)) return '';
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);   // YYYY-MM-DDTHH:MM
+}
+
+function localInputToIso(val) {
+    if (!val) return null;
+    const d = new Date(val);   // parsed as local time
+    return isNaN(d) ? null : d.toISOString();
+}
+
 function openPriceEditor(plan) {
     const p = pricesData[plan];
     if (!p) { showToast('Pricing not loaded yet. Run prices_table.sql.', 'error'); return; }
@@ -1623,6 +1704,7 @@ function openPriceEditor(plan) {
     document.getElementById('pf-price').value        = p.price ?? 0;
     document.getElementById('pf-discount').value     = p.discount_percent ?? 0;
     document.getElementById('pf-promo').value        = p.promo_label ?? '';
+    document.getElementById('pf-deadline').value     = isoToLocalInput(p.promo_deadline);
     document.getElementById('pf-promo-active').checked = !!p.promo_active;
     document.getElementById('pf-popular').checked      = !!p.is_popular;
     document.getElementById('price-save-btn').onclick  = savePrice;
@@ -1639,10 +1721,18 @@ async function savePrice() {
     const promo_label  = document.getElementById('pf-promo').value.trim() || null;
     const promo_active = document.getElementById('pf-promo-active').checked;
     const is_popular   = document.getElementById('pf-popular').checked;
+    const promo_deadline = localInputToIso(document.getElementById('pf-deadline').value);
+
+    // A deadline already in the past would just be auto-restored on the next
+    // load — warn instead of silently wiping the discount the admin just set.
+    if (promo_deadline && new Date(promo_deadline).getTime() <= Date.now()) {
+        showToast('Promo deadline must be in the future.', 'error');
+        return;
+    }
 
     const { data, error } = await supabaseClient
         .from('prices')
-        .update({ price, discount_percent: discount, promo_label, promo_active, is_popular, updated_at: new Date().toISOString() })
+        .update({ price, discount_percent: discount, promo_label, promo_active, promo_deadline, is_popular, updated_at: new Date().toISOString() })
         .eq('plan', editingPlan)
         .select();
 
@@ -1678,11 +1768,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-function confirmLogout() {
-    if (confirm("Are you sure you want to sign out?")) {
-        window.location.href = "../index.html";
-    }
-}
+// Logout is handled by the shared styled modal in logout-modal.js.
 </script>
 <!-- Highlight the current page's link in the sidebar -->
 <script>

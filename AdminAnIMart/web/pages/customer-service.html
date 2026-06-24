@@ -1060,12 +1060,9 @@ function markUrgent() {
 }
 
 // ─── LOGOUT ─────────────────────────────────────────────
-function confirmLogout() {
-    if (confirm("Are you sure you want to sign out?")) {
-        window.location.href = "../index.html";
-    }
-}
+// Handled by the shared styled modal in logout-modal.js.
 </script>
+<script src="logout-modal.js"></script>
 <!-- Highlight the current page's link in the sidebar -->
 <script>
 (function () {
