@@ -238,11 +238,12 @@
 
         .conv-tab {
             flex: 1;
-            padding: 10px 8px;
-            font-size: 0.73rem;
+            padding: 10px 6px;
+            font-size: 0.72rem;
             font-weight: 600;
             color: var(--muted);
             text-align: center;
+            white-space: nowrap;        /* keep "On-going" on one line */
             cursor: pointer;
             border-bottom: 2px solid transparent;
             transition: all 0.18s;
@@ -278,6 +279,18 @@
             font-size: 0.7rem; font-weight: 700;
             color: var(--mint);
             flex-shrink: 0;
+            position: relative;     /* anchors the photo overlay */
+            overflow: hidden;
+        }
+
+        /* Profile photo that covers the initials; removes itself on load error,
+           revealing the initials underneath. Used in the list, header and chat. */
+        .av-img {
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
         }
 
         .conv-meta { flex: 1; min-width: 0; }
@@ -412,18 +425,37 @@
             font-size: 0.6rem; font-weight: 700;
             flex-shrink: 0;
             margin-bottom: 2px;
+            position: relative;
+            overflow: hidden;
         }
 
         .msg-avatar.user-av { background: var(--surface-2); border: 1px solid var(--border); color: var(--mint); }
         .msg-avatar.admin-av { background: var(--mint); color: var(--dark); }
 
+        /* Wrapper around bubble + timestamp: caps how wide a message can get,
+           and aligns the column to the correct side. min-width:0 lets long words
+           wrap instead of forcing the column wider. */
+        .msg-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            max-width: 65%;
+            min-width: 0;
+        }
+
+        .msg-row.admin .msg-content { align-items: flex-end; }
+
         .msg-bubble {
-            max-width: 60%;
+            width: fit-content;          /* hug the text … */
+            max-width: 100%;             /* … until it hits the column cap, then wrap */
             padding: 10px 14px;
             border-radius: 14px;
             font-size: 0.82rem;
             line-height: 1.55;
             position: relative;
+            white-space: pre-wrap;       /* keep the user's line breaks */
+            word-break: break-word;
+            overflow-wrap: anywhere;     /* break very long unbroken strings/URLs */
         }
 
         .msg-row:not(.admin) .msg-bubble {
@@ -642,7 +674,7 @@
             <div class="topbar-stats">
                 <div class="topbar-stat">
                     <div class="topbar-stat-val" id="stat-open">12</div>
-                    <div class="topbar-stat-label">Open</div>
+                    <div class="topbar-stat-label">On-going</div>
                 </div>
                 <div class="topbar-stat">
                     <div class="topbar-stat-val" id="stat-pending">5</div>
@@ -668,9 +700,9 @@
 
                 <div class="conv-tabs">
                     <div class="conv-tab active" onclick="switchTab(this,'all')">All</div>
-                    <div class="conv-tab" onclick="switchTab(this,'open')">Open</div>
+                    <div class="conv-tab" onclick="switchTab(this,'open')">On-going</div>
                     <div class="conv-tab" onclick="switchTab(this,'pending')">Pending</div>
-                    <div class="conv-tab" onclick="switchTab(this,'closed')">Closed</div>
+                    <div class="conv-tab" onclick="switchTab(this,'closed')">Resolved</div>
                 </div>
 
                 <div class="conv-items" id="convItems"></div>
@@ -692,8 +724,7 @@
                     </div>
                     <div class="chat-header-actions">
                         <button class="icon-btn" title="Mark resolved" onclick="markResolved()"><i data-lucide="check-circle"></i></button>
-                        <button class="icon-btn" title="Flag urgent" onclick="markUrgent()"><i data-lucide="flag"></i></button>
-                        <button class="icon-btn" title="More options"><i data-lucide="more-horizontal"></i></button>
+                        <button class="icon-btn" title="Refresh" onclick="loadConversations()"><i data-lucide="refresh-cw"></i></button>
                     </div>
                 </div>
 
@@ -720,111 +751,26 @@
     </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
 <script>
-// ─── DATA ───────────────────────────────────────────────
-const conversations = [
-    {
-        id: 1,
-        name: "Cardo Dalisay",
-        role: "Seller",
-        location: "Batangas",
-        status: "open",
-        unread: 2,
-        lastMsg: "Hindi pa natatanggap ang payment ko.",
-        lastTime: "9:42 AM",
-        online: true,
-        messages: [
-            { from: "user", text: "Good morning po! Gusto ko lang magtanong tungkol sa aking listing.", time: "9:30 AM" },
-            { from: "admin", text: "Magandang umaga! Paano po kita matutulungan?", time: "9:31 AM" },
-            { from: "user", text: "May isang buyer na nagbayad pero hindi pa natatanggap ang payment sa aking account.", time: "9:40 AM" },
-            { from: "user", text: "Hindi pa natatanggap ang payment ko.", time: "9:42 AM" }
-        ]
-    },
-    {
-        id: 2,
-        name: "Maria Lourdes",
-        role: "Buyer",
-        location: "Laguna",
-        status: "pending",
-        unread: 1,
-        lastMsg: "Kailan po darating ang order ko?",
-        lastTime: "8:55 AM",
-        online: false,
-        messages: [
-            { from: "user", text: "Hi! May tanong lang po ako sa aking order.", time: "8:50 AM" },
-            { from: "admin", text: "Hello Maria! Sige po, ano ang inyong katanungan?", time: "8:52 AM" },
-            { from: "user", text: "Kailan po darating ang order ko?", time: "8:55 AM" }
-        ]
-    },
-    {
-        id: 3,
-        name: "Rico Cruz",
-        role: "Seller",
-        location: "Quezon",
-        status: "open",
-        unread: 0,
-        lastMsg: "Salamat po sa tulong!",
-        lastTime: "Yesterday",
-        online: false,
-        messages: [
-            { from: "user", text: "Paano po mag-upload ng bagong listing?", time: "Yesterday 2:10 PM" },
-            { from: "admin", text: "Pumunta po kayo sa inyong dashboard at i-click ang 'Add Listing' button.", time: "Yesterday 2:15 PM" },
-            { from: "user", text: "Nakita ko na po! Salamat po sa tulong!", time: "Yesterday 2:20 PM" },
-            { from: "admin", text: "Wala pong anuman! Kung may katanungan pa kayo, handa kaming tumulong.", time: "Yesterday 2:21 PM" },
-            { from: "user", text: "Salamat po sa tulong!", time: "Yesterday 2:22 PM" }
-        ]
-    },
-    {
-        id: 4,
-        name: "Anna Santos",
-        role: "Buyer",
-        location: "Cavite",
-        status: "urgent",
-        unread: 3,
-        lastMsg: "Scam yung seller! Wala na syang reply!",
-        lastTime: "10:01 AM",
-        online: true,
-        messages: [
-            { from: "user", text: "Emergency po! May problema ako sa isang seller.", time: "9:55 AM" },
-            { from: "user", text: "Nagbayad na ako pero wala pa rin sa akin ang livestock.", time: "9:57 AM" },
-            { from: "admin", text: "Naiintindihan ko ang inyong sitwasyon. Maaari po ba kayong ibigay ang order number?", time: "9:59 AM" },
-            { from: "user", text: "Scam yung seller! Wala na syang reply!", time: "10:01 AM" }
-        ]
-    },
-    {
-        id: 5,
-        name: "Ben Magtibay",
-        role: "Seller",
-        location: "Rizal",
-        status: "closed",
-        unread: 0,
-        lastMsg: "Naresolba na po ang issue.",
-        lastTime: "Mon",
-        online: false,
-        messages: [
-            { from: "user", text: "Bakit na-block ang aking account?", time: "Mon 11:00 AM" },
-            { from: "admin", text: "Nakatanggap kami ng ilang reklamo kaugnay ng inyong account. Kailangan naming i-verify ang ilang impormasyon.", time: "Mon 11:05 AM" },
-            { from: "user", text: "Okay po, ano pong kailangan ninyo?", time: "Mon 11:08 AM" },
-            { from: "admin", text: "Maari po ba kayong mag-send ng valid ID at business permit para ma-verify?", time: "Mon 11:10 AM" },
-            { from: "user", text: "Naresolba na po ang issue.", time: "Mon 2:30 PM" }
-        ]
-    },
-    {
-        id: 6,
-        name: "Liza Manalo",
-        role: "Seller",
-        location: "Cavite",
-        status: "pending",
-        unread: 1,
-        lastMsg: "Puwede ba mag-upgrade sa Premium?",
-        lastTime: "10:15 AM",
-        online: true,
-        messages: [
-            { from: "user", text: "Magandang araw! Tanong lang po tungkol sa Premium plan.", time: "10:10 AM" },
-            { from: "user", text: "Puwede ba mag-upgrade sa Premium?", time: "10:15 AM" }
-        ]
-    }
-];
+// ─── DATA — live from the shared `support_messages` table ─
+// Each conversation is one user's thread: every row with the same user_id.
+// A row is an admin reply when admin_id is set (or sender = 'admin').
+// See web/sql/support_messages_rls.sql.
+let conversations = [];     // [{ id:<user uuid>, name, role, location, status, unread, lastMsg, lastTime, lastTs, messages:[{from,text,ts}] }]
+let activeId   = null;       // user uuid of the open thread
+let currentTab = 'all';
+let adminId    = null;       // the signed-in admin's id (stamped on replies)
+let adminPfp   = null;       // the signed-in admin's profile picture (for reply bubbles)
+let realtimeChannel = null;  // live support_messages subscription
+let reloadTimer = null;      // debounce for realtime-triggered reloads
+
+// A support_messages row is from the admin side when an admin owns it.
+function rowIsAdmin(r) {
+    if (r.admin_id) return true;
+    return String(r.sender || '').toLowerCase().trim() === 'admin';
+}
 
 const quickRepliesData = [
     "Salamat sa inyong mensahe!",
@@ -834,14 +780,22 @@ const quickRepliesData = [
     "Naayos na po ba ang inyong issue?"
 ];
 
-let activeId = null;
-let currentTab = 'all';
-
 // ─── INIT ────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     lucide.createIcons();
-    renderConversations();
     renderQuickReplies();
+
+    // Remember which admin we are, so replies can stamp admin_id + show our photo.
+    const admin = await getAdminForCurrentUser();
+    adminId = admin ? admin.id : null;
+    if (adminId) {
+        const { data: me } = await supabaseClient
+            .from('admins').select('pfp').eq('id', adminId).maybeSingle();
+        adminPfp = me ? me.pfp : null;
+    }
+
+    loadConversations();
+    subscribeRealtime();
 
     // Auto-resize textarea
     const ta = document.getElementById('chatInput');
@@ -851,14 +805,172 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// ─── FETCH + GROUP INTO THREADS ──────────────────────────
+async function loadConversations() {
+    const { data: msgs, error } = await supabaseClient
+        .from('support_messages')
+        .select('id, user_id, sender, admin_id, body, read, status, created_at')
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error(error);
+        document.getElementById('convItems').innerHTML =
+            `<div style="padding:24px;text-align:center;color:var(--danger);font-size:0.78rem;">Couldn't load messages.<br>${escapeHtml(error.message)}</div>`;
+        return;
+    }
+
+    const rows = (msgs || []).filter(m => m.user_id);   // every thread is keyed by user_id
+    const userIds = [...new Set(rows.map(m => m.user_id))];
+
+    const usersById = {};
+    if (userIds.length) {
+        const { data: users } = await supabaseClient
+            .from('users').select('id, name, is_seller, address, avatar_url').in('id', userIds);
+        (users || []).forEach(u => { usersById[u.id] = u; });
+    }
+
+    // Admin photos for the reply bubbles. RLS only returns the current admin's
+    // own row, so other admins fall back to initials (still stamped with adminPfp).
+    const adminsById = {};
+    const adminIds = [...new Set(rows.map(m => m.admin_id).filter(Boolean))];
+    if (adminIds.length) {
+        const { data: admins } = await supabaseClient
+            .from('admins').select('id, pfp').in('id', adminIds);
+        (admins || []).forEach(a => { adminsById[a.id] = a; });
+    }
+
+    const threads = {};
+    rows.forEach(m => { (threads[m.user_id] = threads[m.user_id] || []).push(m); });
+
+    conversations = Object.keys(threads).map(uid => {
+        const list   = threads[uid];
+        const u      = usersById[uid] || {};
+        const last   = list[list.length - 1];
+        // Unread badge = the user's own messages the admin hasn't read yet.
+        const unread = list.filter(r => !rowIsAdmin(r) && !r.read).length;
+        // Stored state (DB `status`): 'closed' = resolved (set by the ✓ button),
+        // otherwise 'open'. A new user message rows in as 'open' → re-opens.
+        const isClosed = list.every(r => (r.status || 'open') === 'closed');
+        const dbStatus = isClosed ? 'closed' : 'open';
+        // Display status (drives tabs/pill/stats): Resolved, else Pending until
+        // the admin has replied at least once, else Open.
+        const hasAdminReply = list.some(rowIsAdmin);
+        const status = isClosed ? 'closed' : (hasAdminReply ? 'open' : 'pending');
+        return {
+            id:       uid,
+            name:     u.name || '(unknown user)',
+            role:     u.is_seller ? 'Seller' : 'Buyer',
+            location: u.address || '—',
+            status,
+            dbStatus,
+            unread,
+            avatar:   u.avatar_url || null,   // the user's photo (list + header)
+            lastMsg:  last.body,
+            lastTs:   last.created_at,
+            lastTime: listTime(last.created_at),
+            messages: list.map(r => ({
+                from:   rowIsAdmin(r) ? 'admin' : 'user',
+                text:   r.body,
+                ts:     r.created_at,
+                avatar: rowIsAdmin(r)
+                            ? ((adminsById[r.admin_id] && adminsById[r.admin_id].pfp) || adminPfp || null)
+                            : (u.avatar_url || null)
+            }))
+        };
+    }).sort((a, b) => new Date(b.lastTs) - new Date(a.lastTs));
+
+    updateStats();
+    renderConversations();
+
+    // Keep the open thread open (and refreshed) across reloads.
+    if (activeId && conversations.some(c => c.id === activeId)) openConversation(activeId);
+    else if (activeId) resetChatPanel();
+}
+
+// ─── REALTIME ────────────────────────────────────────────
+// Live-update the inbox whenever support_messages changes (a new user message
+// from the mobile app, a read flag, a resolve). RLS applies to the stream, so we
+// only receive rows this admin may read. Debounced so a burst — or our own reply
+// echoing back — collapses into a single reload.
+function subscribeRealtime() {
+    if (realtimeChannel) return;
+    realtimeChannel = supabaseClient
+        .channel('support_messages_admin')
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'support_messages' },
+            scheduleReload)
+        .subscribe();
+}
+
+function scheduleReload() {
+    clearTimeout(reloadTimer);
+    reloadTimer = setTimeout(loadConversations, 250);
+}
+
+// Mark this user's unread messages as read (the unread badge), without touching
+// `status` so the thread stays Open. Fire-and-forget; logs but doesn't block UI.
+async function markThreadRead(userId) {
+    const { error } = await supabaseClient
+        .from('support_messages')
+        .update({ read: true })
+        .eq('user_id', userId)
+        .is('admin_id', null)
+        .eq('read', false);
+    if (error) console.error('markThreadRead:', error);
+}
+
+function updateStats() {
+    const by = s => conversations.filter(c => c.status === s).length;
+    document.getElementById('stat-open').textContent     = by('open');
+    document.getElementById('stat-pending').textContent  = by('pending');
+    document.getElementById('stat-resolved').textContent = by('closed');
+}
+
+// ─── TIME / HTML HELPERS ─────────────────────────────────
+function formatClock(ts) {
+    return new Date(ts).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+}
+function dayLabel(ts) {
+    const d = new Date(ts), now = new Date();
+    const same = (a, b) => a.toDateString() === b.toDateString();
+    const yest = new Date(now); yest.setDate(now.getDate() - 1);
+    if (same(d, now))  return 'Today';
+    if (same(d, yest)) return 'Yesterday';
+    return d.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+// Compact stamp for the conversation list: clock if today, otherwise the day.
+function listTime(ts) {
+    const lbl = dayLabel(ts);
+    return lbl === 'Today' ? formatClock(ts) : lbl;
+}
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+// Avatar contents: the initials always render underneath; if a photo URL is given
+// it overlays them, and removes itself on a load error so the initials show.
+function avatarMarkup(url, initials) {
+    const text = escapeHtml(initials);
+    if (!url) return text;
+    return `${text}<img class="av-img" src="${escapeHtml(url)}" alt="" onerror="this.remove()">`;
+}
+
+function resetChatPanel() {
+    activeId = null;
+    document.getElementById('emptyChat').style.display    = 'flex';
+    document.getElementById('chatHeader').style.display   = 'none';
+    document.getElementById('messagesArea').style.display = 'none';
+    document.getElementById('chatInputWrap').style.display = 'none';
+}
+
 // ─── RENDER CONVERSATIONS ────────────────────────────────
 function renderConversations() {
     const container = document.getElementById('convItems');
     const search = document.getElementById('searchInput').value.toLowerCase();
 
     const filtered = conversations.filter(c => {
-        const matchTab = currentTab === 'all' || c.status === currentTab || (currentTab === 'open' && c.status === 'urgent');
-        const matchSearch = c.name.toLowerCase().includes(search) || c.lastMsg.toLowerCase().includes(search);
+        const matchTab = currentTab === 'all' || c.status === currentTab;
+        const matchSearch = c.name.toLowerCase().includes(search) || (c.lastMsg || '').toLowerCase().includes(search);
         return matchTab && matchSearch;
     });
 
@@ -871,20 +983,20 @@ function renderConversations() {
 
     filtered.forEach(c => {
         const initials = c.name.split(' ').map(n => n[0]).join('').slice(0, 2);
-        const dotColor = { open: '#7EFFC5', pending: '#FBB824', closed: 'var(--muted)', urgent: '#FF6B6B' }[c.status];
+        const dotColor = { open: '#7EFFC5', pending: '#FBB824', closed: 'var(--muted)' }[c.status] || 'var(--muted)';
 
         const div = document.createElement('div');
         div.className = 'conv-item' + (activeId === c.id ? ' active' : '');
         div.dataset.id = c.id;
         div.onclick = () => openConversation(c.id);
         div.innerHTML = `
-            <div class="conv-avatar">${initials}</div>
+            <div class="conv-avatar">${avatarMarkup(c.avatar, initials)}</div>
             <div class="conv-meta">
                 <div class="conv-name">
-                    <span>${c.name}</span>
-                    <span class="conv-time">${c.lastTime}</span>
+                    <span>${escapeHtml(c.name)}</span>
+                    <span class="conv-time">${escapeHtml(c.lastTime)}</span>
                 </div>
-                <div class="conv-preview">${c.lastMsg}</div>
+                <div class="conv-preview">${escapeHtml(c.lastMsg || '')}</div>
             </div>
             ${c.unread > 0 ? `<div class="conv-unread">${c.unread}</div>` : `<div class="priority-dot" style="background:${dotColor};"></div>`}
         `;
@@ -895,31 +1007,36 @@ function renderConversations() {
 }
 
 // ─── OPEN CONVERSATION ───────────────────────────────────
-function openConversation(id) {
+async function openConversation(id) {
     activeId = id;
     const conv = conversations.find(c => c.id === id);
     if (!conv) return;
 
-    // Clear unread
-    conv.unread = 0;
+    // Reading the thread clears its unread badge: mark the user's unread
+    // messages as read in the DB (status is untouched, so it stays Open). The
+    // badge only comes back when the user sends a new (unread) message.
+    if (conv.unread > 0) {
+        conv.unread = 0;
+        renderConversations();   // swap the "2" badge for the status dot
+        markThreadRead(id);
+    }
 
     // Update active state
     document.querySelectorAll('.conv-item').forEach(el => {
-        el.classList.toggle('active', parseInt(el.dataset.id) === id);
+        el.classList.toggle('active', el.dataset.id === id);
     });
 
     // Update header
     const initials = conv.name.split(' ').map(n => n[0]).join('').slice(0, 2);
-    document.getElementById('headerAvatar').textContent = initials;
+    document.getElementById('headerAvatar').innerHTML = avatarMarkup(conv.avatar, initials);
     document.getElementById('headerName').textContent = conv.name;
-    document.getElementById('onlineDot').style.display = conv.online ? 'block' : 'none';
+    document.getElementById('onlineDot').style.display = 'none';   // no presence signal in the data
     document.getElementById('headerSub').textContent = `${conv.role} · ${conv.location}`;
 
     const tagMap = {
-        open: '<span class="tag tag-open">Open</span>',
+        open:    '<span class="tag tag-open">On-going</span>',
         pending: '<span class="tag tag-pending">Pending</span>',
-        closed: '<span class="tag tag-closed">Closed</span>',
-        urgent: '<span class="tag tag-urgent">Urgent</span>'
+        closed:  '<span class="tag tag-closed">Resolved</span>'
     };
     document.getElementById('headerTag').innerHTML = tagMap[conv.status] || '';
 
@@ -931,9 +1048,6 @@ function openConversation(id) {
 
     // Render messages
     renderMessages(conv);
-
-    // Re-render list to clear badge
-    renderConversations();
     lucide.createIcons();
 }
 
@@ -943,18 +1057,16 @@ function renderMessages(conv) {
     area.innerHTML = '';
 
     let lastDate = '';
-    const today = 'Today';
 
     conv.messages.forEach((msg, i) => {
-        const dateLabel = msg.time.includes('Yesterday') ? 'Yesterday' :
-                          msg.time.includes('Mon') ? 'Monday' : today;
+        const label = dayLabel(msg.ts);
 
-        if (dateLabel !== lastDate) {
+        if (label !== lastDate) {
             const divider = document.createElement('div');
             divider.className = 'date-divider';
-            divider.textContent = dateLabel;
+            divider.textContent = label;
             area.appendChild(divider);
-            lastDate = dateLabel;
+            lastDate = label;
         }
 
         const isAdmin = msg.from === 'admin';
@@ -966,10 +1078,10 @@ function renderMessages(conv) {
         row.style.animationDelay = (i * 0.04) + 's';
 
         row.innerHTML = `
-            <div class="msg-avatar ${isAdmin ? 'admin-av' : 'user-av'}">${initials}</div>
-            <div>
-                <div class="msg-bubble">${msg.text}</div>
-                <div class="msg-time">${msg.time.replace('Yesterday ', '').replace('Mon ', '')}</div>
+            <div class="msg-avatar ${isAdmin ? 'admin-av' : 'user-av'}">${avatarMarkup(msg.avatar, initials)}</div>
+            <div class="msg-content">
+                <div class="msg-bubble">${escapeHtml(msg.text)}</div>
+                <div class="msg-time">${formatClock(msg.ts)}</div>
             </div>
         `;
         area.appendChild(row);
@@ -995,27 +1107,34 @@ function renderQuickReplies() {
 }
 
 // ─── SEND MESSAGE ────────────────────────────────────────
-function sendMessage() {
+// An admin reply is a support_messages row for this user_id with sender 'admin'
+// and admin_id stamped to the signed-in admin.
+async function sendMessage() {
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
-    if (!text || activeId === null) return;
+    if (!text || !activeId) return;
 
+    const sendBtn = document.querySelector('.send-btn');
+    input.disabled = true; if (sendBtn) sendBtn.disabled = true;
+
+    // Persist the thread's real open/closed state on the reply (never the derived
+    // 'pending'): answering a pending/open thread leaves it open, a resolved one
+    // stays resolved until the user writes back.
     const conv = conversations.find(c => c.id === activeId);
-    if (!conv) return;
+    const status = conv ? conv.dbStatus : 'open';
 
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+    const { error } = await supabaseClient
+        .from('support_messages')
+        .insert({ user_id: activeId, sender: 'admin', admin_id: adminId, body: text, read: false, status });
 
-    conv.messages.push({ from: 'admin', text, time: timeStr });
-    conv.lastMsg = text;
-    conv.lastTime = timeStr;
-    if (conv.status === 'pending') conv.status = 'open';
+    input.disabled = false; if (sendBtn) sendBtn.disabled = false;
+
+    if (error) { console.error(error); alert('Could not send: ' + error.message); return; }
 
     input.value = '';
     input.style.height = 'auto';
-
-    renderMessages(conv);
-    renderConversations();
+    await loadConversations();   // re-fetch so the new bubble + list order reflect the DB
+    input.focus();
 }
 
 function handleKey(e) {
@@ -1030,6 +1149,7 @@ function switchTab(el, tab) {
     currentTab = tab;
     document.querySelectorAll('.conv-tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
+    resetChatPanel();      // close the open thread, back to the empty state
     renderConversations();
 }
 
@@ -1039,24 +1159,19 @@ function filterConversations() {
 }
 
 // ─── ACTIONS ─────────────────────────────────────────────
-function markResolved() {
-    if (activeId === null) return;
-    const conv = conversations.find(c => c.id === activeId);
-    if (conv) {
-        conv.status = 'closed';
-        document.getElementById('headerTag').innerHTML = '<span class="tag tag-closed">Closed</span>';
-        renderConversations();
-    }
-}
+// Resolving a thread marks the user's outstanding messages as read; with no
+// status column, "all read" is what makes a conversation count as Resolved.
+// A new incoming user message (read = false) reopens it automatically.
+async function markResolved() {
+    if (!activeId) return;
+    // Resolve the whole thread: close every row and clear any unread.
+    const { error } = await supabaseClient
+        .from('support_messages')
+        .update({ status: 'closed', read: true })
+        .eq('user_id', activeId);
 
-function markUrgent() {
-    if (activeId === null) return;
-    const conv = conversations.find(c => c.id === activeId);
-    if (conv && conv.status !== 'closed') {
-        conv.status = 'urgent';
-        document.getElementById('headerTag').innerHTML = '<span class="tag tag-urgent">Urgent</span>';
-        renderConversations();
-    }
+    if (error) { console.error(error); alert('Could not update: ' + error.message); return; }
+    await loadConversations();
 }
 
 // ─── LOGOUT ─────────────────────────────────────────────

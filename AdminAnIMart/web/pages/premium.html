@@ -566,6 +566,11 @@
         .pf input:focus { border-color: rgba(255,209,102,0.4); }
         .pf input[type="datetime-local"] { color-scheme: dark; }
         .pf-hint { font-size: 0.62rem; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; margin-top: 2px; }
+        .pf-preview { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: -6px; padding: 12px 14px; background: var(--gold-glow); border: 1px solid rgba(255, 209, 102, 0.25); border-radius: 10px; }
+        .pf-preview-label { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+        .pf-preview-value { display: flex; align-items: baseline; gap: 8px; }
+        .pf-preview-value #pf-preview-final { font-size: 1.05rem; font-weight: 800; color: var(--gold); }
+        .pf-preview-old { font-size: 0.78rem; color: var(--muted); text-decoration: line-through; font-weight: 600; }
         .pf-check { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text); cursor: pointer; }
         .pf-check input { width: 15px; height: 15px; accent-color: var(--gold); cursor: pointer; }
 
@@ -1014,6 +1019,13 @@
             <label class="pf">Discount (%)
                 <input type="number" id="pf-discount" min="0" max="100" step="1" placeholder="0">
             </label>
+            <div class="pf-preview" id="pf-preview">
+                <span class="pf-preview-label">Display Price</span>
+                <span class="pf-preview-value">
+                    <span id="pf-preview-final">₱0</span>
+                    <span class="pf-preview-old" id="pf-preview-old"></span>
+                </span>
+            </div>
             <label class="pf">Promo Label
                 <input type="text" id="pf-promo" maxlength="24" placeholder="e.g. HOLIDAY SALE">
             </label>
@@ -1709,7 +1721,20 @@ function openPriceEditor(plan) {
     document.getElementById('pf-popular').checked      = !!p.is_popular;
     document.getElementById('price-save-btn').onclick  = savePrice;
 
+    updatePricePreview();
     document.getElementById('priceModal').classList.add('open');
+}
+
+function updatePricePreview() {
+    const price = Math.max(0, parseFloat(document.getElementById('pf-price').value) || 0);
+    let discount = parseFloat(document.getElementById('pf-discount').value) || 0;
+    discount = Math.max(0, Math.min(100, discount));
+
+    const final = price * (1 - discount / 100);
+    const fmt = n => '₱' + (Number.isInteger(n) ? n : n.toFixed(2));
+
+    document.getElementById('pf-preview-final').textContent = fmt(final);
+    document.getElementById('pf-preview-old').textContent   = discount > 0 ? fmt(price) : '';
 }
 
 async function savePrice() {
@@ -1759,6 +1784,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load editable plan pricing (prices table).
     loadPrices();
+
+    // live-update the display price preview as price/discount change
+    document.getElementById('pf-price').addEventListener('input', updatePricePreview);
+    document.getElementById('pf-discount').addEventListener('input', updatePricePreview);
 
     // close modals on overlay click
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
