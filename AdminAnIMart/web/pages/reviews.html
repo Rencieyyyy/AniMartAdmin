@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviews | AniMart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --mint: #7EFFC5;
+            --mint-dim: #5CE8A8;
+            --mint-glow: rgba(126,255,197,0.15);
+            --dark: #0D1117;
+            --surface: #161B22;
+            --surface-2: #1C2333;
+            --surface-3: #21293a;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.13);
+            --text: #E6EDF3;
+            --muted: #7D8590;
+            --danger: #FF6B6B;
+            --warn: #FBB824;
+            --gold: #FFD166;
+            --sidebar-w: 260px;
+            --radius: 16px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: white;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -25%; left: -5%;
+            width: 50%; height: 50%;
+            background: radial-gradient(ellipse, rgba(126,255,197,0.045) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .wrapper { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; height: 100vh;
+            z-index: 100; padding: 0 12px 20px;
+        }
+
+        .sidebar-brand {
+            padding: 28px 12px 24px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border); margin-bottom: 16px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px; background: var(--mint);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
+        }
+
+        .brand-icon svg { width: 18px; height: 18px; color: var(--dark); }
+        .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+        .brand-name span { color: var(--mint); }
+
+        .nav { display: flex; flex-direction: column; flex: 1; gap: 3px; }
+
+        .nav-label {
+            font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--muted); padding: 14px 12px 6px;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+            border-radius: 10px; text-decoration: none; color: var(--muted);
+            font-size: 0.875rem; font-weight: 500; transition: all 0.18s;
+            border: none; background: transparent; cursor: pointer; width: 100%; text-align: left;
+        }
+
+        .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .nav-link:hover { color: var(--dark); background: var(--mint); }
+        .nav-link.active { background: var(--mint); color: var(--dark); font-weight: 700; }
+        .nav-link.logout { color: var(--danger); }
+        .nav-link.logout:hover { background: rgba(255,107,107,0.1); color: var(--danger); }
+
+        .nav-bottom {
+            border-top: 1px solid var(--border); padding-top: 12px;
+            margin-top: auto; display: flex; flex-direction: column; gap: 3px;
+        }
+
+        /* ── MAIN ── */
+        .main {
+            margin-left: var(--sidebar-w); flex: 1;
+            padding: 36px 40px;
+            max-width: calc(100vw - var(--sidebar-w));
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            display: flex; align-items: flex-start;
+            justify-content: space-between; margin-bottom: 32px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem; font-weight: 800;
+            letter-spacing: -0.04em; color: var(--mint);
+        }
+
+        .page-header p { font-size: 0.875rem; color: var(--muted); margin-top: 3px; }
+
+        .header-right { display: flex; align-items: center; gap: 10px; }
+
+        .date-badge {
+            font-family: 'DM Mono', monospace; font-size: 0.75rem;
+            color: var(--muted); background: var(--surface-2);
+            border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+        }
+
+        .icon-btn {
+            width: 36px; height: 36px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 9px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--muted); transition: all 0.18s;
+        }
+        .icon-btn:hover { border-color: rgba(126,255,197,0.3); color: var(--mint); }
+        .icon-btn svg { width: 15px; height: 15px; }
+
+        /* ── STATS ── */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 14px; margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px;
+            transition: border-color 0.2s, transform 0.2s;
+            animation: fadeUp 0.4s ease both;
+            position: relative; overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 2px; border-radius: 0 0 var(--radius) var(--radius);
+        }
+
+        .stat-card.avg::after    { background: var(--gold); }
+        .stat-card.total::after  { background: #38BDF8; }
+        .stat-card.top::after    { background: var(--mint); }
+        .stat-card.low::after    { background: var(--danger); }
+
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-card.avg:hover   { border-color: rgba(255,209,102,0.25); }
+        .stat-card.total:hover { border-color: rgba(56,189,248,0.25); }
+        .stat-card.top:hover   { border-color: rgba(126,255,197,0.25); }
+        .stat-card.low:hover   { border-color: rgba(255,107,107,0.25); }
+
+        .stat-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+        }
+
+        .stat-icon svg { width: 17px; height: 17px; }
+        .stat-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+        .stat-value { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; display: flex; align-items: baseline; gap: 6px; }
+        .stat-value .stat-suffix { font-size: 0.9rem; font-weight: 600; color: var(--muted); }
+        .stat-sub { font-size: 0.7rem; color: var(--muted); margin-top: 7px; font-family: 'DM Mono', monospace; display: flex; align-items: center; gap: 4px; }
+        .stat-sub .mini-stars { color: var(--gold); letter-spacing: 1px; }
+
+        /* ── TABS + CONTROLS ── */
+        .tabs-wrap {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+            animation: fadeUp 0.45s ease both;
+        }
+
+        .tabs-row {
+            display: flex; align-items: center; gap: 4px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 5px;
+        }
+
+        .tab-btn {
+            padding: 8px 14px; border-radius: 8px; border: none;
+            background: transparent; color: var(--muted);
+            font-size: 0.8rem; font-weight: 600; font-family: 'Sora', sans-serif;
+            cursor: pointer; transition: all 0.18s;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .tab-btn .tb-star { color: var(--gold); }
+
+        .tab-count {
+            font-size: 0.62rem; font-family: 'DM Mono', monospace;
+            padding: 2px 7px; border-radius: 20px;
+            background: var(--surface-2); color: var(--muted);
+        }
+
+        .tab-btn:hover:not(.active) { color: var(--text); background: var(--surface-2); }
+        .tab-btn.active { background: rgba(255,209,102,0.15); color: var(--gold); }
+        .tab-btn.active .tab-count { background: rgba(255,209,102,0.18); color: var(--gold); }
+        .tab-btn.tab-all.active { background: rgba(126,255,197,0.15); color: var(--mint-dim); }
+        .tab-btn.tab-all.active .tab-count { background: rgba(126,255,197,0.15); color: var(--mint-dim); }
+
+        .controls-right { display: flex; align-items: center; gap: 10px; }
+
+        .sort-filter {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 9px; padding: 8px 32px 8px 12px;
+            font-size: 0.8rem; color: var(--text); font-family: 'Sora', sans-serif;
+            outline: none; cursor: pointer; transition: border-color 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237D8590' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+            background-color: var(--surface);
+        }
+        .sort-filter option { background: var(--surface-2); }
+        .sort-filter:focus { border-color: rgba(126,255,197,0.35); }
+
+        .search-wrap { position: relative; }
+        .search-wrap input {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 9px; padding: 8px 14px 8px 36px;
+            font-size: 0.8rem; color: var(--text); font-family: 'Sora', sans-serif;
+            width: 220px; outline: none; transition: border-color 0.2s;
+        }
+        .search-wrap input::placeholder { color: var(--muted); }
+        .search-wrap input:focus { border-color: rgba(126,255,197,0.35); }
+        .search-icon {
+            position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+            width: 14px; height: 14px; color: var(--muted); pointer-events: none;
+        }
+
+        /* ── REVIEW CARDS ── */
+        .review-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .review-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            display: flex; gap: 16px; align-items: flex-start;
+            transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .review-card:hover {
+            border-color: var(--border-hover);
+            transform: translateX(3px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .review-avatar {
+            width: 46px; height: 46px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.78rem; font-weight: 800;
+            flex-shrink: 0; position: relative; overflow: hidden;
+        }
+        .review-avatar .av-img {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            border-radius: 50%; object-fit: cover;
+        }
+        .review-avatar .role-dot {
+            position: absolute; bottom: 1px; right: 1px;
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid var(--surface);
+        }
+
+        .review-body { flex: 1; min-width: 0; }
+
+        .review-top {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; margin-bottom: 8px;
+        }
+
+        .review-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+        .review-name {
+            font-size: 0.92rem; font-weight: 700; color: var(--text);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .role-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.62rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            padding: 3px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em;
+            flex-shrink: 0;
+        }
+        .role-seller { background: rgba(126,255,197,0.1); color: var(--mint-dim); border: 1px solid rgba(126,255,197,0.2); }
+        .role-buyer  { background: rgba(56,189,248,0.1);  color: #38BDF8;        border: 1px solid rgba(56,189,248,0.2); }
+
+        .review-time {
+            font-size: 0.7rem; color: var(--muted); font-family: 'DM Mono', monospace;
+            white-space: nowrap; flex-shrink: 0;
+        }
+
+        .stars { display: inline-flex; align-items: center; gap: 2px; margin-bottom: 8px; }
+        .stars svg { width: 15px; height: 15px; }
+        .stars .filled { color: var(--gold); fill: var(--gold); }
+        .stars .empty  { color: var(--border-hover); fill: transparent; }
+        .stars .score {
+            font-size: 0.72rem; font-weight: 700; color: var(--gold);
+            font-family: 'DM Mono', monospace; margin-left: 6px;
+        }
+
+        .review-comment {
+            font-size: 0.85rem; color: var(--text); line-height: 1.6;
+            white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
+        }
+        .review-comment.empty { color: var(--muted); font-style: italic; }
+
+        /* ── EMPTY STATE ── */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+        .empty-icon {
+            width: 56px; height: 56px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 16px; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+        }
+        .empty-icon svg { width: 24px; height: 24px; opacity: 0.4; }
+        .empty-state h3 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+        .empty-state p  { font-size: 0.8rem; color: var(--muted); }
+
+        /* ── DISTRIBUTION BAR (in average card) ── */
+        .dist-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+        .dist-row .dist-label { font-size: 0.62rem; color: var(--muted); font-family: 'DM Mono', monospace; width: 22px; }
+        .dist-track { flex: 1; height: 5px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+        .dist-fill { height: 100%; background: var(--gold); border-radius: 4px; transition: width 0.5s ease; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1100px) {
+            .stats-grid { grid-template-columns: repeat(2,1fr); }
+        }
+        @media (max-width: 900px) {
+            :root { --sidebar-w: 64px; }
+            .sidebar-brand, .nav-link span, .nav-label { display: none; }
+            .nav-link { justify-content: center; padding: 10px; }
+            .main { padding: 24px 18px; }
+        }
+        @media (max-width: 700px) {
+            .tabs-wrap { flex-direction: column; align-items: flex-start; }
+            .controls-right { width: 100%; }
+            .search-wrap input { width: 150px; }
+            .review-top { flex-direction: column; align-items: flex-start; gap: 4px; }
+        }
+        @media (max-width: 500px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="brand-name">Ani<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-label">Main</div>
+            <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+            <a href="sellers.html"   class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+            <a href="premium.html"   class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
+
+            <div class="nav-label">Admin</div>
+            <a href="announcements.html"  class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
+            <a href="user.html"           class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
+            <a href="customer-service.html" class="nav-link"><i data-lucide="message-circle"></i><span>Customer Service</span></a>
+            <a href="reviews.html"        class="nav-link active"><i data-lucide="star"></i><span>Reviews</span></a>
+
+            <div class="nav-bottom">
+                <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
+                <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <div class="page-header">
+            <div>
+                <h1>Reviews</h1>
+                <p>App ratings &amp; feedback submitted from the “Rate us” screen in the mobile app.</p>
+            </div>
+            <div class="header-right">
+                <div class="date-badge" id="dateBadge">—</div>
+                <button class="icon-btn" title="Refresh" onclick="loadReviews()"><i data-lucide="refresh-cw"></i></button>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+            <div class="stat-card avg" style="animation-delay:0.05s">
+                <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:var(--gold);"><i data-lucide="star"></i></div>
+                <div class="stat-label">Average Rating</div>
+                <div class="stat-value"><span id="stat-avg">0.0</span><span class="stat-suffix">/ 5</span></div>
+                <div class="stat-sub"><span class="mini-stars" id="stat-avg-stars">☆☆☆☆☆</span></div>
+            </div>
+            <div class="stat-card total" style="animation-delay:0.1s">
+                <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:#38BDF8;"><i data-lucide="message-square"></i></div>
+                <div class="stat-label">Total Reviews</div>
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-sub" id="stat-total-sub">all time</div>
+            </div>
+            <div class="stat-card top" style="animation-delay:0.15s">
+                <div class="stat-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);"><i data-lucide="thumbs-up"></i></div>
+                <div class="stat-label">Positive (4–5★)</div>
+                <div class="stat-value"><span id="stat-positive">0</span><span class="stat-suffix" id="stat-positive-pct">0%</span></div>
+                <div class="stat-sub">happy users</div>
+            </div>
+            <div class="stat-card low" style="animation-delay:0.2s">
+                <div class="stat-icon" style="background:rgba(255,107,107,0.12); color:var(--danger);"><i data-lucide="thumbs-down"></i></div>
+                <div class="stat-label">Needs Attention (1–2★)</div>
+                <div class="stat-value" id="stat-low">0</div>
+                <div class="stat-sub">low ratings</div>
+            </div>
+        </div>
+
+        <!-- TABS + CONTROLS -->
+        <div class="tabs-wrap">
+            <div class="tabs-row" id="starTabs">
+                <button class="tab-btn tab-all active" data-star="all" onclick="switchTab('all', this)">
+                    All <span class="tab-count" id="tc-all">0</span>
+                </button>
+                <button class="tab-btn" data-star="5" onclick="switchTab('5', this)">
+                    5 <i data-lucide="star" class="tb-star" style="width:13px;height:13px;"></i> <span class="tab-count" id="tc-5">0</span>
+                </button>
+                <button class="tab-btn" data-star="4" onclick="switchTab('4', this)">
+                    4 <i data-lucide="star" class="tb-star" style="width:13px;height:13px;"></i> <span class="tab-count" id="tc-4">0</span>
+                </button>
+                <button class="tab-btn" data-star="3" onclick="switchTab('3', this)">
+                    3 <i data-lucide="star" class="tb-star" style="width:13px;height:13px;"></i> <span class="tab-count" id="tc-3">0</span>
+                </button>
+                <button class="tab-btn" data-star="2" onclick="switchTab('2', this)">
+                    2 <i data-lucide="star" class="tb-star" style="width:13px;height:13px;"></i> <span class="tab-count" id="tc-2">0</span>
+                </button>
+                <button class="tab-btn" data-star="1" onclick="switchTab('1', this)">
+                    1 <i data-lucide="star" class="tb-star" style="width:13px;height:13px;"></i> <span class="tab-count" id="tc-1">0</span>
+                </button>
+            </div>
+
+            <div class="controls-right">
+                <select class="sort-filter" id="sortFilter" onchange="renderList()">
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                    <option value="highest">Highest rated</option>
+                    <option value="lowest">Lowest rated</option>
+                </select>
+                <div class="search-wrap">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search name or comment…" oninput="renderList()">
+                </div>
+            </div>
+        </div>
+
+        <!-- LIST -->
+        <div class="review-list" id="reviewList"></div>
+
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="logout-modal.js"></script>
+<script>
+// ─────────────────────────────────────────────────
+// DATA — live from the `reviews` table (the mobile app's "Rate us" feature).
+// Shape: id, seller_id, reviewer_id, rating, comment, created_at, updated_at.
+// Each row is one user's app rating; `reviewer_id` is who left it. We join
+// `users` on reviewer_id for the name/photo/role.
+// ─────────────────────────────────────────────────
+const COLORS = ['#38BDF8','#7EFFC5','#FBB824','#C084FC','#FB923C','#F472B6','#34D399','#60A5FA'];
+
+function rndColor(name) {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h += name.charCodeAt(i);
+    return COLORS[h % COLORS.length];
+}
+
+function initials(name) {
+    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+let reviews = [];       // [{ id, name, role, avatar, stars, comment, ts }]
+let currentStar = 'all';
+
+// ─────────────────────────────────────────────────
+// LOAD
+// ─────────────────────────────────────────────────
+async function loadReviews() {
+    const { data: rows, error } = await supabaseClient
+        .from('reviews')
+        .select('id, reviewer_id, rating, comment, created_at')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('LOAD REVIEWS ERROR:', error);
+        document.getElementById('reviewList').innerHTML =
+            `<div class="empty-state">
+                <div class="empty-icon"><i data-lucide="alert-triangle"></i></div>
+                <h3>Couldn't load reviews</h3>
+                <p>${escapeHtml(error.message)}</p>
+            </div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    const list = rows || [];
+    const userIds = [...new Set(list.map(r => r.reviewer_id).filter(Boolean))];
+
+    const usersById = {};
+    if (userIds.length) {
+        const { data: users } = await supabaseClient
+            .from('users')
+            .select('id, name, avatar_url, is_seller')
+            .in('id', userIds);
+        (users || []).forEach(u => { usersById[u.id] = u; });
+    }
+
+    reviews = list.map(r => {
+        const u = usersById[r.reviewer_id] || {};
+        return {
+            id:      String(r.id),
+            name:    u.name || 'Anonymous user',
+            role:    u.is_seller ? 'Seller' : 'Buyer',
+            avatar:  u.avatar_url || null,
+            stars:   Math.max(0, Math.min(5, Number(r.rating) || 0)),
+            comment: (r.comment || '').trim(),
+            ts:      r.created_at
+        };
+    });
+
+    updateStats();
+    renderList();
+}
+
+// ─────────────────────────────────────────────────
+// STATS
+// ─────────────────────────────────────────────────
+function updateStats() {
+    const total = reviews.length;
+    const sum = reviews.reduce((a, r) => a + r.stars, 0);
+    const avg = total ? sum / total : 0;
+
+    document.getElementById('stat-avg').textContent = avg.toFixed(1);
+    document.getElementById('stat-avg-stars').textContent = starString(Math.round(avg));
+
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-total-sub').textContent =
+        total === 1 ? '1 review' : `${total} reviews`;
+
+    const positive = reviews.filter(r => r.stars >= 4).length;
+    const low = reviews.filter(r => r.stars > 0 && r.stars <= 2).length;
+    document.getElementById('stat-positive').textContent = positive;
+    document.getElementById('stat-positive-pct').textContent =
+        total ? `${Math.round((positive / total) * 100)}%` : '0%';
+    document.getElementById('stat-low').textContent = low;
+
+    // Per-star tab counts
+    document.getElementById('tc-all').textContent = total;
+    for (let s = 1; s <= 5; s++) {
+        document.getElementById('tc-' + s).textContent =
+            reviews.filter(r => r.stars === s).length;
+    }
+}
+
+function starString(n) {
+    n = Math.max(0, Math.min(5, n));
+    return '★'.repeat(n) + '☆'.repeat(5 - n);
+}
+
+// Inline SVG stars for a card (filled vs empty).
+function starsSvg(n) {
+    let html = '<div class="stars">';
+    for (let i = 1; i <= 5; i++) {
+        const cls = i <= n ? 'filled' : 'empty';
+        html += `<svg class="${cls}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+    }
+    html += `<span class="score">${n.toFixed ? n.toFixed(1) : n}.0</span></div>`;
+    return html;
+}
+
+// ─────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────
+function renderList() {
+    const container = document.getElementById('reviewList');
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    const sort = document.getElementById('sortFilter').value;
+
+    let filtered = reviews.filter(r => {
+        const matchStar = currentStar === 'all' || r.stars === Number(currentStar);
+        const matchQuery = !q || r.name.toLowerCase().includes(q) || r.comment.toLowerCase().includes(q);
+        return matchStar && matchQuery;
+    });
+
+    filtered.sort((a, b) => {
+        if (sort === 'newest')  return new Date(b.ts) - new Date(a.ts);
+        if (sort === 'oldest')  return new Date(a.ts) - new Date(b.ts);
+        if (sort === 'highest') return b.stars - a.stars || (new Date(b.ts) - new Date(a.ts));
+        if (sort === 'lowest')  return a.stars - b.stars || (new Date(b.ts) - new Date(a.ts));
+        return 0;
+    });
+
+    container.innerHTML = '';
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon"><i data-lucide="star"></i></div>
+                <h3>${reviews.length === 0 ? 'No reviews yet' : 'No reviews match your filters'}</h3>
+                <p>${reviews.length === 0
+                    ? 'Ratings submitted from the “Rate us” screen will appear here.'
+                    : 'Try a different star filter or search term.'}</p>
+            </div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    filtered.forEach((r, idx) => {
+        const color = rndColor(r.name);
+        const roleDotColor = r.role === 'Seller' ? 'var(--mint)' : '#38BDF8';
+        const avInner = r.avatar
+            ? `${initials(r.name)}<img class="av-img" src="${escapeHtml(r.avatar)}" alt="" onerror="this.remove()">`
+            : initials(r.name);
+
+        const card = document.createElement('div');
+        card.className = 'review-card';
+        card.style.animationDelay = (idx * 0.04) + 's';
+        card.innerHTML = `
+            <div class="review-avatar" style="background:${color}22; color:${color}; border:1.5px solid ${color}44;">
+                ${avInner}
+                <span class="role-dot" style="background:${roleDotColor};"></span>
+            </div>
+            <div class="review-body">
+                <div class="review-top">
+                    <div class="review-id">
+                        <span class="review-name">${escapeHtml(r.name)}</span>
+                        <span class="role-badge ${r.role === 'Seller' ? 'role-seller' : 'role-buyer'}">${r.role}</span>
+                    </div>
+                    <span class="review-time">${fmtDate(r.ts)}</span>
+                </div>
+                ${starsSvg(r.stars)}
+                ${r.comment
+                    ? `<div class="review-comment">${escapeHtml(r.comment)}</div>`
+                    : `<div class="review-comment empty">No written feedback.</div>`}
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    lucide.createIcons();
+}
+
+function fmtDate(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts), now = new Date();
+    const diff = (now - d) / 1000;
+    if (diff < 60)    return 'just now';
+    if (diff < 3600)  return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+    return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// ─────────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────────
+function switchTab(star, btn) {
+    currentStar = star;
+    document.querySelectorAll('#starTabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderList();
+}
+
+// ─────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    document.getElementById('dateBadge').textContent =
+        new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+    loadReviews();
+});
+
+// Logout is handled by the shared styled modal in logout-modal.js.
+</script>
+<!-- Highlight the current page's link in the sidebar -->
+<script>
+(function () {
+    var here = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+    document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {
+        var href = (link.getAttribute('href') || '').split('/').pop().toLowerCase();
+        link.classList.toggle('active', !!href && href === here);
+    });
+})();
+</script>
+</body>
+</html>
