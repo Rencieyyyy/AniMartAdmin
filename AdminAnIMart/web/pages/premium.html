@@ -1096,7 +1096,9 @@ let tierCounts   = { 'Free': 0, 'Premium': 0, 'Super Premium': 0, totalSellers: 
 
 function mapSub(row) {
     const u    = row.users || {};
-    const plan = row.plan || 'Free';
+    // Normalize legacy/lowercase DB values ('superpremium', 'premium', …) to the
+    // canonical tier label so badges, charts, and counts all agree.
+    const plan = normalizePlan(row.plan);
     return {
         id:          row.id,
         name:        u.name || '(no name)',

@@ -15,6 +15,24 @@
 // The two PAID tiers (Free is everyone else).
 const PAID_TIERS = ['Premium', 'Super Premium'];
 
+// Normalize ANY stored/legacy plan value to a canonical tier label. The DB has
+// historically stored lowercase keys ('premium', 'superpremium', 'basic') and
+// may also store the spaced labels ('Super Premium') depending on whether the
+// migration ran — so we accept all of them. 'basic'/'pro' fold into Premium;
+// 'elite'/'superpremium' into Super Premium.
+const _PLAN_ALIASES = {
+    free:         'Free',
+    basic:        'Premium',
+    pro:          'Premium',
+    premium:      'Premium',
+    elite:        'Super Premium',
+    superpremium: 'Super Premium'
+};
+function normalizePlan(plan) {
+    const key = String(plan || '').toLowerCase().replace(/[^a-z]/g, '');
+    return _PLAN_ALIASES[key] || plan || 'Free';
+}
+
 // Display metadata for the three tiers (shared so both pages look consistent).
 // `key` is the canonical plan label; `id` is the DOM-safe element suffix.
 const TIER_META = [
@@ -45,7 +63,8 @@ async function computeSellerTierCounts(client) {
 
         const tierByUser = {};
         (subs || []).forEach(s => {
-            if (PAID_TIERS.includes(s.plan) && s.user_id != null) tierByUser[s.user_id] = s.plan;
+            const tier = normalizePlan(s.plan);
+            if (PAID_TIERS.includes(tier) && s.user_id != null) tierByUser[s.user_id] = tier;
         });
 
         const counts = { 'Premium': 0, 'Super Premium': 0 };
