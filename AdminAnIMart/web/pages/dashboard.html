@@ -586,7 +586,7 @@
 
         <!-- SELLERS BY TIER -->
         <div class="section-title">Sellers by Tier</div>
-        <div class="stats-grid">
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
             <div class="stat-card" style="--accent-bg: rgba(125,133,144,0.06);">
                 <div class="stat-icon" style="background:rgba(125,133,144,0.12); color:#7D8590;">
                     <i data-lucide="user"></i>
@@ -595,29 +595,21 @@
                 <div class="stat-value" id="tier-free">0</div>
                 <div class="stat-trend" id="tier-free-pct" style="color:#7D8590;"><i data-lucide="users"></i> — of sellers</div>
             </div>
-            <div class="stat-card" style="--accent-bg: rgba(56,189,248,0.06);">
-                <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:#38BDF8;">
-                    <i data-lucide="zap"></i>
-                </div>
-                <div class="stat-label">Basic Tier</div>
-                <div class="stat-value" id="tier-basic">0</div>
-                <div class="stat-trend" id="tier-basic-pct" style="color:#38BDF8;"><i data-lucide="users"></i> — of sellers</div>
-            </div>
             <div class="stat-card" style="--accent-bg: rgba(255,209,102,0.06);">
                 <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:#FFD166;">
                     <i data-lucide="crown"></i>
                 </div>
-                <div class="stat-label">Pro Tier</div>
-                <div class="stat-value" id="tier-pro">0</div>
-                <div class="stat-trend" id="tier-pro-pct" style="color:#FFD166;"><i data-lucide="users"></i> — of sellers</div>
+                <div class="stat-label">Premium Tier</div>
+                <div class="stat-value" id="tier-premium">0</div>
+                <div class="stat-trend" id="tier-premium-pct" style="color:#FFD166;"><i data-lucide="users"></i> — of sellers</div>
             </div>
             <div class="stat-card" style="--accent-bg: rgba(192,132,252,0.06);">
                 <div class="stat-icon" style="background:rgba(192,132,252,0.12); color:#C084FC;">
                     <i data-lucide="star"></i>
                 </div>
-                <div class="stat-label">Elite Tier</div>
-                <div class="stat-value" id="tier-elite">0</div>
-                <div class="stat-trend" id="tier-elite-pct" style="color:#C084FC;"><i data-lucide="users"></i> — of sellers</div>
+                <div class="stat-label">Super Premium Tier</div>
+                <div class="stat-value" id="tier-super">0</div>
+                <div class="stat-trend" id="tier-super-pct" style="color:#C084FC;"><i data-lucide="users"></i> — of sellers</div>
             </div>
         </div>
 
@@ -884,19 +876,22 @@ async function approvalDecision(id, decision) {
 }
 
 // ── SELLERS BY TIER ────────────────────────────────────────────────────────
-// Populates the Free / Basic / Pro / Elite stat cards using the shared helper
+// Populates the Free / Premium / Super Premium stat cards using the shared helper
 // in tier-stats.js (same numbers the Premium Requests page shows).
 async function loadTierStats() {
     const t = await computeSellerTierCounts(supabaseClient);
     const total = t.totalSellers || 0;
 
-    ['free', 'basic', 'pro', 'elite'].forEach(key => {
-        const valEl = document.getElementById('tier-' + key);
-        if (valEl) valEl.textContent = (t[key] || 0).toLocaleString();
+    // TIER_META (tier-stats.js) drives the three tiers: meta.key is the plan
+    // label used to look up the count; meta.id is the DOM element suffix.
+    TIER_META.forEach(meta => {
+        const count = t[meta.key] || 0;
+        const valEl = document.getElementById('tier-' + meta.id);
+        if (valEl) valEl.textContent = count.toLocaleString();
 
-        const pctEl = document.getElementById('tier-' + key + '-pct');
+        const pctEl = document.getElementById('tier-' + meta.id + '-pct');
         if (pctEl) {
-            const pct = total > 0 ? Math.round((t[key] / total) * 100) : 0;
+            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
             pctEl.innerHTML = `<i data-lucide="users"></i> ${pct}% of sellers`;
         }
     });
@@ -932,7 +927,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // User Approvals page.
     loadPendingApprovals();
 
-    // Seller tier breakdown (Free / Basic / Pro / Elite), live from Supabase.
+    // Seller tier breakdown (Free / Premium / Super Premium), live from Supabase.
     loadTierStats();
 
     // Charts

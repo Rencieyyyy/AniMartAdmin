@@ -7,7 +7,7 @@
 
 create table if not exists public.prices (
     id               uuid primary key default gen_random_uuid(),
-    plan             text    not null unique,        -- 'basic' | 'pro' | 'elite'
+    plan             text    not null unique,        -- 'Premium' | 'Super Premium' (canonical label; Free has no row)
     name             text    not null,               -- display name
     tagline          text,                            -- short subtitle
     price            numeric not null default 0,      -- base monthly price (PHP)
@@ -21,12 +21,12 @@ create table if not exists public.prices (
     updated_at       timestamptz not null default now()
 );
 
--- Seed the three current plans (no-op if they already exist).
+-- Seed the two PAID plans (no-op if they already exist). The Free tier is the
+-- default for sellers with no subscription, so it has no pricing row.
 insert into public.prices (plan, name, tagline, price, is_popular, sort_order)
 values
-    ('basic', 'Basic', 'For new sellers starting out',  299,  false, 1),
-    ('pro',   'Pro',   'For serious livestock traders', 699,  true,  2),
-    ('elite', 'Elite', 'Maximum visibility & control',  1299, false, 3)
+    ('Premium',       'Premium',       'For serious livestock traders', 699,  true,  2),
+    ('Super Premium', 'Super Premium', 'Maximum visibility & control',  1299, false, 3)
 on conflict (plan) do nothing;
 
 -- ── RLS ──

@@ -305,9 +305,9 @@
             padding: 3px 10px; border-radius: 20px;
         }
 
-        .plan-basic { background: rgba(56,189,248,0.12); color: #38BDF8; border: 1px solid rgba(56,189,248,0.2); }
-        .plan-pro { background: var(--gold-glow); color: var(--gold); border: 1px solid rgba(255,209,102,0.25); }
-        .plan-elite { background: rgba(168,85,247,0.12); color: #C084FC; border: 1px solid rgba(168,85,247,0.2); }
+        .plan-free { background: rgba(56,189,248,0.12); color: #38BDF8; border: 1px solid rgba(56,189,248,0.2); }
+        .plan-premium { background: var(--gold-glow); color: var(--gold); border: 1px solid rgba(255,209,102,0.25); }
+        .plan-super { background: rgba(168,85,247,0.12); color: #C084FC; border: 1px solid rgba(168,85,247,0.2); }
 
         .req-amount {
             font-family: 'DM Mono', monospace;
@@ -903,47 +903,49 @@
         </div>
 
         <div class="features-grid">
-            <!-- BASIC -->
-            <div class="feature-card" data-plan="basic" style="--fc-glow: rgba(56,189,248,0.08);">
-                <div id="badge-basic" class="card-badges"></div>
+            <!-- FREE -->
+            <div class="feature-card" data-plan="free" style="--fc-glow: rgba(56,189,248,0.08);">
                 <div class="plan-header">
                     <div>
                         <div class="plan-icon" style="background:rgba(56,189,248,0.12); color:#38BDF8; margin-bottom:10px;">
                             <i data-lucide="zap"></i>
                         </div>
-                        <div class="plan-name" style="color:#38BDF8;">Basic</div>
+                        <div class="plan-name" style="color:#38BDF8;">Free</div>
                         <div class="plan-tagline">For new sellers starting out</div>
                     </div>
-                    <div class="plan-price" id="price-basic"></div>
+                    <div class="plan-price">
+                        <div class="amount" style="color:#38BDF8;">₱0</div>
+                        <span class="period">/ forever</span>
+                    </div>
                 </div>
                 <div class="plan-divider"></div>
                 <div class="feature-list">
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> Up to 10 active listings</div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> Verified seller badge</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> Basic analytics dashboard</div>
+                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> Standard analytics dashboard</div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> Email support</div>
                     <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Priority listing placement</div>
                     <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Featured on homepage</div>
                     <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Buyer direct messaging</div>
                 </div>
                 <div class="plan-active-count">
-                    <span class="label">Active subscribers</span>
-                    <span class="count" id="count-basic" style="color:#38BDF8;">0</span>
+                    <span class="label">Free-tier sellers</span>
+                    <span class="count" id="count-free" style="color:#38BDF8;">0</span>
                 </div>
             </div>
 
-            <!-- PRO -->
-            <div class="feature-card" data-plan="pro" style="--fc-glow: rgba(255,209,102,0.09); border-color:rgba(255,209,102,0.2);">
-                <div id="badge-pro" class="card-badges"></div>
+            <!-- PREMIUM -->
+            <div class="feature-card" data-plan="Premium" style="--fc-glow: rgba(255,209,102,0.09); border-color:rgba(255,209,102,0.2);">
+                <div id="badge-premium" class="card-badges"></div>
                 <div class="plan-header">
                     <div>
                         <div class="plan-icon" style="background:var(--gold-glow); color:var(--gold); margin-bottom:10px;">
                             <i data-lucide="crown"></i>
                         </div>
-                        <div class="plan-name" style="color:var(--gold);">Pro</div>
+                        <div class="plan-name" style="color:var(--gold);">Premium</div>
                         <div class="plan-tagline">For serious livestock traders</div>
                     </div>
-                    <div class="plan-price" id="price-pro"></div>
+                    <div class="plan-price" id="price-premium"></div>
                 </div>
                 <div class="plan-divider"></div>
                 <div class="feature-list">
@@ -957,27 +959,27 @@
                 </div>
                 <div class="plan-active-count">
                     <span class="label">Active subscribers</span>
-                    <span class="count" id="count-pro" style="color:var(--gold);">0</span>
+                    <span class="count" id="count-premium" style="color:var(--gold);">0</span>
                 </div>
             </div>
 
-            <!-- ELITE -->
-            <div class="feature-card" data-plan="elite" style="--fc-glow: rgba(168,85,247,0.08); border-color:rgba(168,85,247,0.2);">
-                <div id="badge-elite" class="card-badges"></div>
+            <!-- SUPER PREMIUM -->
+            <div class="feature-card" data-plan="Super Premium" style="--fc-glow: rgba(168,85,247,0.08); border-color:rgba(168,85,247,0.2);">
+                <div id="badge-super" class="card-badges"></div>
                 <div class="plan-header">
                     <div>
                         <div class="plan-icon" style="background:rgba(168,85,247,0.12); color:#C084FC; margin-bottom:10px;">
                             <i data-lucide="star"></i>
                         </div>
-                        <div class="plan-name" style="color:#C084FC;">Elite</div>
+                        <div class="plan-name" style="color:#C084FC;">Super Premium</div>
                         <div class="plan-tagline">Maximum visibility & control</div>
                     </div>
-                    <div class="plan-price" id="price-elite"></div>
+                    <div class="plan-price" id="price-super"></div>
                 </div>
                 <div class="plan-divider"></div>
                 <div class="feature-list">
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Unlimited active listings</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Verified + Elite badge</div>
+                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Verified + Super Premium badge</div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Full analytics suite</div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Top listing placement</div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Featured on homepage banner</div>
@@ -986,7 +988,7 @@
                 </div>
                 <div class="plan-active-count">
                     <span class="label">Active subscribers</span>
-                    <span class="count" id="count-elite" style="color:#C084FC;">0</span>
+                    <span class="count" id="count-super" style="color:#C084FC;">0</span>
                 </div>
             </div>
         </div>
@@ -1069,12 +1071,18 @@
 <script>
 // ──────────────────────────────────────────────
 // DATA — live from the `subscriptions` table (joined to users)
-// DB plan -> UI key/label:  basic->Basic, premium->Pro, superpremium->Elite
+// There are three tiers, stored verbatim in subscriptions.plan: 'Free',
+// 'Premium', 'Super Premium'. There is NO key-mapping layer — the stored
+// string IS the label. The Free tier is the default for sellers with no
+// active subscription; only the two PAID tiers ('Premium', 'Super Premium')
+// appear as requests/cards here.
 // ──────────────────────────────────────────────
-const PLAN_MAP = {
-    basic:        { key: 'basic', label: 'Basic' },
-    premium:      { key: 'pro',   label: 'Pro'   },
-    superpremium: { key: 'elite', label: 'Elite' }
+
+// Badge styling per tier label (cosmetic only — colors/icon).
+const PLAN_STYLE = {
+    'Free':          { cls: 'plan-free',    icon: 'zap'   },
+    'Premium':       { cls: 'plan-premium', icon: 'crown' },
+    'Super Premium': { cls: 'plan-super',   icon: 'star'  }
 };
 
 const MS_DAY = 86400000;
@@ -1084,18 +1092,18 @@ let pendingData  = [];
 let activeData   = [];
 let expiredData  = [];
 let rejectedData = [];
-let tierCounts   = { free: 0, basic: 0, pro: 0, elite: 0, totalSellers: 0 };
+let tierCounts   = { 'Free': 0, 'Premium': 0, 'Super Premium': 0, totalSellers: 0 };
 
 function mapSub(row) {
-    const u  = row.users || {};
-    const pm = PLAN_MAP[row.plan] || { key: 'basic', label: row.plan || 'Basic' };
+    const u    = row.users || {};
+    const plan = row.plan || 'Free';
     return {
         id:          row.id,
         name:        u.name || '(no name)',
         address:     u.address || '—',
         memberSince: u.created_at || null,
-        plan:        pm.key,
-        planLabel:   pm.label,
+        plan:        plan,
+        planLabel:   plan,
         amount:      Number(row.price) || 0,
         status:      row.status,
         startedAt:   row.started_at,
@@ -1142,7 +1150,7 @@ async function loadSubscriptions() {
     expiredData  = allSubs.filter(s => s.status === 'expired');
     rejectedData = allSubs.filter(s => s.status === 'rejected');
 
-    // Seller tier breakdown (Free / Basic / Pro / Elite) — shared with the dashboard.
+    // Seller tier breakdown (Free / Premium / Super Premium) — shared with the dashboard.
     tierCounts = await computeSellerTierCounts(supabaseClient);
 
     renderPending();
@@ -1155,7 +1163,7 @@ async function loadSubscriptions() {
     buildCharts();
 }
 
-// Renders the Free/Basic/Pro/Elite count chips under the doughnut.
+// Renders the Free/Premium/Super Premium count chips under the doughnut.
 function renderTierLegend() {
     const el = document.getElementById('tier-legend');
     if (!el) return;
@@ -1175,9 +1183,8 @@ function initials(name) {
 }
 
 function planBadge(plan, label) {
-    const cls = plan === 'basic' ? 'plan-basic' : plan === 'pro' ? 'plan-pro' : 'plan-elite';
-    const icon = plan === 'basic' ? 'zap' : plan === 'pro' ? 'crown' : 'star';
-    return `<span class="req-plan ${cls}"><i data-lucide="${icon}" style="width:10px;height:10px;"></i>${label}</span>`;
+    const s = PLAN_STYLE[plan] || { cls: 'plan-premium', icon: 'crown' };
+    return `<span class="req-plan ${s.cls}"><i data-lucide="${s.icon}" style="width:10px;height:10px;"></i>${label || plan}</span>`;
 }
 
 // ──────────────────────────────────────────────
@@ -1381,16 +1388,17 @@ function updateCounts() {
 
 // Active-plan subscriber counts (feature cards) + active revenue stat.
 function updatePlanInsights() {
-    const counts = { basic: 0, pro: 0, elite: 0 };
+    const counts = { 'Premium': 0, 'Super Premium': 0 };
     let revenue = 0;
     activeData.forEach(s => {
         if (counts[s.plan] !== undefined) counts[s.plan]++;
         revenue += s.amount;
     });
-    document.getElementById('count-basic').textContent = counts.basic;
-    document.getElementById('count-pro').textContent   = counts.pro;
-    document.getElementById('count-elite').textContent = counts.elite;
-    document.getElementById('stat-revenue').textContent = '₱' + revenue.toLocaleString();
+    // The Free card shows the count of Free-tier sellers (no active subscription).
+    document.getElementById('count-free').textContent    = tierCounts['Free'] || 0;
+    document.getElementById('count-premium').textContent = counts['Premium'];
+    document.getElementById('count-super').textContent   = counts['Super Premium'];
+    document.getElementById('stat-revenue').textContent  = '₱' + revenue.toLocaleString();
 }
 
 function countUp(id, target) {
@@ -1511,7 +1519,7 @@ function buildCharts() {
     const months = [];
     for (let i = 5; i >= 0; i--) months.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
     const labels = months.map(d => d.toLocaleDateString('en-PH', { month: 'short' }));
-    const buckets = { basic: Array(6).fill(0), pro: Array(6).fill(0), elite: Array(6).fill(0) };
+    const buckets = { 'Premium': Array(6).fill(0), 'Super Premium': Array(6).fill(0) };
 
     allSubs.forEach(s => {
         if (s.status !== 'approved' && s.status !== 'expired') return;   // paid plans only
@@ -1532,9 +1540,8 @@ function buildCharts() {
         data: {
             labels,
             datasets: [
-                { label: 'Basic (₱)', data: buckets.basic, backgroundColor: 'rgba(56,189,248,0.7)',  borderRadius: 6, borderSkipped: false },
-                { label: 'Pro (₱)',   data: buckets.pro,   backgroundColor: 'rgba(255,209,102,0.75)', borderRadius: 6, borderSkipped: false },
-                { label: 'Elite (₱)', data: buckets.elite, backgroundColor: 'rgba(192,132,252,0.7)',  borderRadius: 6, borderSkipped: false }
+                { label: 'Premium (₱)',       data: buckets['Premium'],       backgroundColor: 'rgba(255,209,102,0.75)', borderRadius: 6, borderSkipped: false },
+                { label: 'Super Premium (₱)', data: buckets['Super Premium'], backgroundColor: 'rgba(192,132,252,0.7)',  borderRadius: 6, borderSkipped: false }
             ]
         },
         options: {
@@ -1590,20 +1597,20 @@ function buildCharts() {
 // ──────────────────────────────────────────────
 // PLAN PRICING (prices table — editable, discounts, promos)
 // ──────────────────────────────────────────────
+// Keyed by the canonical plan label. `id` is the DOM-safe suffix used for the
+// card element ids (price-/badge-); `color` is the card accent.
 const PLAN_UI = {
-    basic: { color: '#38BDF8' },
-    pro:   { color: 'var(--gold)' },
-    elite: { color: '#C084FC' }
+    'Premium':       { id: 'premium', color: 'var(--gold)' },
+    'Super Premium': { id: 'super',   color: '#C084FC'     }
 };
 
-let pricesData = {};       // keyed by plan: { basic, pro, elite }
+let pricesData = {};       // keyed by plan label: { 'Premium', 'Super Premium' }
 let editingPlan = null;
 
 // Defaults so the cards always render (e.g. before prices_table.sql is run).
 const DEFAULT_PRICES = {
-    basic: { plan:'basic', name:'Basic', price:299,  discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'month' },
-    pro:   { plan:'pro',   name:'Pro',   price:699,  discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:true,  billing_period:'month' },
-    elite: { plan:'elite', name:'Elite', price:1299, discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'month' }
+    'Premium':       { plan:'Premium',       name:'Premium',       price:699,  discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:true,  billing_period:'month' },
+    'Super Premium': { plan:'Super Premium', name:'Super Premium', price:1299, discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'month' }
 };
 
 async function loadPrices() {
@@ -1647,13 +1654,14 @@ async function restoreExpiredPromos() {
 }
 
 function renderPrices() {
-    ['basic', 'pro', 'elite'].forEach(plan => {
-        const p = pricesData[plan];
-        const priceEl = document.getElementById('price-' + plan);
-        const badgeEl = document.getElementById('badge-' + plan);
+    Object.keys(PLAN_UI).forEach(plan => {
+        const p  = pricesData[plan];
+        const ui = PLAN_UI[plan];
+        const priceEl = document.getElementById('price-' + ui.id);
+        const badgeEl = document.getElementById('badge-' + ui.id);
         if (!priceEl || !p) return;
 
-        const color = PLAN_UI[plan].color;
+        const color = ui.color;
         const base  = Number(p.price) || 0;
         const disc  = Math.max(0, Math.min(100, Number(p.discount_percent) || 0));
         const hasDisc = disc > 0;
