@@ -701,6 +701,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="tier-stats.js"></script>
 <script src="logout-modal.js"></script>
 <script>
 // ─── DATA ───
@@ -722,12 +723,33 @@ function dbStatusToUi(s) { return s === 'approved' ? 'active' : s; }
 function uiStatusToDb(s) { return s === 'active' ? 'approved' : s; }
 
 async function loadUsers() {
-    const { data, error } = await supabaseClient
-        .from('users')
-        .select('id, name, email, phone, address, is_seller, status, created_at, plan, messenger')
-        .in('status', ['approved', 'restricted', 'blocked'])
-        .order('created_at', { ascending: false });
+    // Plans come from the subscriptions table (what the mobile app uses), not
+    // the stale users.plan column: a user's plan = their approved subscription,
+    // or Free if they have none. Same derivation as tier-stats.js.
+    const [usersRes, subsRes] = await Promise.all([
+        supabaseClient
+            .from('users')
+            .select('id, name, email, phone, address, is_seller, status, created_at, messenger')
+            .in('status', ['approved', 'restricted', 'blocked'])
+            .order('created_at', { ascending: false }),
+        supabaseClient
+            .from('subscriptions')
+            .select('user_id, plan')
+            .eq('status', 'approved')
+    ]);
 
+    const planByUser = {};
+    if (subsRes.error) {
+        console.error('LOAD SUBSCRIPTIONS ERROR:', subsRes.error);
+        showToast('Failed to load plans: ' + subsRes.error.message, 'danger');
+    } else {
+        (subsRes.data || []).forEach(s => {
+            const tier = normalizePlan(s.plan);          // tier-stats.js
+            if (PAID_TIERS.includes(tier) && s.user_id != null) planByUser[s.user_id] = tier;
+        });
+    }
+
+    const { data, error } = usersRes;
     if (error) {
         console.error('LOAD USERS ERROR:', error);
         showToast('Failed to load users: ' + error.message, 'danger');
@@ -742,7 +764,7 @@ async function loadUsers() {
             type:     row.is_seller ? 'seller' : 'buyer',
             joined:   row.created_at || null,
             status:   dbStatusToUi(row.status),       // approved -> active
-            plan:     row.plan || '—',
+            plan:     planByUser[row.id] || 'Free',
             messenger: row.messenger || ''
         }));
     }
