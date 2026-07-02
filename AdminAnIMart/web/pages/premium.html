@@ -916,14 +916,15 @@
                     <div class="plan-price">
                         <div class="amount" style="color:#38BDF8;">₱0</div>
                         <span class="period">/ forever</span>
+                        <button class="price-edit-btn" title="Edit listing capacity" onclick="openCapacityEditor()" style="margin-top:8px;"><i data-lucide="pencil"></i> Edit capacity</button>
                     </div>
                 </div>
                 <div class="plan-divider"></div>
                 <div class="feature-list">
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> Up to 10 active listings</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> Verified seller badge</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> Standard analytics dashboard</div>
+                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> <span>Up to <span id="free-listing-cap">10</span> active listings</span></div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> Email support</div>
+                    <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Verified seller badge</div>
+                    <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Standard analytics dashboard</div>
                     <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Priority listing placement</div>
                     <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Featured on homepage</div>
                     <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Buyer direct messaging</div>
@@ -955,7 +956,6 @@
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Priority listing placement</div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Buyer direct messaging</div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Priority email & chat support</div>
-                    <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Featured on homepage</div>
                 </div>
                 <div class="plan-active-count">
                     <span class="label">Active subscribers</span>
@@ -1042,6 +1042,24 @@
         <div class="modal-actions">
             <button class="btn-secondary" onclick="closeModal('priceModal')">Cancel</button>
             <button class="btn-primary" id="price-save-btn">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Edit Free Tier Listing Capacity -->
+<div class="modal-overlay" id="capacityModal">
+    <div class="modal">
+        <h2>Edit Listing Capacity</h2>
+        <p>Set how many active listings Free-tier sellers can have.</p>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;">
+            <label class="pf">Listing Capacity
+                <input type="number" id="cf-capacity" min="1" step="1" placeholder="10">
+                <span class="pf-hint">The Free card will show "Up to N active listings". The mobile app reads the same value to cap new listings.</span>
+            </label>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal('capacityModal')">Cancel</button>
+            <button class="btn-primary" onclick="saveCapacity()">Save Changes</button>
         </div>
     </div>
 </div>
@@ -1606,11 +1624,13 @@ const PLAN_UI = {
     'Super Premium': { id: 'super',   color: '#C084FC'     }
 };
 
-let pricesData = {};       // keyed by plan label: { 'Premium', 'Super Premium' }
+let pricesData = {};       // keyed by plan label: { 'Free', 'Premium', 'Super Premium' }
 let editingPlan = null;
 
 // Defaults so the cards always render (e.g. before prices_table.sql is run).
+// The Free row only carries listing_capacity (see add_listing_capacity_column.sql).
 const DEFAULT_PRICES = {
+    'Free':          { plan:'Free',          name:'Free',          price:0,    discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'forever', listing_capacity:10 },
     'Premium':       { plan:'Premium',       name:'Premium',       price:699,  discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:true,  billing_period:'month' },
     'Super Premium': { plan:'Super Premium', name:'Super Premium', price:1299, discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'month' }
 };
@@ -1618,7 +1638,7 @@ const DEFAULT_PRICES = {
 async function loadPrices() {
     const { data, error } = await supabaseClient
         .from('prices')
-        .select('plan, name, price, discount_percent, promo_label, promo_active, promo_deadline, is_popular, billing_period');
+        .select('plan, name, price, discount_percent, promo_label, promo_active, promo_deadline, is_popular, billing_period, listing_capacity');
 
     // Start from defaults, then overlay whatever the DB returns.
     pricesData = JSON.parse(JSON.stringify(DEFAULT_PRICES));
@@ -1634,6 +1654,7 @@ async function loadPrices() {
     await restoreExpiredPromos();
 
     renderPrices();
+    renderFreeCapacity();
 }
 
 // Clears the discount/promo on any plan whose promo_deadline is in the past,
@@ -1700,6 +1721,38 @@ function renderPrices() {
     });
 
     lucide.createIcons();   // render the newly-injected pencil icons
+}
+
+// ──────────────────────────────────────────────
+// FREE TIER LISTING CAPACITY (prices.listing_capacity, plan = 'Free')
+// ──────────────────────────────────────────────
+function renderFreeCapacity() {
+    const el = document.getElementById('free-listing-cap');
+    if (!el) return;
+    el.textContent = Number(pricesData['Free']?.listing_capacity) || 10;
+}
+
+function openCapacityEditor() {
+    document.getElementById('cf-capacity').value = Number(pricesData['Free']?.listing_capacity) || 10;
+    document.getElementById('capacityModal').classList.add('open');
+}
+
+async function saveCapacity() {
+    const cap = Math.round(parseFloat(document.getElementById('cf-capacity').value));
+    if (!cap || cap < 1) { showToast('Enter a capacity of at least 1.', 'error'); return; }
+
+    const { data, error } = await supabaseClient
+        .from('prices')
+        .update({ listing_capacity: cap, updated_at: new Date().toISOString() })
+        .eq('plan', 'Free')
+        .select();
+
+    if (error) { showToast('Error saving capacity: ' + error.message, 'error'); return; }
+    if (!data || data.length === 0) { showToast('Update blocked — run add_listing_capacity_column.sql or check RLS.', 'error'); return; }
+
+    closeModal('capacityModal');
+    showToast('Listing capacity updated!', 'success');
+    await loadPrices();
 }
 
 // <input type="datetime-local"> works in local time with no timezone; these

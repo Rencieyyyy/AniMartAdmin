@@ -488,10 +488,11 @@
 <script src="logout-modal.js"></script>
 <script>
 // ─────────────────────────────────────────────────
-// DATA — live from the `reviews` table (the mobile app's "Rate us" feature).
-// Shape: id, seller_id, reviewer_id, rating, comment, created_at, updated_at.
-// Each row is one user's app rating; `reviewer_id` is who left it. We join
-// `users` on reviewer_id for the name/photo/role.
+// DATA — live from the `app_reviews` table (the mobile app's "Rate us"
+// feature). Shape: id, reviewer_id, rating, comment, created_at, updated_at —
+// one row per user; re-submitting from the app updates it. NOTE: `reviews`
+// (without the prefix) is the marketplace seller-review table and must NOT be
+// shown here. We join `users` on reviewer_id for the name/photo/role.
 // ─────────────────────────────────────────────────
 const COLORS = ['#38BDF8','#7EFFC5','#FBB824','#C084FC','#FB923C','#F472B6','#34D399','#60A5FA'];
 
@@ -518,7 +519,7 @@ let currentStar = 'all';
 // ─────────────────────────────────────────────────
 async function loadReviews() {
     const { data: rows, error } = await supabaseClient
-        .from('reviews')
+        .from('app_reviews')
         .select('id, reviewer_id, rating, comment, created_at')
         .order('created_at', { ascending: false });
 
