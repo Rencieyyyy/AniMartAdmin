@@ -199,7 +199,7 @@
         /* ─── STAT CARDS ─── */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -446,6 +446,7 @@
         .stat-card:nth-child(2) { animation-delay: 0.10s; }
         .stat-card:nth-child(3) { animation-delay: 0.15s; }
         .stat-card:nth-child(4) { animation-delay: 0.20s; }
+        .stat-card:nth-child(5) { animation-delay: 0.25s; }
         .livestock-card:nth-child(1) { animation-delay: 0.10s; }
         .livestock-card:nth-child(2) { animation-delay: 0.15s; }
         .livestock-card:nth-child(3) { animation-delay: 0.20s; }
@@ -573,6 +574,14 @@
                 <div class="stat-label">Commission Revenue</div>
                 <div class="stat-value">₱42,500</div>
                 <div class="stat-trend"><i data-lucide="trending-up"></i> +21% this month</div>
+            </div>
+            <div class="stat-card" style="--accent-bg: rgba(255,209,102,0.06);">
+                <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:#FFD166;">
+                    <i data-lucide="wallet"></i>
+                </div>
+                <div class="stat-label">Subscription Revenue</div>
+                <div class="stat-value" id="stat-sub-revenue">₱0</div>
+                <div class="stat-trend" id="stat-sub-revenue-note" style="color:#FFD166;"><i data-lucide="coins"></i> — from active plans</div>
             </div>
             <div class="stat-card" style="--accent-bg: rgba(234,88,12,0.06);">
                 <div class="stat-icon" style="background:rgba(234,88,12,0.12); color:#FB923C;">
@@ -899,6 +908,18 @@ async function loadTierStats() {
     lucide.createIcons();   // re-render the icons injected into the trend lines
 }
 
+// ── SUBSCRIPTION REVENUE ───────────────────────────────────────────────────
+// Total revenue collected from mobile-app subscription payments (approved +
+// expired plans), via the shared helper in tier-stats.js — same numbers the
+// Premium Requests page shows.
+async function loadSubscriptionRevenue() {
+    const r = await computeSubscriptionRevenue(supabaseClient);
+    document.getElementById('stat-sub-revenue').textContent = '₱' + r.total.toLocaleString();
+    const note = document.getElementById('stat-sub-revenue-note');
+    if (note) note.innerHTML = `<i data-lucide="coins"></i> ₱${r.active.toLocaleString()} from active plans`;
+    lucide.createIcons();   // re-render the icon injected into the trend line
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // Icons
@@ -929,6 +950,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Seller tier breakdown (Free / Premium / Super Premium), live from Supabase.
     loadTierStats();
+
+    // Subscription revenue from the mobile app, live from Supabase.
+    loadSubscriptionRevenue();
 
     // Charts
     Chart.defaults.color = '#7D8590';

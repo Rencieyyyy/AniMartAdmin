@@ -151,7 +151,7 @@
         /* STAT CARDS */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 16px;
             margin-bottom: 28px;
         }
@@ -766,6 +766,14 @@
                 <div class="stat-label">Active Revenue</div>
                 <div class="stat-value" id="stat-revenue">₱0</div>
                 <div class="stat-trend mint"><i data-lucide="trending-up"></i> from active plans</div>
+            </div>
+            <div class="stat-card" style="animation-delay:0.25s">
+                <div class="stat-icon" style="background:var(--gold-glow); color:var(--gold);">
+                    <i data-lucide="wallet"></i>
+                </div>
+                <div class="stat-label">Total Revenue</div>
+                <div class="stat-value" id="stat-total-revenue">₱0</div>
+                <div class="stat-trend gold"><i data-lucide="coins"></i> all-time, incl. expired</div>
             </div>
         </div>
 
@@ -1406,7 +1414,7 @@ function updateCounts() {
     countUp('stat-expired', expiredData.length);
 }
 
-// Active-plan subscriber counts (feature cards) + active revenue stat.
+// Active-plan subscriber counts (feature cards) + revenue stats.
 function updatePlanInsights() {
     const counts = { 'Premium': 0, 'Super Premium': 0 };
     let revenue = 0;
@@ -1414,11 +1422,18 @@ function updatePlanInsights() {
         if (counts[s.plan] !== undefined) counts[s.plan]++;
         revenue += s.amount;
     });
+    // Total revenue = every paid subscription (active + expired). Pending and
+    // rejected requests were never paid, so they don't count.
+    let totalRevenue = 0;
+    allSubs.forEach(s => {
+        if (s.status === 'approved' || s.status === 'expired') totalRevenue += s.amount;
+    });
     // The Free card shows the count of Free-tier sellers (no active subscription).
     document.getElementById('count-free').textContent    = tierCounts['Free'] || 0;
     document.getElementById('count-premium').textContent = counts['Premium'];
     document.getElementById('count-super').textContent   = counts['Super Premium'];
     document.getElementById('stat-revenue').textContent  = '₱' + revenue.toLocaleString();
+    document.getElementById('stat-total-revenue').textContent = '₱' + totalRevenue.toLocaleString();
 }
 
 function countUp(id, target) {

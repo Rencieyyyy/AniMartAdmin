@@ -41,6 +41,29 @@ const TIER_META = [
     { key: 'Super Premium', id: 'super',   label: 'Super Premium', color: '#C084FC', rgb: '192,132,252' }
 ];
 
+// Total revenue from mobile-app subscription payments: sum of subscriptions.price
+// over approved (active) + expired rows — pending/rejected were never paid.
+// Returns { total, active }; zeros on error (callers render zeros, page survives).
+async function computeSubscriptionRevenue(client) {
+    try {
+        const { data, error } = await client
+            .from('subscriptions')
+            .select('price, status')
+            .in('status', ['approved', 'expired']);
+        if (error) throw error;
+        let total = 0, active = 0;
+        (data || []).forEach(r => {
+            const amt = Number(r.price) || 0;
+            total += amt;
+            if (r.status === 'approved') active += amt;
+        });
+        return { total, active };
+    } catch (e) {
+        console.error('SUBSCRIPTION REVENUE ERROR:', e);
+        return { total: 0, active: 0 };
+    }
+}
+
 // Returns { 'Free', 'Premium', 'Super Premium', totalSellers }.
 // On any error, returns all-zero counts and logs (callers render zeros rather
 // than breaking the page).
