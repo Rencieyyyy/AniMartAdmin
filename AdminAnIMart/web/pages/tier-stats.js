@@ -33,6 +33,31 @@ function normalizePlan(plan) {
     return _PLAN_ALIASES[key] || plan || 'Free';
 }
 
+// Normalize subscriptions.billing_cycle to 'monthly' | 'yearly'. Rows written
+// before the 20260703 migration have no explicit value, so missing/null (or
+// anything unrecognized) is treated as 'monthly'.
+function normalizeBillingCycle(cycle) {
+    return String(cycle || '').toLowerCase() === 'yearly' ? 'yearly' : 'monthly';
+}
+
+function billingCycleLabel(cycle) {
+    return normalizeBillingCycle(cycle) === 'yearly' ? 'Yearly' : 'Monthly';
+}
+
+// Selects from subscriptions including billing_cycle, retrying without it when
+// the column doesn't exist yet (add_subscriptions_billing_cycle.sql not applied
+// — Postgres error 42703). Fallback rows carry no billing_cycle, which
+// normalizeBillingCycle treats as 'monthly' — the pre-migration reality.
+// `applyFilters` receives the query builder so callers keep their own filters.
+async function selectSubscriptions(client, withCycle, withoutCycle, applyFilters) {
+    let res = await applyFilters(client.from('subscriptions').select(withCycle));
+    if (res.error && res.error.code === '42703') {
+        console.warn('subscriptions.billing_cycle missing — run web/sql/add_subscriptions_billing_cycle.sql. Treating all subscriptions as monthly until then.');
+        res = await applyFilters(client.from('subscriptions').select(withoutCycle));
+    }
+    return res;
+}
+
 // Display metadata for the three tiers (shared so both pages look consistent).
 // `key` is the canonical plan label; `id` is the DOM-safe element suffix.
 const TIER_META = [
@@ -43,24 +68,33 @@ const TIER_META = [
 
 // Total revenue from mobile-app subscription payments: sum of subscriptions.price
 // over approved (active) + expired rows — pending/rejected were never paid.
-// Returns { total, active }; zeros on error (callers render zeros, page survives).
+// A row's price is the FULL amount for its billing cycle (a yearly row's price
+// covers the whole year), so `total`/`active` are money actually collected.
+// `mrr` normalizes active plans to a per-month rate (yearly ÷ 12) for
+// monthly-recurring-revenue style display.
+// Returns { total, active, mrr }; zeros on error (callers render zeros, page survives).
 async function computeSubscriptionRevenue(client) {
     try {
-        const { data, error } = await client
-            .from('subscriptions')
-            .select('price, status')
-            .in('status', ['approved', 'expired']);
+        const { data, error } = await selectSubscriptions(
+            client,
+            'price, status, billing_cycle',
+            'price, status',
+            q => q.in('status', ['approved', 'expired'])
+        );
         if (error) throw error;
-        let total = 0, active = 0;
+        let total = 0, active = 0, mrr = 0;
         (data || []).forEach(r => {
             const amt = Number(r.price) || 0;
             total += amt;
-            if (r.status === 'approved') active += amt;
+            if (r.status === 'approved') {
+                active += amt;
+                mrr += normalizeBillingCycle(r.billing_cycle) === 'yearly' ? amt / 12 : amt;
+            }
         });
-        return { total, active };
+        return { total, active, mrr: Math.round(mrr) };
     } catch (e) {
         console.error('SUBSCRIPTION REVENUE ERROR:', e);
-        return { total: 0, active: 0 };
+        return { total: 0, active: 0, mrr: 0 };
     }
 }
 

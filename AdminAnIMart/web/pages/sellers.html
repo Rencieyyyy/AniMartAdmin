@@ -732,10 +732,14 @@ async function loadUsers() {
             .select('id, name, email, phone, address, is_seller, status, created_at, messenger')
             .in('status', ['approved', 'restricted', 'blocked'])
             .order('created_at', { ascending: false }),
-        supabaseClient
-            .from('subscriptions')
-            .select('user_id, plan')
-            .eq('status', 'approved')
+        // selectSubscriptions (tier-stats.js) retries without billing_cycle when
+        // the column's migration hasn't been applied yet.
+        selectSubscriptions(
+            supabaseClient,
+            'user_id, plan, billing_cycle',
+            'user_id, plan',
+            q => q.eq('status', 'approved')
+        )
     ]);
 
     const planByUser = {};
@@ -745,7 +749,14 @@ async function loadUsers() {
     } else {
         (subsRes.data || []).forEach(s => {
             const tier = normalizePlan(s.plan);          // tier-stats.js
-            if (PAID_TIERS.includes(tier) && s.user_id != null) planByUser[s.user_id] = tier;
+            if (!PAID_TIERS.includes(tier) || s.user_id == null) return;
+            const cycle = normalizeBillingCycle(s.billing_cycle);   // null → monthly
+            // A member can hold monthly + yearly of the same plan while a cycle
+            // upgrade is in flight — show the yearly one rather than whichever
+            // row happened to arrive last.
+            const prev = planByUser[s.user_id];
+            if (prev && prev.tier === tier && prev.cycle === 'yearly' && cycle !== 'yearly') return;
+            planByUser[s.user_id] = { tier, cycle };
         });
     }
 
@@ -764,7 +775,9 @@ async function loadUsers() {
             type:     row.is_seller ? 'seller' : 'buyer',
             joined:   row.created_at || null,
             status:   dbStatusToUi(row.status),       // approved -> active
-            plan:     planByUser[row.id] || 'Free',
+            plan:     planByUser[row.id]?.tier || 'Free',
+            // 'Monthly' / 'Yearly' for paid plans; Free has no billing cycle.
+            billing:  planByUser[row.id] ? billingCycleLabel(planByUser[row.id].cycle) : '—',
             messenger: row.messenger || ''
         }));
     }
@@ -985,7 +998,7 @@ function viewUser(id) {
             </div>
             <div class="detail-item">
                 <div class="detail-item-label">Plan</div>
-                <div class="detail-item-value">${u.plan}</div>
+                <div class="detail-item-value">${u.plan}${u.billing !== '—' ? ' · ' + u.billing : ''}</div>
             </div>
             <div class="detail-item">
                 <div class="detail-item-label">Phone</div>
@@ -1104,7 +1117,7 @@ function exportCSV() {
     }
 
     const statusLabel = { active:'Active', restricted:'Restricted', blocked:'Blocked' };
-    const headers = ['Name','Email','Phone','Address','Type','Status','Plan','Messenger','Joined'];
+    const headers = ['Name','Email','Phone','Address','Type','Status','Plan','Billing','Messenger','Joined'];
 
     // Quote a value if it contains a comma, quote, or newline.
     const esc = v => {
@@ -1120,6 +1133,7 @@ function exportCSV() {
         u.type.charAt(0).toUpperCase() + u.type.slice(1),
         statusLabel[u.status] || u.status,
         u.plan,
+        u.billing,
         u.messenger || '',
         u.joined ? new Date(u.joined).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' }) : ''
     ].map(esc).join(','));

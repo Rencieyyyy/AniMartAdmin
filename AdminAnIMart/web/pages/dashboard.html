@@ -916,7 +916,9 @@ async function loadSubscriptionRevenue() {
     const r = await computeSubscriptionRevenue(supabaseClient);
     document.getElementById('stat-sub-revenue').textContent = '₱' + r.total.toLocaleString();
     const note = document.getElementById('stat-sub-revenue-note');
-    if (note) note.innerHTML = `<i data-lucide="coins"></i> ₱${r.active.toLocaleString()} from active plans`;
+    // r.active sums each plan's full-cycle price; r.mrr is the per-month
+    // equivalent (yearly plans ÷ 12) so yearly rows don't read as monthly rates.
+    if (note) note.innerHTML = `<i data-lucide="coins"></i> ₱${r.active.toLocaleString()} active · ₱${r.mrr.toLocaleString()}/mo recurring`;
     lucide.createIcons();   // re-render the icon injected into the trend line
 }
 
