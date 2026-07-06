@@ -719,6 +719,7 @@
             <a href="user.html" class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
  <a href="customer-service.html" class="nav-link "><i data-lucide="message-circle"></i><span>Customer Service</span></a>
             <a href="reviews.html" class="nav-link"><i data-lucide="star"></i><span>Reviews</span></a>
+            <a href="reports.html" class="nav-link"><i data-lucide="flag"></i><span>Reports</span><span class="reports-badge" data-reports-badge hidden>0</span></a>
             <div class="nav-bottom">
                 <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
                 <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
@@ -928,7 +929,6 @@
                     </div>
                     <div class="plan-price">
                         <div class="amount" style="color:#38BDF8;">₱0</div>
-                        <span class="period">/ forever</span>
                         <button class="price-edit-btn" title="Edit listing capacity" onclick="openCapacityEditor()" style="margin-top:8px;"><i data-lucide="pencil"></i> Edit capacity</button>
                     </div>
                 </div>
@@ -940,7 +940,6 @@
                     <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Standard analytics dashboard</div>
                     <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Priority listing placement</div>
                     <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Featured on homepage</div>
-                    <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Buyer direct messaging</div>
                 </div>
                 <div class="plan-active-count">
                     <span class="label">Free-tier sellers</span>
@@ -965,10 +964,9 @@
                 <div class="feature-list">
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Unlimited active listings</div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Verified seller badge</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Advanced analytics + reports</div>
+                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Basic analytics report</div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Priority listing placement</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Buyer direct messaging</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Priority email & chat support</div>
+                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Chat support</div>
                 </div>
                 <div class="plan-active-count">
                     <span class="label">Active subscribers</span>
@@ -996,8 +994,7 @@
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Full analytics suite</div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Top listing placement</div>
                     <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Featured on homepage banner</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Dedicated account manager</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Custom seller profile page</div>
+                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Chat support</div>
                 </div>
                 <div class="plan-active-count">
                     <span class="label">Active subscribers</span>
@@ -2023,5 +2020,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 })();
 </script>
+<script src="reports-badge.js"></script>
 </body>
 </html>
