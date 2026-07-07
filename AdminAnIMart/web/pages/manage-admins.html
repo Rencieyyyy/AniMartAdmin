@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Admins | AniMart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --mint: #7EFFC5;
+            --mint-dim: #5CE8A8;
+            --mint-glow: rgba(126,255,197,0.15);
+            --dark: #0D1117;
+            --surface: #161B22;
+            --surface-2: #1C2333;
+            --surface-3: #21293a;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.13);
+            --text: #E6EDF3;
+            --muted: #7D8590;
+            --danger: #FF6B6B;
+            --warn: #FBB824;
+            --gold: #FFD166;
+            --blue: #38BDF8;
+            --purple: #C084FC;
+            --sidebar-w: 260px;
+            --radius: 16px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: white;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -25%; left: -5%;
+            width: 50%; height: 50%;
+            background: radial-gradient(ellipse, rgba(126,255,197,0.045) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .wrapper { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; height: 100vh;
+            z-index: 100; padding: 0 12px 20px;
+        }
+
+        .sidebar-brand {
+            padding: 28px 12px 24px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border); margin-bottom: 16px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px; background: var(--mint);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
+        }
+
+        .brand-icon svg { width: 18px; height: 18px; color: var(--dark); }
+        .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+        .brand-name span { color: var(--mint); }
+
+        .nav { display: flex; flex-direction: column; flex: 1; gap: 3px; }
+
+        .nav-label {
+            font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--muted); padding: 14px 12px 6px;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+            border-radius: 10px; text-decoration: none; color: var(--muted);
+            font-size: 0.875rem; font-weight: 500; transition: all 0.18s;
+            border: none; background: transparent; cursor: pointer; width: 100%; text-align: left;
+        }
+
+        .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .nav-link:hover { color: var(--dark); background: var(--mint); }
+        .nav-link.active { background: var(--mint); color: var(--dark); font-weight: 700; }
+        .nav-link.logout { color: var(--danger); }
+        .nav-link.logout:hover { background: rgba(255,107,107,0.1); color: var(--danger); }
+
+        .nav-bottom {
+            border-top: 1px solid var(--border); padding-top: 12px;
+            margin-top: auto; display: flex; flex-direction: column; gap: 3px;
+        }
+
+        /* ── MAIN ── */
+        .main {
+            margin-left: var(--sidebar-w); flex: 1;
+            padding: 36px 40px;
+            max-width: calc(100vw - var(--sidebar-w));
+        }
+
+        .main[data-guarding] { visibility: hidden; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            display: flex; align-items: flex-start;
+            justify-content: space-between; margin-bottom: 32px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem; font-weight: 800;
+            letter-spacing: -0.04em; color: var(--mint);
+        }
+
+        .page-header p { font-size: 0.875rem; color: var(--muted); margin-top: 3px; }
+
+        .header-right { display: flex; align-items: center; gap: 10px; }
+
+        .super-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.62rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            padding: 5px 11px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em;
+            background: rgba(255,209,102,0.1); color: var(--gold);
+            border: 1px solid rgba(255,209,102,0.25);
+        }
+        .super-badge svg { width: 11px; height: 11px; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+            padding: 10px 16px; border-radius: 10px; border: 1px solid transparent;
+            font-size: 0.8rem; font-weight: 700; font-family: 'Sora', sans-serif;
+            cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .btn svg { width: 13px; height: 13px; }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .btn-primary { background: var(--mint); color: var(--dark); font-weight: 800; }
+        .btn-primary:hover:not(:disabled) { background: var(--mint-dim); transform: translateY(-1px); }
+        .btn-secondary { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+        .btn-secondary:hover:not(:disabled) { border-color: rgba(126,255,197,0.35); color: var(--mint); }
+        .btn-danger { background: rgba(255,107,107,0.12); color: var(--danger); border-color: rgba(255,107,107,0.25); }
+        .btn-danger:hover:not(:disabled) { background: rgba(255,107,107,0.2); }
+
+        /* ── STATS ── */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 14px; margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px;
+            transition: transform 0.2s;
+            animation: fadeUp 0.4s ease both;
+            position: relative; overflow: hidden;
+        }
+        .stat-card::after {
+            content: '';
+            position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+        .stat-card.all::after        { background: var(--mint); }
+        .stat-card.supers::after     { background: var(--gold); }
+        .stat-card.restricted::after { background: var(--warn); }
+        .stat-card.blocked::after    { background: var(--danger); }
+        .stat-card:hover { transform: translateY(-2px); }
+
+        .stat-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+        }
+        .stat-icon svg { width: 17px; height: 17px; }
+        .stat-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+        .stat-value { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+
+        /* ── TABLE ── */
+        .table-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden;
+            animation: fadeUp 0.5s ease both;
+        }
+
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 820px; }
+
+        thead th {
+            text-align: left; font-size: 0.65rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+            padding: 13px 16px; border-bottom: 1px solid var(--border);
+            background: var(--surface-2); white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 13px 16px; border-bottom: 1px solid var(--border);
+            font-size: 0.8rem; vertical-align: middle;
+        }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr { transition: background 0.15s; }
+        tbody tr:hover { background: rgba(255,255,255,0.02); }
+        tbody tr.is-blocked { opacity: 0.55; }
+
+        .admin-cell { display: flex; align-items: center; gap: 11px; }
+        .admin-avatar {
+            width: 38px; height: 38px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 800; flex-shrink: 0;
+            position: relative; overflow: hidden;
+        }
+        .admin-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .admin-name { font-weight: 700; display: flex; align-items: center; gap: 7px; }
+        .admin-email { font-size: 0.68rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+        .you-chip {
+            font-size: 0.58rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            background: var(--mint-glow); color: var(--mint);
+            border: 1px solid rgba(126,255,197,0.25);
+            border-radius: 20px; padding: 2px 8px; text-transform: uppercase;
+        }
+
+        .role-badge, .status-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.62rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em;
+            border: 1px solid transparent; white-space: nowrap;
+        }
+        .role-badge svg, .status-badge svg { width: 10px; height: 10px; }
+        .rb-super { background: rgba(255,209,102,0.1); color: var(--gold); border-color: rgba(255,209,102,0.25); }
+        .rb-admin { background: rgba(56,189,248,0.1); color: var(--blue); border-color: rgba(56,189,248,0.22); }
+        .sb-active     { background: rgba(126,255,197,0.1); color: var(--mint-dim); border-color: rgba(126,255,197,0.2); }
+        .sb-restricted { background: rgba(251,184,36,0.1); color: var(--warn); border-color: rgba(251,184,36,0.25); }
+        .sb-blocked    { background: rgba(255,107,107,0.1); color: var(--danger); border-color: rgba(255,107,107,0.25); }
+
+        .cell-date { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+
+        .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .act-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--surface-2); color: var(--muted);
+            font-size: 0.68rem; font-weight: 700; font-family: 'Sora', sans-serif;
+            cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .act-btn svg { width: 11px; height: 11px; }
+        .act-btn:hover:not(:disabled) { color: var(--text); border-color: var(--border-hover); }
+        .act-btn.promote:hover:not(:disabled) { color: var(--gold); border-color: rgba(255,209,102,0.35); }
+        .act-btn.restrict:hover:not(:disabled) { color: var(--warn); border-color: rgba(251,184,36,0.35); }
+        .act-btn.activate:hover:not(:disabled) { color: var(--mint); border-color: rgba(126,255,197,0.35); }
+        .act-btn.block:hover:not(:disabled), .act-btn.delete:hover:not(:disabled) { color: var(--danger); border-color: rgba(255,107,107,0.35); }
+        .act-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* ── EMPTY ── */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+
+        /* ── MODALS ── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(5,8,12,0.7);
+            backdrop-filter: blur(4px); z-index: 1000;
+            display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--surface); border: 1px solid var(--border-hover);
+            border-radius: 18px; padding: 26px; width: 100%; max-width: 460px;
+            animation: fadeUp 0.25s ease both;
+        }
+        .modal h2 { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
+        .modal .modal-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+        .field { margin-bottom: 14px; }
+        .field label {
+            display: block; font-size: 0.68rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.07em;
+            color: var(--muted); margin-bottom: 6px;
+        }
+        .field input, .field select {
+            width: 100%;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 10px; padding: 10px 13px;
+            font-size: 0.85rem; color: var(--text); font-family: 'Sora', sans-serif;
+            outline: none; transition: border-color 0.2s;
+        }
+        .field input:focus, .field select:focus { border-color: rgba(126,255,197,0.4); }
+        .field select option { background: var(--surface-2); }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .pw-row { display: flex; gap: 8px; }
+        .pw-row input { flex: 1; }
+
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+        .confirm-icon {
+            width: 46px; height: 46px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+        }
+        .confirm-icon svg { width: 20px; height: 20px; }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 28px; right: 28px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 12px; padding: 12px 18px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.82rem; font-weight: 600;
+            z-index: 9999; transform: translateY(80px); opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            min-width: 240px; max-width: 440px;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: rgba(126,255,197,0.3); color: var(--mint-dim); }
+        .toast.error { border-color: rgba(255,107,107,0.3); color: var(--danger); }
+        .toast svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+        @media (max-width: 900px) {
+            :root { --sidebar-w: 64px; }
+            .sidebar-brand, .nav-link span, .nav-label { display: none; }
+            .nav-link { justify-content: center; padding: 10px; }
+            .main { padding: 24px 18px; }
+        }
+        @media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="brand-name">Ani<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-label">Main</div>
+            <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+            <a href="sellers.html"   class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+            <a href="premium.html"   class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
+
+            <div class="nav-label">Admin</div>
+            <a href="announcements.html"  class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
+            <a href="user.html"           class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
+            <a href="customer-service.html" class="nav-link"><i data-lucide="message-circle"></i><span>Customer Service</span></a>
+            <a href="reviews.html"        class="nav-link"><i data-lucide="star"></i><span>Reviews</span></a>
+            <a href="reports.html"        class="nav-link"><i data-lucide="flag"></i><span>Reports</span><span class="reports-badge" data-reports-badge hidden>0</span></a>
+
+            <!-- Super Admin section is injected here by role.js -->
+
+            <div class="nav-bottom">
+                <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
+                <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN (hidden until the super-admin guard passes) -->
+    <main class="main" id="mainContent" data-guarding>
+
+        <div class="page-header">
+            <div>
+                <h1>Manage Admins</h1>
+                <p>Create, promote, restrict, block or delete admin accounts. Every change here is audit-logged.</p>
+            </div>
+            <div class="header-right">
+                <span class="super-badge"><i data-lucide="shield-check"></i>Super Admin only</span>
+                <button class="btn btn-primary" onclick="openCreate()"><i data-lucide="user-plus"></i>Add admin</button>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+            <div class="stat-card all" style="animation-delay:0.05s">
+                <div class="stat-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);"><i data-lucide="users"></i></div>
+                <div class="stat-label">Total admins</div>
+                <div class="stat-value" id="stat-total">0</div>
+            </div>
+            <div class="stat-card supers" style="animation-delay:0.1s">
+                <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:var(--gold);"><i data-lucide="crown"></i></div>
+                <div class="stat-label">Super admins</div>
+                <div class="stat-value" id="stat-supers">0</div>
+            </div>
+            <div class="stat-card restricted" style="animation-delay:0.15s">
+                <div class="stat-icon" style="background:rgba(251,184,36,0.12); color:var(--warn);"><i data-lucide="eye"></i></div>
+                <div class="stat-label">Restricted</div>
+                <div class="stat-value" id="stat-restricted">0</div>
+            </div>
+            <div class="stat-card blocked" style="animation-delay:0.2s">
+                <div class="stat-icon" style="background:rgba(255,107,107,0.12); color:var(--danger);"><i data-lucide="ban"></i></div>
+                <div class="stat-label">Blocked</div>
+                <div class="stat-value" id="stat-blocked">0</div>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Admin</th>
+                            <th style="width:130px">Role</th>
+                            <th style="width:120px">Status</th>
+                            <th style="width:120px">Added</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminsBody"></tbody>
+                </table>
+            </div>
+            <div id="emptyWrap"></div>
+        </div>
+
+    </main>
+</div>
+
+<!-- CREATE MODAL -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal">
+        <h2>Add a new admin</h2>
+        <div class="modal-sub">Creates the login (Supabase auth user) and the admin record together. Share the password with them securely — they can change it on their Profile page.</div>
+
+        <div class="field-row">
+            <div class="field">
+                <label for="cFirst">First name</label>
+                <input type="text" id="cFirst" placeholder="Juan" autocomplete="off">
+            </div>
+            <div class="field">
+                <label for="cLast">Last name</label>
+                <input type="text" id="cLast" placeholder="Dela Cruz" autocomplete="off">
+            </div>
+        </div>
+        <div class="field">
+            <label for="cEmail">Email (their login)</label>
+            <input type="email" id="cEmail" placeholder="new-admin@ani.com" autocomplete="off">
+        </div>
+        <div class="field">
+            <label for="cPassword">Temporary password (min 8 chars)</label>
+            <div class="pw-row">
+                <input type="text" id="cPassword" placeholder="••••••••" autocomplete="off">
+                <button class="btn btn-secondary" type="button" onclick="generatePassword()" title="Generate a strong password"><i data-lucide="dices"></i></button>
+            </div>
+        </div>
+        <div class="field">
+            <label for="cRole">Role</label>
+            <select id="cRole">
+                <option value="admin">Admin — everyday moderation</option>
+                <option value="super_admin">Super Admin — payments, audit logs, admin management</option>
+            </select>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('createModal')">Cancel</button>
+            <button class="btn btn-primary" id="createBtn" onclick="createAdmin()"><i data-lucide="user-plus"></i>Create admin</button>
+        </div>
+    </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal">
+        <div class="confirm-icon" id="confirmIcon"></div>
+        <h2 id="confirmTitle">Are you sure?</h2>
+        <div class="modal-sub" id="confirmDesc"></div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+            <button class="btn" id="confirmBtn" onclick="runPendingAction()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+    <i data-lucide="check-circle"></i>
+    <span id="toast-msg">Done.</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="logout-modal.js"></script>
+<script src="reports-badge.js"></script>
+<script src="role.js"></script>
+<script>
+// ─────────────────────────────────────────────────
+// DATA — public.admins with role ('admin'|'super_admin') and status
+// ('active'|'restricted'|'blocked'), migrations 20260709000000 + 003000.
+//
+// Role/status flips are direct table updates under RLS; the DB trigger
+// trg_protect_admins_row enforces: super-admin-only, never your own row,
+// and never the last active super admin — so even devtools can't bypass it.
+// Create/delete go through the admin-users Edge Function (auth users need
+// the service role). Everything lands in audit_logs automatically.
+// ─────────────────────────────────────────────────
+const COLORS = ['#38BDF8','#7EFFC5','#FBB824','#C084FC','#FB923C','#F472B6','#34D399','#60A5FA'];
+
+let admins = [];
+let myAdminId = null;
+let pendingAction = null;   // { kind, id, label }
+
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function initials(name) {
+    return (name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase();
+}
+function rndColor(seed) {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) h += seed.charCodeAt(i);
+    return COLORS[h % COLORS.length];
+}
+
+// ─────────────────────────────────────────────────
+// LOAD
+// ─────────────────────────────────────────────────
+async function loadAdmins() {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    const { data, error } = await supabaseClient
+        .from('admins')
+        .select('id, email, first_name, last_name, role, status, created_at, pfp')
+        .order('created_at');
+
+    if (error) {
+        document.getElementById('emptyWrap').innerHTML =
+            `<div class="empty-state">Couldn't load admins: ${escapeHtml(error.message)}</div>`;
+        return;
+    }
+
+    admins = data || [];
+    const mine = admins.find(a =>
+        (a.email || '').trim().toLowerCase() === (user?.email || '').trim().toLowerCase());
+    myAdminId = mine ? mine.id : null;
+
+    renderStats();
+    renderTable();
+}
+
+function renderStats() {
+    document.getElementById('stat-total').textContent      = admins.length;
+    document.getElementById('stat-supers').textContent     = admins.filter(a => a.role === 'super_admin').length;
+    document.getElementById('stat-restricted').textContent = admins.filter(a => a.status === 'restricted').length;
+    document.getElementById('stat-blocked').textContent    = admins.filter(a => a.status === 'blocked').length;
+}
+
+// ─────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────
+function roleBadge(role) {
+    return role === 'super_admin'
+        ? '<span class="role-badge rb-super"><i data-lucide="crown"></i>Super Admin</span>'
+        : '<span class="role-badge rb-admin"><i data-lucide="shield"></i>Admin</span>';
+}
+
+function statusBadge(status) {
+    const map = {
+        active:     ['sb-active', 'check-circle', 'Active'],
+        restricted: ['sb-restricted', 'eye', 'Restricted'],
+        blocked:    ['sb-blocked', 'ban', 'Blocked']
+    };
+    const [cls, icon, label] = map[status] || map.active;
+    return `<span class="status-badge ${cls}"><i data-lucide="${icon}"></i>${label}</span>`;
+}
+
+function actionButtons(a) {
+    if (a.id === myAdminId) {
+        return '<span style="font-size:0.7rem;color:var(--muted);font-style:italic;">Your own account — ask another super admin</span>';
+    }
+
+    const btns = [];
+    btns.push(a.role === 'super_admin'
+        ? `<button class="act-btn" onclick="confirmAction('demote','${a.id}')"><i data-lucide="arrow-down"></i>Demote</button>`
+        : `<button class="act-btn promote" onclick="confirmAction('promote','${a.id}')"><i data-lucide="crown"></i>Promote</button>`);
+
+    if (a.status !== 'restricted') {
+        btns.push(`<button class="act-btn restrict" onclick="confirmAction('restrict','${a.id}')"><i data-lucide="eye"></i>Restrict</button>`);
+    }
+    if (a.status !== 'active') {
+        btns.push(`<button class="act-btn activate" onclick="confirmAction('activate','${a.id}')"><i data-lucide="check"></i>Activate</button>`);
+    }
+    if (a.status !== 'blocked') {
+        btns.push(`<button class="act-btn block" onclick="confirmAction('block','${a.id}')"><i data-lucide="ban"></i>Block</button>`);
+    }
+    btns.push(`<button class="act-btn delete" onclick="confirmAction('delete','${a.id}')"><i data-lucide="trash-2"></i>Delete</button>`);
+    return `<div class="row-actions">${btns.join('')}</div>`;
+}
+
+function renderTable() {
+    const body = document.getElementById('adminsBody');
+    body.innerHTML = '';
+
+    admins.forEach(a => {
+        const name = [a.first_name, a.last_name].filter(Boolean).join(' ').trim() || a.email;
+        const color = rndColor(name);
+        const tr = document.createElement('tr');
+        if (a.status === 'blocked') tr.className = 'is-blocked';
+        tr.innerHTML = `
+            <td>
+                <div class="admin-cell">
+                    <div class="admin-avatar" style="background:${color}22;color:${color};border:1.5px solid ${color}44;">
+                        ${initials(name)}${a.pfp ? `<img src="${escapeHtml(a.pfp)}" alt="" onerror="this.remove()">` : ''}
+                    </div>
+                    <div>
+                        <div class="admin-name">${escapeHtml(name)}${a.id === myAdminId ? '<span class="you-chip">You</span>' : ''}</div>
+                        <div class="admin-email">${escapeHtml(a.email)}</div>
+                    </div>
+                </div>
+            </td>
+            <td>${roleBadge(a.role)}</td>
+            <td>${statusBadge(a.status)}</td>
+            <td class="cell-date">${a.created_at ? new Date(a.created_at).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' }) : '—'}</td>
+            <td>${actionButtons(a)}</td>
+        `;
+        body.appendChild(tr);
+    });
+
+    lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// ACTIONS — role/status = direct updates (trigger-guarded);
+//           delete     = Edge Function (auth user must go too)
+// ─────────────────────────────────────────────────
+const ACTIONS = {
+    promote:  { title: 'Promote to Super Admin', color: 'var(--gold)',  bg: 'rgba(255,209,102,0.12)', icon: 'crown',
+                desc: a => `<strong>${escapeHtml(nameOf(a))}</strong> will gain access to Payment Settings, Audit Logs and Manage Admins.`,
+                btn: 'btn-primary', btnLabel: 'Promote' },
+    demote:   { title: 'Demote to Admin', color: 'var(--blue)', bg: 'rgba(56,189,248,0.12)', icon: 'arrow-down',
+                desc: a => `<strong>${escapeHtml(nameOf(a))}</strong> will lose super admin access (payments, audit logs, admin management).`,
+                btn: 'btn-primary', btnLabel: 'Demote' },
+    restrict: { title: 'Restrict this admin?', color: 'var(--warn)', bg: 'rgba(251,184,36,0.12)', icon: 'eye',
+                desc: a => `<strong>${escapeHtml(nameOf(a))}</strong> becomes read-only: they can sign in and view panel data, but the database will reject every change they try to make.`,
+                btn: 'btn-primary', btnLabel: 'Restrict' },
+    activate: { title: 'Restore full access?', color: 'var(--mint)', bg: 'rgba(126,255,197,0.12)', icon: 'check',
+                desc: a => `<strong>${escapeHtml(nameOf(a))}</strong> becomes an active admin again with their previous role.`,
+                btn: 'btn-primary', btnLabel: 'Activate' },
+    block:    { title: 'Block this admin?', color: 'var(--danger)', bg: 'rgba(255,107,107,0.12)', icon: 'ban',
+                desc: a => `<strong>${escapeHtml(nameOf(a))}</strong> loses ALL panel access — they cannot sign in, read, or change anything until unblocked. Their account and history are kept.`,
+                btn: 'btn-danger', btnLabel: 'Block' },
+    delete:   { title: 'Delete this admin?', color: 'var(--danger)', bg: 'rgba(255,107,107,0.12)', icon: 'trash-2',
+                desc: a => `<strong>${escapeHtml(nameOf(a))}</strong>'s login and admin record are permanently removed. Their past actions stay in the audit log. This cannot be undone.`,
+                btn: 'btn-danger', btnLabel: 'Delete permanently' }
+};
+
+function nameOf(a) {
+    return [a.first_name, a.last_name].filter(Boolean).join(' ').trim() || a.email;
+}
+
+function confirmAction(kind, id) {
+    const a = admins.find(x => x.id === id);
+    if (!a) return;
+    const cfg = ACTIONS[kind];
+    pendingAction = { kind, id };
+
+    const icon = document.getElementById('confirmIcon');
+    icon.style.cssText = `background:${cfg.bg};color:${cfg.color};border:1px solid ${cfg.color}44;`;
+    icon.innerHTML = `<i data-lucide="${cfg.icon}"></i>`;
+    document.getElementById('confirmTitle').textContent = cfg.title;
+    document.getElementById('confirmDesc').innerHTML = cfg.desc(a);
+    const btn = document.getElementById('confirmBtn');
+    btn.className = `btn ${cfg.btn}`;
+    btn.textContent = cfg.btnLabel;
+
+    openModal('confirmModal');
+    lucide.createIcons();
+}
+
+async function runPendingAction() {
+    if (!pendingAction) return;
+    const { kind, id } = pendingAction;
+    closeModal('confirmModal');
+
+    try {
+        if (kind === 'delete') {
+            await invokeAdminUsers({ action: 'delete', admin_id: id });
+            showToast('Admin deleted.', 'success');
+        } else {
+            const patch = {
+                promote:  { role: 'super_admin' },
+                demote:   { role: 'admin' },
+                restrict: { status: 'restricted' },
+                activate: { status: 'active' },
+                block:    { status: 'blocked' }
+            }[kind];
+
+            const { data, error } = await supabaseClient
+                .from('admins').update(patch).eq('id', id).select();
+            if (error) throw new Error(error.message);
+            if (!data || data.length === 0) throw new Error('Update blocked — no permission (check RLS).');
+            showToast('Admin updated.', 'success');
+        }
+    } catch (e) {
+        showToast(e.message || String(e), 'error');
+    }
+
+    pendingAction = null;
+    await loadAdmins();
+}
+
+// ─────────────────────────────────────────────────
+// CREATE
+// ─────────────────────────────────────────────────
+function openCreate() {
+    ['cFirst','cLast','cEmail','cPassword'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('cRole').value = 'admin';
+    openModal('createModal');
+}
+
+function generatePassword() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    const buf = new Uint32Array(14);
+    crypto.getRandomValues(buf);
+    document.getElementById('cPassword').value =
+        [...buf].map(n => chars[n % chars.length]).join('');
+}
+
+async function createAdmin() {
+    const btn = document.getElementById('createBtn');
+    btn.disabled = true;
+    try {
+        const payload = {
+            action:     'create',
+            first_name: document.getElementById('cFirst').value.trim(),
+            last_name:  document.getElementById('cLast').value.trim(),
+            email:      document.getElementById('cEmail').value.trim(),
+            password:   document.getElementById('cPassword').value,
+            role:       document.getElementById('cRole').value
+        };
+        if (!payload.last_name) throw new Error('Last name is required.');
+        if (!payload.email) throw new Error('Email is required.');
+        if (payload.password.length < 8) throw new Error('Password must be at least 8 characters.');
+
+        await invokeAdminUsers(payload);
+        closeModal('createModal');
+        showToast('Admin created — they can sign in now.', 'success');
+        await loadAdmins();
+    } catch (e) {
+        showToast(e.message || String(e), 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// Invoke the Edge Function, surfacing its JSON error message on failure.
+async function invokeAdminUsers(body) {
+    const { data, error } = await supabaseClient.functions.invoke('admin-users', { body });
+    if (error) {
+        let msg = error.message;
+        try {
+            const ctx = await error.context.json();
+            if (ctx && ctx.error) msg = ctx.error;
+        } catch (_) { /* keep generic message */ }
+        throw new Error(msg);
+    }
+    if (data && data.error) throw new Error(data.error);
+    return data;
+}
+
+// ─────────────────────────────────────────────────
+// MODALS / TOAST
+// ─────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+let toastTimer;
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.className = `toast ${type} show`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.classList.remove('show'); }, 4200);
+    lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+    lucide.createIcons();
+    if (!(await requireSuperAdmin())) return;
+    document.getElementById('mainContent').removeAttribute('data-guarding');
+    await loadAdmins();
+});
+
+// Logout is handled by the shared styled modal in logout-modal.js.
+</script>
+</body>
+</html>

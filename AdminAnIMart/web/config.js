@@ -14,7 +14,9 @@ const ACCESS_DENIED_MESSAGE =
 
 
 // Looks up the admins row for the currently signed-in user.
-// Returns the row, or null when there is no session or the account is not an admin.
+// Returns the row, or null when there is no session, the account is not an
+// admin, or the admin has been BLOCKED by a super admin (blocked accounts
+// also lose all database access via RLS — this check is just the front door).
 async function getAdminForCurrentUser(){
 
     const { data: { user } } = await supabaseClient.auth.getUser();
@@ -22,11 +24,12 @@ async function getAdminForCurrentUser(){
 
     const { data } = await supabaseClient
         .from("admins")
-        .select("id, email")
+        .select("id, email, role, status")
         .eq("email", user.email)
         .maybeSingle();
 
-    return data || null;
+    if (!data || data.status === "blocked") return null;
+    return data;
 }
 
 

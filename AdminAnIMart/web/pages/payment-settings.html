@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Settings | AniMart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --mint: #7EFFC5;
+            --mint-dim: #5CE8A8;
+            --mint-glow: rgba(126,255,197,0.15);
+            --dark: #0D1117;
+            --surface: #161B22;
+            --surface-2: #1C2333;
+            --surface-3: #21293a;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.13);
+            --text: #E6EDF3;
+            --muted: #7D8590;
+            --danger: #FF6B6B;
+            --warn: #FBB824;
+            --gold: #FFD166;
+            --gcash-blue: #007DFE;
+            --sidebar-w: 260px;
+            --radius: 16px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: white;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -25%; left: -5%;
+            width: 50%; height: 50%;
+            background: radial-gradient(ellipse, rgba(126,255,197,0.045) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .wrapper { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; height: 100vh;
+            z-index: 100; padding: 0 12px 20px;
+        }
+
+        .sidebar-brand {
+            padding: 28px 12px 24px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border); margin-bottom: 16px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px; background: var(--mint);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
+        }
+
+        .brand-icon svg { width: 18px; height: 18px; color: var(--dark); }
+        .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+        .brand-name span { color: var(--mint); }
+
+        .nav { display: flex; flex-direction: column; flex: 1; gap: 3px; }
+
+        .nav-label {
+            font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--muted); padding: 14px 12px 6px;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+            border-radius: 10px; text-decoration: none; color: var(--muted);
+            font-size: 0.875rem; font-weight: 500; transition: all 0.18s;
+            border: none; background: transparent; cursor: pointer; width: 100%; text-align: left;
+        }
+
+        .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .nav-link:hover { color: var(--dark); background: var(--mint); }
+        .nav-link.active { background: var(--mint); color: var(--dark); font-weight: 700; }
+        .nav-link.logout { color: var(--danger); }
+        .nav-link.logout:hover { background: rgba(255,107,107,0.1); color: var(--danger); }
+
+        .nav-bottom {
+            border-top: 1px solid var(--border); padding-top: 12px;
+            margin-top: auto; display: flex; flex-direction: column; gap: 3px;
+        }
+
+        /* ── MAIN ── */
+        .main {
+            margin-left: var(--sidebar-w); flex: 1;
+            padding: 36px 40px;
+            max-width: calc(100vw - var(--sidebar-w));
+        }
+
+        .main[data-guarding] { visibility: hidden; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            display: flex; align-items: flex-start;
+            justify-content: space-between; margin-bottom: 32px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem; font-weight: 800;
+            letter-spacing: -0.04em; color: var(--mint);
+        }
+
+        .page-header p { font-size: 0.875rem; color: var(--muted); margin-top: 3px; }
+
+        .header-right { display: flex; align-items: center; gap: 10px; }
+
+        .date-badge {
+            font-family: 'DM Mono', monospace; font-size: 0.75rem;
+            color: var(--muted); background: var(--surface-2);
+            border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+        }
+
+        .super-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.62rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            padding: 5px 11px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em;
+            background: rgba(255,209,102,0.1); color: var(--gold);
+            border: 1px solid rgba(255,209,102,0.25);
+        }
+        .super-badge svg { width: 11px; height: 11px; }
+
+        /* ── LAYOUT ── */
+        .settings-grid {
+            display: grid; grid-template-columns: minmax(0, 1fr) 360px;
+            gap: 22px; align-items: start;
+        }
+
+        .card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 26px;
+            animation: fadeUp 0.45s ease both;
+        }
+
+        .card-title {
+            display: flex; align-items: center; gap: 9px;
+            font-size: 1rem; font-weight: 800; letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+        .card-title svg { width: 17px; height: 17px; color: var(--mint); }
+        .card-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 22px; line-height: 1.5; }
+
+        /* ── ACCOUNT CARDS ── */
+        .accounts-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
+
+        .account-card {
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 14px; padding: 18px;
+            transition: border-color 0.2s;
+        }
+        .account-card:hover { border-color: var(--border-hover); }
+        .account-card.inactive { opacity: 0.6; }
+
+        .account-head {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
+        }
+        .account-kicker {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 0.68rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+        }
+        .gcash-chip {
+            width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+            background: var(--gcash-blue); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.55rem; font-weight: 800; font-family: 'DM Mono', monospace;
+        }
+        .primary-chip {
+            font-size: 0.58rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            background: var(--mint-glow); color: var(--mint);
+            border: 1px solid rgba(126,255,197,0.25);
+            border-radius: 20px; padding: 2px 8px; text-transform: uppercase;
+        }
+
+        .account-head-actions { display: flex; align-items: center; gap: 8px; }
+
+        /* toggle */
+        .toggle { position: relative; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
+        .toggle input { position: absolute; opacity: 0; }
+        .toggle .track {
+            width: 34px; height: 19px; border-radius: 20px;
+            background: var(--surface-3); border: 1px solid var(--border-hover);
+            position: relative; transition: background 0.2s;
+        }
+        .toggle .track::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 13px; height: 13px; border-radius: 50%;
+            background: var(--muted); transition: all 0.2s;
+        }
+        .toggle input:checked + .track { background: rgba(126,255,197,0.25); }
+        .toggle input:checked + .track::after { left: 17px; background: var(--mint); }
+        .toggle .toggle-label { font-size: 0.68rem; font-weight: 700; color: var(--muted); }
+
+        .icon-mini {
+            width: 28px; height: 28px; border-radius: 8px;
+            background: var(--surface-3); border: 1px solid var(--border);
+            display: inline-flex; align-items: center; justify-content: center;
+            color: var(--muted); cursor: pointer; transition: all 0.15s;
+        }
+        .icon-mini svg { width: 12px; height: 12px; }
+        .icon-mini:hover:not(:disabled) { color: var(--text); border-color: var(--border-hover); }
+        .icon-mini.danger:hover:not(:disabled) { color: var(--danger); border-color: rgba(255,107,107,0.35); }
+        .icon-mini:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .account-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+        .field label {
+            display: block; font-size: 0.66rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.07em;
+            color: var(--muted); margin-bottom: 6px;
+        }
+        .field input[type="text"], .field input[type="tel"], .field textarea {
+            width: 100%;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 10px; padding: 10px 13px;
+            font-size: 0.85rem; color: var(--text); font-family: 'Sora', sans-serif;
+            outline: none; transition: border-color 0.2s;
+        }
+        .field input:focus, .field textarea:focus { border-color: rgba(126,255,197,0.4); }
+        .field input::placeholder, .field textarea::placeholder { color: var(--muted); opacity: 0.7; }
+
+        /* per-account QR row */
+        .qr-row { display: flex; gap: 12px; align-items: center; }
+        .qr-preview {
+            width: 74px; height: 74px; flex-shrink: 0;
+            background: var(--surface); border: 1px dashed var(--border-hover);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            color: var(--muted); overflow: hidden;
+        }
+        .qr-preview img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+        .qr-preview svg { width: 20px; height: 20px; opacity: 0.4; }
+        .qr-btns { display: flex; flex-direction: column; gap: 6px; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+            padding: 10px 16px; border-radius: 10px; border: 1px solid transparent;
+            font-size: 0.8rem; font-weight: 700; font-family: 'Sora', sans-serif;
+            cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .btn svg { width: 13px; height: 13px; }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .btn.small { padding: 7px 12px; font-size: 0.7rem; border-radius: 8px; }
+        .btn-secondary { background: var(--surface-3); color: var(--text); border-color: var(--border); }
+        .btn-secondary:hover:not(:disabled) { border-color: rgba(126,255,197,0.35); color: var(--mint); }
+        .btn-ghost-danger { background: transparent; color: var(--muted); border-color: var(--border); }
+        .btn-ghost-danger:hover:not(:disabled) { color: var(--danger); border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.06); }
+        .btn-primary { background: var(--mint); color: var(--dark); font-weight: 800; }
+        .btn-primary:hover:not(:disabled) { background: var(--mint-dim); transform: translateY(-1px); }
+
+        .btn-add {
+            width: 100%; border: 1px dashed var(--border-hover);
+            background: transparent; color: var(--muted);
+            border-radius: 12px; padding: 13px;
+            font-size: 0.8rem; font-weight: 700; font-family: 'Sora', sans-serif;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            cursor: pointer; transition: all 0.18s;
+        }
+        .btn-add svg { width: 15px; height: 15px; }
+        .btn-add:hover { color: var(--mint); border-color: rgba(126,255,197,0.4); background: rgba(126,255,197,0.04); }
+
+        .qr-pending {
+            font-size: 0.64rem; font-family: 'DM Mono', monospace; color: var(--warn);
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .qr-pending svg { width: 10px; height: 10px; }
+
+        .instructions-card { margin-top: 22px; }
+        .field textarea { min-height: 130px; resize: vertical; line-height: 1.6; }
+        .field-hint { font-size: 0.7rem; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+        .save-row {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; margin-top: 24px; padding-top: 20px;
+            border-top: 1px solid var(--border); flex-wrap: wrap;
+        }
+        .save-note { font-size: 0.7rem; color: var(--muted); line-height: 1.5; max-width: 380px; }
+        .save-note strong { color: var(--warn); font-weight: 700; }
+
+        /* ── PHONE PREVIEW ── */
+        .preview-card { position: sticky; top: 24px; }
+
+        .phone-frame {
+            background: #0A0E14;
+            border: 1px solid var(--border-hover);
+            border-radius: 26px; padding: 14px 14px 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+            max-height: 70vh; overflow-y: auto;
+        }
+
+        .phone-notch {
+            width: 90px; height: 5px; border-radius: 4px;
+            background: var(--surface-3); margin: 0 auto 16px;
+        }
+
+        .sheet {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 18px; padding: 18px;
+        }
+
+        .sheet-title {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.92rem; font-weight: 800; margin-bottom: 3px;
+        }
+        .gcash-logo {
+            width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+            background: var(--gcash-blue); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.6rem; font-weight: 800; font-family: 'DM Mono', monospace;
+        }
+        .sheet-sub { font-size: 0.68rem; color: var(--muted); margin-bottom: 14px; }
+
+        .sheet-account {
+            border: 1px solid var(--border); border-radius: 14px;
+            padding: 12px; margin-bottom: 10px; background: var(--surface);
+        }
+        .sheet-account .acct-head {
+            font-size: 0.6rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+            margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+        }
+        .sheet-row { margin-bottom: 7px; }
+        .sheet-row .k {
+            font-size: 0.56rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; color: var(--muted); font-family: 'DM Mono', monospace;
+            margin-bottom: 2px;
+        }
+        .sheet-row .v { font-size: 0.82rem; font-weight: 700; word-break: break-word; }
+        .sheet-row .v.mono { font-family: 'DM Mono', monospace; letter-spacing: 0.03em; }
+
+        .sheet-qr {
+            background: #fff; border-radius: 10px; padding: 8px;
+            display: flex; align-items: center; justify-content: center;
+            margin-top: 8px;
+        }
+        .sheet-qr img { max-width: 100%; max-height: 150px; display: block; }
+
+        .sheet-instructions {
+            font-size: 0.72rem; color: var(--text); line-height: 1.65;
+            white-space: pre-wrap; word-break: break-word;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 11px 13px; margin-top: 4px;
+        }
+
+        .sheet-empty {
+            text-align: center; font-size: 0.72rem; color: var(--muted);
+            padding: 22px 10px; line-height: 1.6;
+        }
+
+        .preview-note {
+            font-size: 0.66rem; color: var(--muted); text-align: center;
+            margin-top: 12px; line-height: 1.6; font-family: 'DM Mono', monospace;
+        }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 28px; right: 28px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 12px; padding: 12px 18px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.82rem; font-weight: 600;
+            z-index: 9999; transform: translateY(80px); opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            min-width: 240px; max-width: 420px;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: rgba(126,255,197,0.3); color: var(--mint-dim); }
+        .toast.error { border-color: rgba(255,107,107,0.3); color: var(--danger); }
+        .toast svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1150px) {
+            .settings-grid { grid-template-columns: 1fr; }
+            .preview-card { position: static; max-width: 420px; }
+        }
+        @media (max-width: 900px) {
+            :root { --sidebar-w: 64px; }
+            .sidebar-brand, .nav-link span, .nav-label { display: none; }
+            .nav-link { justify-content: center; padding: 10px; }
+            .main { padding: 24px 18px; }
+        }
+        @media (max-width: 640px) {
+            .account-fields { grid-template-columns: 1fr; }
+            .save-row { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="brand-name">Ani<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-label">Main</div>
+            <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+            <a href="sellers.html"   class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+            <a href="premium.html"   class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
+
+            <div class="nav-label">Admin</div>
+            <a href="announcements.html"  class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
+            <a href="user.html"           class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
+            <a href="customer-service.html" class="nav-link"><i data-lucide="message-circle"></i><span>Customer Service</span></a>
+            <a href="reviews.html"        class="nav-link"><i data-lucide="star"></i><span>Reviews</span></a>
+            <a href="reports.html"        class="nav-link"><i data-lucide="flag"></i><span>Reports</span><span class="reports-badge" data-reports-badge hidden>0</span></a>
+
+            <!-- Super Admin section is injected here by role.js -->
+
+            <div class="nav-bottom">
+                <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
+                <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN (hidden until the super-admin guard passes) -->
+    <main class="main" id="mainContent" data-guarding>
+
+        <div class="page-header">
+            <div>
+                <h1>Payment Settings</h1>
+                <p>GCash accounts shown to mobile-app users on the "Pay with GCash" sheet — they pay any of these before submitting a premium request.</p>
+            </div>
+            <div class="header-right">
+                <span class="super-badge"><i data-lucide="shield-check"></i>Super Admin only</span>
+                <div class="date-badge" id="dateBadge">—</div>
+            </div>
+        </div>
+
+        <div class="settings-grid">
+
+            <div>
+                <!-- ACCOUNTS -->
+                <div class="card" style="animation-delay:0.05s">
+                    <div class="card-title"><i data-lucide="wallet"></i>GCash accounts</div>
+                    <div class="card-sub">
+                        Every <strong>active</strong> account is listed in the app. The first one is the
+                        primary (older app versions that only support a single account see that one).
+                        Use the arrows to reorder; the toggle hides an account without deleting it.
+                    </div>
+
+                    <div class="accounts-list" id="accountsList"></div>
+
+                    <button class="btn-add" onclick="addAccount()">
+                        <i data-lucide="plus-circle"></i>Add another GCash
+                    </button>
+                </div>
+
+                <!-- INSTRUCTIONS -->
+                <div class="card instructions-card" style="animation-delay:0.1s">
+                    <div class="card-title"><i data-lucide="list-checks"></i>Payment instructions</div>
+                    <div class="card-sub">Shown once, under all the accounts. Plain text, rendered verbatim in the app.</div>
+
+                    <div class="field">
+                        <textarea id="instructions" placeholder="Step-by-step instructions shown to the user…"></textarea>
+                        <div class="field-hint">Tip: tell users to pay the exact plan amount, keep their receipt screenshot, and upload it when submitting the request.</div>
+                    </div>
+
+                    <div class="save-row">
+                        <div class="save-note">
+                            Every change is <strong>audit-logged</strong>. New details go live in the
+                            mobile app immediately — no app release needed.
+                        </div>
+                        <button class="btn btn-primary" id="saveBtn" onclick="saveAll()">
+                            <i data-lucide="save"></i>Save payment settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LIVE PREVIEW -->
+            <div class="card preview-card" style="animation-delay:0.15s">
+                <div class="card-title"><i data-lucide="smartphone"></i>Mobile app preview</div>
+                <div class="card-sub">What users see before submitting a premium request (their plan's amount is shown above this).</div>
+
+                <div class="phone-frame">
+                    <div class="phone-notch"></div>
+                    <div class="sheet">
+                        <div class="sheet-title"><span class="gcash-logo">G</span>Pay with GCash</div>
+                        <div class="sheet-sub">Pay to any account below, then upload your receipt.</div>
+                        <div id="previewBody"></div>
+                    </div>
+                </div>
+                <div class="preview-note">live preview — updates as you type</div>
+            </div>
+
+        </div>
+
+    </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+    <i data-lucide="check-circle"></i>
+    <span id="toast-msg">Saved.</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="logout-modal.js"></script>
+<script src="reports-badge.js"></script>
+<script src="role.js"></script>
+<script>
+// ─────────────────────────────────────────────────
+// DATA — public.payment_methods (migration 20260709004000): one row per GCash
+// account; the mobile app lists every active row. A DB trigger mirrors the
+// primary (first active) account into the legacy single-account app_settings
+// keys for older app builds, so this page never writes gcash_* keys itself.
+// premium_payment_instructions stays in app_settings (global text).
+//
+// Writes are super-admin-only at the DATABASE level; this page's route guard
+// is just UX. QR images live in the public payment-qr bucket as
+// qr-<accountId>.<ext> (replace-on-upload + ?v= cache-buster).
+// ─────────────────────────────────────────────────
+const QR_BUCKET    = 'payment-qr';
+const QR_EXTS      = ['png', 'jpg', 'webp'];
+const QR_MAX_BYTES = 2 * 1024 * 1024;
+const INSTRUCTIONS_KEY = 'premium_payment_instructions';
+
+// Local editor state. Each entry:
+// { id, account_name, account_number, qr_url, is_active, pendingFile, qrRemoved, isNew }
+let accounts = [];
+let deletedIds = [];
+
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ─────────────────────────────────────────────────
+// LOAD
+// ─────────────────────────────────────────────────
+async function loadAll() {
+    const [{ data: rows, error: pmErr }, { data: settings, error: sErr }] = await Promise.all([
+        supabaseClient.from('payment_methods')
+            .select('id, account_name, account_number, qr_url, sort_order, is_active')
+            .order('sort_order').order('created_at'),
+        supabaseClient.from('app_settings').select('key, value').eq('key', INSTRUCTIONS_KEY)
+    ]);
+
+    if (pmErr) { showToast('Could not load accounts: ' + pmErr.message, 'error'); return; }
+    if (sErr)  console.error('LOAD INSTRUCTIONS ERROR:', sErr);
+
+    accounts = (rows || []).map(r => ({
+        id: r.id,
+        account_name: r.account_name || '',
+        account_number: r.account_number || '',
+        qr_url: r.qr_url || '',
+        is_active: !!r.is_active,
+        pendingFile: null,
+        qrRemoved: false,
+        isNew: false
+    }));
+    deletedIds = [];
+
+    if (accounts.length === 0) addAccount(false);
+
+    document.getElementById('instructions').value =
+        (settings && settings[0] && settings[0].value) || '';
+
+    renderAccounts();
+    renderPreview();
+}
+
+// ─────────────────────────────────────────────────
+// EDITOR
+// ─────────────────────────────────────────────────
+function addAccount(render = true) {
+    accounts.push({
+        id: crypto.randomUUID(),   // becomes the row id on insert
+        account_name: '',
+        account_number: '',
+        qr_url: '',
+        is_active: true,
+        pendingFile: null,
+        qrRemoved: false,
+        isNew: true
+    });
+    if (render) { renderAccounts(); renderPreview(); }
+}
+
+function removeAccount(idx) {
+    const a = accounts[idx];
+    if (!a.isNew) deletedIds.push(a.id);
+    accounts.splice(idx, 1);
+    renderAccounts();
+    renderPreview();
+}
+
+function moveAccount(idx, dir) {
+    const j = idx + dir;
+    if (j < 0 || j >= accounts.length) return;
+    [accounts[idx], accounts[j]] = [accounts[j], accounts[idx]];
+    renderAccounts();
+    renderPreview();
+}
+
+function setField(idx, field, value) {
+    accounts[idx][field] = value;
+    if (field === 'is_active') renderAccounts();
+    renderPreview();
+}
+
+function qrExt(file) {
+    return ({ 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' })[file.type] || null;
+}
+
+function handleQrPick(idx, input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (!qrExt(file)) { showToast('Please choose a PNG, JPG or WEBP image.', 'error'); return; }
+    if (file.size > QR_MAX_BYTES) { showToast('Image is too large — 2 MB max.', 'error'); return; }
+    accounts[idx].pendingFile = file;
+    accounts[idx].qrRemoved = false;
+    renderAccounts();
+    renderPreview();
+}
+
+function removeQr(idx) {
+    accounts[idx].pendingFile = null;
+    accounts[idx].qrRemoved = true;
+    renderAccounts();
+    renderPreview();
+}
+
+function effectiveQrSrc(a) {
+    if (a.pendingFile) return URL.createObjectURL(a.pendingFile);
+    if (!a.qrRemoved && a.qr_url) return a.qr_url;
+    return null;
+}
+
+function renderAccounts() {
+    const list = document.getElementById('accountsList');
+    list.innerHTML = '';
+
+    accounts.forEach((a, idx) => {
+        const qrSrc = effectiveQrSrc(a);
+        const card = document.createElement('div');
+        card.className = 'account-card' + (a.is_active ? '' : ' inactive');
+        card.innerHTML = `
+            <div class="account-head">
+                <span class="account-kicker">
+                    <span class="gcash-chip">G</span>
+                    GCash account ${idx + 1}
+                    ${idx === 0 && a.is_active ? '<span class="primary-chip">Primary</span>' : ''}
+                </span>
+                <div class="account-head-actions">
+                    <label class="toggle" title="Shown in the app when on">
+                        <input type="checkbox" ${a.is_active ? 'checked' : ''}
+                               onchange="setField(${idx}, 'is_active', this.checked)">
+                        <span class="track"></span>
+                        <span class="toggle-label">${a.is_active ? 'Active' : 'Hidden'}</span>
+                    </label>
+                    <button class="icon-mini" title="Move up" onclick="moveAccount(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}><i data-lucide="chevron-up"></i></button>
+                    <button class="icon-mini" title="Move down" onclick="moveAccount(${idx}, 1)" ${idx === accounts.length - 1 ? 'disabled' : ''}><i data-lucide="chevron-down"></i></button>
+                    <button class="icon-mini danger" title="Remove this account" onclick="removeAccount(${idx})"><i data-lucide="trash-2"></i></button>
+                </div>
+            </div>
+
+            <div class="account-fields">
+                <div class="field">
+                    <label>GCash number</label>
+                    <input type="tel" placeholder="09XX XXX XXXX" value="${escapeHtml(a.account_number)}"
+                           oninput="setField(${idx}, 'account_number', this.value)">
+                </div>
+                <div class="field">
+                    <label>Account name</label>
+                    <input type="text" placeholder="e.g. Juan D." value="${escapeHtml(a.account_name)}"
+                           oninput="setField(${idx}, 'account_name', this.value)">
+                </div>
+            </div>
+
+            <div class="qr-row">
+                <div class="qr-preview">${qrSrc
+                    ? `<img src="${escapeHtml(qrSrc)}" alt="QR" onerror="this.remove()">`
+                    : '<i data-lucide="qr-code"></i>'}</div>
+                <div class="qr-btns">
+                    <input type="file" id="qrInput-${idx}" accept="image/png,image/jpeg,image/webp"
+                           style="display:none" onchange="handleQrPick(${idx}, this)">
+                    <button class="btn btn-secondary small" type="button"
+                            onclick="document.getElementById('qrInput-${idx}').click()">
+                        <i data-lucide="upload"></i>QR image
+                    </button>
+                    <button class="btn btn-ghost-danger small" type="button"
+                            onclick="removeQr(${idx})" ${qrSrc ? '' : 'disabled'}>
+                        <i data-lucide="x"></i>Remove QR
+                    </button>
+                    ${a.pendingFile ? '<span class="qr-pending"><i data-lucide="clock"></i>uploads on save</span>' : ''}
+                </div>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+
+    lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// LIVE PHONE PREVIEW — mirrors the mobile sheet: every ACTIVE account with
+// any content, in order, then the shared instructions.
+// ─────────────────────────────────────────────────
+function renderPreview() {
+    const instructions = document.getElementById('instructions').value.trim();
+    let html = '';
+
+    const visible = accounts.filter(a =>
+        a.is_active && (a.account_number.trim() || a.account_name.trim() || effectiveQrSrc(a)));
+
+    visible.forEach((a, i) => {
+        const qrSrc = effectiveQrSrc(a);
+        html += `<div class="sheet-account">
+            <div class="acct-head"><span class="gcash-chip">G</span>GCash ${visible.length > 1 ? i + 1 : ''}</div>
+            ${a.account_number.trim() ? `<div class="sheet-row"><div class="k">GCash number</div><div class="v mono">${escapeHtml(a.account_number.trim())}</div></div>` : ''}
+            ${a.account_name.trim() ? `<div class="sheet-row"><div class="k">Account name</div><div class="v">${escapeHtml(a.account_name.trim())}</div></div>` : ''}
+            ${qrSrc ? `<div class="sheet-qr"><img src="${escapeHtml(qrSrc)}" alt="QR" onerror="this.parentElement.remove()"></div>` : ''}
+        </div>`;
+    });
+
+    if (instructions) html += `<div class="sheet-instructions">${escapeHtml(instructions)}</div>`;
+
+    document.getElementById('previewBody').innerHTML = html ||
+        `<div class="sheet-empty">Nothing to show yet — the app hides empty sections.<br>Add a GCash account on the left.</div>`;
+}
+
+// ─────────────────────────────────────────────────
+// SAVE — uploads pending QRs, upserts rows, deletes removed accounts, and
+// saves the shared instructions. Legacy single-account keys are synced by
+// the DB trigger. A regular admin reaching this code gets the database
+// error, surfaced in the toast.
+// ─────────────────────────────────────────────────
+async function saveAll() {
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+
+    try {
+        // Drop completely empty NEW accounts silently (never saved).
+        accounts = accounts.filter(a =>
+            !(a.isNew && !a.account_number.trim() && !a.account_name.trim() && !a.pendingFile));
+        if (accounts.length === 0 && deletedIds.length === 0) {
+            // still allow instructions-only saves below
+        }
+
+        // 1) QR uploads (fixed per-account name + cache-busting ?v=).
+        for (const a of accounts) {
+            if (a.pendingFile) {
+                const ext  = qrExt(a.pendingFile);
+                const path = `qr-${a.id}.${ext}`;
+                const { error: upErr } = await supabaseClient.storage
+                    .from(QR_BUCKET)
+                    .upload(path, a.pendingFile, { upsert: true, contentType: a.pendingFile.type, cacheControl: '3600' });
+                if (upErr) throw new Error('QR upload failed: ' + upErr.message);
+
+                const stale = QR_EXTS.filter(x => x !== ext).map(x => `qr-${a.id}.${x}`);
+                await supabaseClient.storage.from(QR_BUCKET).remove(stale);
+
+                const { data: pub } = supabaseClient.storage.from(QR_BUCKET).getPublicUrl(path);
+                a.qr_url = pub.publicUrl + '?v=' + Date.now();
+                a.pendingFile = null;
+            } else if (a.qrRemoved) {
+                await supabaseClient.storage.from(QR_BUCKET)
+                    .remove(QR_EXTS.map(x => `qr-${a.id}.${x}`));
+                a.qr_url = '';
+                a.qrRemoved = false;
+            }
+        }
+
+        // 2) Upsert accounts in display order.
+        if (accounts.length) {
+            const rows = accounts.map((a, i) => ({
+                id: a.id,
+                provider: 'gcash',
+                account_name: a.account_name.trim(),
+                account_number: a.account_number.trim(),
+                qr_url: a.qr_url,
+                sort_order: i,
+                is_active: a.is_active,
+                updated_at: new Date().toISOString()
+            }));
+            const { error } = await supabaseClient
+                .from('payment_methods')
+                .upsert(rows, { onConflict: 'id' });
+            if (error) throw new Error(error.message);
+        }
+
+        // 3) Deletions (rows + their QR images).
+        if (deletedIds.length) {
+            const { error } = await supabaseClient
+                .from('payment_methods').delete().in('id', deletedIds);
+            if (error) throw new Error(error.message);
+            const paths = deletedIds.flatMap(id => QR_EXTS.map(x => `qr-${id}.${x}`));
+            await supabaseClient.storage.from(QR_BUCKET).remove(paths);
+            deletedIds = [];
+        }
+
+        // 4) Shared instructions (app_settings row is blanked, never deleted).
+        const { data: sData, error: sErr } = await supabaseClient
+            .from('app_settings')
+            .update({ value: document.getElementById('instructions').value.trim(),
+                      updated_at: new Date().toISOString() })
+            .eq('key', INSTRUCTIONS_KEY)
+            .select();
+        if (sErr) throw new Error(sErr.message);
+        if (!sData || sData.length === 0) throw new Error('Instructions update blocked — no permission (check RLS).');
+
+        accounts.forEach(a => { a.isNew = false; });
+        renderAccounts();
+        renderPreview();
+        showToast('Payment settings saved — live in the app now.', 'success');
+    } catch (e) {
+        console.error('SAVE PAYMENT SETTINGS ERROR:', e);
+        showToast(e.message || String(e), 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// ─────────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.className = `toast ${type} show`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.classList.remove('show'); }, 4200);
+    lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// INIT — config.js bounces non-admins; requireSuperAdmin (role.js) bounces
+// regular admins to the dashboard before anything renders.
+// ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+    lucide.createIcons();
+    document.getElementById('dateBadge').textContent =
+        new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+
+    if (!(await requireSuperAdmin())) return;
+    document.getElementById('mainContent').removeAttribute('data-guarding');
+
+    document.getElementById('instructions').addEventListener('input', renderPreview);
+    await loadAll();
+});
+
+// Logout is handled by the shared styled modal in logout-modal.js.
+</script>
+</body>
+</html>

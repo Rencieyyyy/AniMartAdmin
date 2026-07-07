@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs | AniMart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --mint: #7EFFC5;
+            --mint-dim: #5CE8A8;
+            --mint-glow: rgba(126,255,197,0.15);
+            --dark: #0D1117;
+            --surface: #161B22;
+            --surface-2: #1C2333;
+            --surface-3: #21293a;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.13);
+            --text: #E6EDF3;
+            --muted: #7D8590;
+            --danger: #FF6B6B;
+            --warn: #FBB824;
+            --gold: #FFD166;
+            --blue: #38BDF8;
+            --purple: #C084FC;
+            --orange: #FB923C;
+            --sidebar-w: 260px;
+            --radius: 16px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: white;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -25%; left: -5%;
+            width: 50%; height: 50%;
+            background: radial-gradient(ellipse, rgba(126,255,197,0.045) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .wrapper { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; height: 100vh;
+            z-index: 100; padding: 0 12px 20px;
+        }
+
+        .sidebar-brand {
+            padding: 28px 12px 24px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border); margin-bottom: 16px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px; background: var(--mint);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
+        }
+
+        .brand-icon svg { width: 18px; height: 18px; color: var(--dark); }
+        .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+        .brand-name span { color: var(--mint); }
+
+        .nav { display: flex; flex-direction: column; flex: 1; gap: 3px; }
+
+        .nav-label {
+            font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--muted); padding: 14px 12px 6px;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+            border-radius: 10px; text-decoration: none; color: var(--muted);
+            font-size: 0.875rem; font-weight: 500; transition: all 0.18s;
+            border: none; background: transparent; cursor: pointer; width: 100%; text-align: left;
+        }
+
+        .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .nav-link:hover { color: var(--dark); background: var(--mint); }
+        .nav-link.active { background: var(--mint); color: var(--dark); font-weight: 700; }
+        .nav-link.logout { color: var(--danger); }
+        .nav-link.logout:hover { background: rgba(255,107,107,0.1); color: var(--danger); }
+
+        .nav-bottom {
+            border-top: 1px solid var(--border); padding-top: 12px;
+            margin-top: auto; display: flex; flex-direction: column; gap: 3px;
+        }
+
+        /* ── MAIN ── */
+        .main {
+            margin-left: var(--sidebar-w); flex: 1;
+            padding: 36px 40px;
+            max-width: calc(100vw - var(--sidebar-w));
+        }
+
+        .main[data-guarding] { visibility: hidden; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            display: flex; align-items: flex-start;
+            justify-content: space-between; margin-bottom: 32px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem; font-weight: 800;
+            letter-spacing: -0.04em; color: var(--mint);
+        }
+
+        .page-header p { font-size: 0.875rem; color: var(--muted); margin-top: 3px; }
+
+        .header-right { display: flex; align-items: center; gap: 10px; }
+
+        .date-badge {
+            font-family: 'DM Mono', monospace; font-size: 0.75rem;
+            color: var(--muted); background: var(--surface-2);
+            border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+        }
+
+        .super-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.62rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            padding: 5px 11px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em;
+            background: rgba(255,209,102,0.1); color: var(--gold);
+            border: 1px solid rgba(255,209,102,0.25);
+        }
+        .super-badge svg { width: 11px; height: 11px; }
+
+        .icon-btn {
+            width: 36px; height: 36px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 9px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--muted); transition: all 0.18s;
+        }
+        .icon-btn:hover { border-color: rgba(126,255,197,0.3); color: var(--mint); }
+        .icon-btn svg { width: 15px; height: 15px; }
+
+        /* ── STATS ── */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 14px; margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px;
+            transition: border-color 0.2s, transform 0.2s;
+            animation: fadeUp 0.4s ease both;
+            position: relative; overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 2px; border-radius: 0 0 var(--radius) var(--radius);
+        }
+
+        .stat-card.total::after    { background: var(--mint); }
+        .stat-card.today::after    { background: var(--blue); }
+        .stat-card.week::after     { background: var(--gold); }
+        .stat-card.settings::after { background: var(--purple); }
+        .stat-card:hover { transform: translateY(-2px); }
+
+        .stat-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+        }
+        .stat-icon svg { width: 17px; height: 17px; }
+        .stat-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+        .stat-value { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+        .stat-sub { font-size: 0.7rem; color: var(--muted); margin-top: 7px; font-family: 'DM Mono', monospace; }
+
+        /* ── FILTERS ── */
+        .filters {
+            display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 16px 18px;
+            margin-bottom: 20px;
+            animation: fadeUp 0.45s ease both;
+        }
+
+        .filter-group { display: flex; flex-direction: column; gap: 6px; }
+        .filter-group label {
+            font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.08em; color: var(--muted);
+        }
+
+        .sort-filter, .date-input {
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 9px; padding: 8px 12px;
+            font-size: 0.8rem; color: var(--text); font-family: 'Sora', sans-serif;
+            outline: none; cursor: pointer; transition: border-color 0.2s;
+        }
+        select.sort-filter {
+            padding-right: 32px; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237D8590' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+        }
+        .sort-filter option, .sort-filter optgroup { background: var(--surface-2); }
+        .sort-filter:focus, .date-input:focus { border-color: rgba(126,255,197,0.35); }
+        .date-input { color-scheme: dark; }
+
+        .btn-clear {
+            background: transparent; border: 1px solid var(--border);
+            color: var(--muted); border-radius: 9px; padding: 8px 14px;
+            font-size: 0.75rem; font-weight: 700; font-family: 'Sora', sans-serif;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .btn-clear:hover { color: var(--danger); border-color: rgba(255,107,107,0.3); }
+
+        .filters .spacer { flex: 1; }
+
+        .result-count {
+            font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace;
+            padding-bottom: 9px;
+        }
+
+        /* ── TABLE ── */
+        .table-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden;
+            animation: fadeUp 0.5s ease both;
+        }
+
+        .table-scroll { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; min-width: 760px; }
+
+        thead th {
+            text-align: left; font-size: 0.65rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+            padding: 13px 16px; border-bottom: 1px solid var(--border);
+            background: var(--surface-2); white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 13px 16px; border-bottom: 1px solid var(--border);
+            font-size: 0.8rem; vertical-align: top;
+        }
+        tbody tr.log-row { cursor: pointer; transition: background 0.15s; }
+        tbody tr.log-row:hover { background: rgba(255,255,255,0.02); }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .cell-time { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+        .cell-time .t-date { color: var(--text); font-weight: 500; }
+
+        .cell-admin .a-name { font-weight: 700; font-size: 0.8rem; }
+        .cell-admin .a-email { font-size: 0.68rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+        .action-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.64rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            padding: 4px 10px; border-radius: 20px; letter-spacing: 0.02em;
+            white-space: nowrap; border: 1px solid transparent;
+        }
+        .ac-subscription { background: rgba(255,209,102,0.1);  color: var(--gold);   border-color: rgba(255,209,102,0.22); }
+        .ac-listing      { background: rgba(56,189,248,0.1);   color: var(--blue);   border-color: rgba(56,189,248,0.22); }
+        .ac-announcement { background: rgba(192,132,252,0.1);  color: var(--purple); border-color: rgba(192,132,252,0.22); }
+        .ac-pricing      { background: rgba(251,184,36,0.1);   color: var(--warn);   border-color: rgba(251,184,36,0.22); }
+        .ac-report       { background: rgba(255,107,107,0.1);  color: var(--danger); border-color: rgba(255,107,107,0.22); }
+        .ac-settings     { background: rgba(126,255,197,0.1);  color: var(--mint-dim); border-color: rgba(126,255,197,0.2); }
+        .ac-user         { background: rgba(251,146,60,0.1);   color: var(--orange); border-color: rgba(251,146,60,0.22); }
+        .ac-admin        { background: rgba(255,209,102,0.1);  color: var(--gold);   border-color: rgba(255,209,102,0.25); }
+        .ac-payment_method { background: rgba(126,255,197,0.1); color: var(--mint-dim); border-color: rgba(126,255,197,0.2); }
+        .ac-other        { background: rgba(125,133,144,0.12); color: var(--muted);  border-color: rgba(125,133,144,0.25); }
+
+        .cell-target { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+        .cell-target .tg-type { color: var(--text); font-weight: 500; }
+        .cell-target .tg-id {
+            display: inline-block; max-width: 140px; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom;
+        }
+
+        .expand-chevron { color: var(--muted); transition: transform 0.2s; }
+        .expand-chevron svg { width: 14px; height: 14px; }
+        tr.expanded .expand-chevron { transform: rotate(180deg); color: var(--mint); }
+
+        tr.details-row td {
+            background: var(--surface-2); padding: 0 16px;
+        }
+        .details-json {
+            font-family: 'DM Mono', monospace; font-size: 0.72rem; line-height: 1.7;
+            color: var(--mint-dim); white-space: pre-wrap; word-break: break-word;
+            padding: 14px 4px; margin: 0;
+        }
+        .details-empty { font-size: 0.72rem; color: var(--muted); font-style: italic; padding: 14px 4px; }
+
+        /* ── PAGINATION ── */
+        .pagination {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px; border-top: 1px solid var(--border);
+            background: var(--surface-2); flex-wrap: wrap; gap: 10px;
+        }
+        .page-info { font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+        .page-btns { display: flex; gap: 8px; }
+        .page-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--surface); border: 1px solid var(--border);
+            color: var(--text); border-radius: 9px; padding: 7px 14px;
+            font-size: 0.75rem; font-weight: 700; font-family: 'Sora', sans-serif;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .page-btn svg { width: 13px; height: 13px; }
+        .page-btn:hover:not(:disabled) { border-color: rgba(126,255,197,0.35); color: var(--mint); }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ── EMPTY / LOADING ── */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+        .empty-icon {
+            width: 56px; height: 56px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 16px; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+        }
+        .empty-icon svg { width: 24px; height: 24px; opacity: 0.4; }
+        .empty-state h3 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+        .empty-state p  { font-size: 0.8rem; color: var(--muted); }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 28px; right: 28px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 12px; padding: 12px 18px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.82rem; font-weight: 600;
+            z-index: 9999; transform: translateY(80px); opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            min-width: 240px; max-width: 420px;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: rgba(126,255,197,0.3); color: var(--mint-dim); }
+        .toast.error { border-color: rgba(255,107,107,0.3); color: var(--danger); }
+        .toast svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1100px) {
+            .stats-grid { grid-template-columns: repeat(2,1fr); }
+        }
+        @media (max-width: 900px) {
+            :root { --sidebar-w: 64px; }
+            .sidebar-brand, .nav-link span, .nav-label { display: none; }
+            .nav-link { justify-content: center; padding: 10px; }
+            .main { padding: 24px 18px; }
+        }
+        @media (max-width: 500px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="brand-name">Ani<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-label">Main</div>
+            <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+            <a href="sellers.html"   class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+            <a href="premium.html"   class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
+
+            <div class="nav-label">Admin</div>
+            <a href="announcements.html"  class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
+            <a href="user.html"           class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
+            <a href="customer-service.html" class="nav-link"><i data-lucide="message-circle"></i><span>Customer Service</span></a>
+            <a href="reviews.html"        class="nav-link"><i data-lucide="star"></i><span>Reviews</span></a>
+            <a href="reports.html"        class="nav-link"><i data-lucide="flag"></i><span>Reports</span><span class="reports-badge" data-reports-badge hidden>0</span></a>
+
+            <!-- Super Admin section (Payment Settings / Audit Logs) is injected
+                 here by role.js — only for super_admin sessions. -->
+
+            <div class="nav-bottom">
+                <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
+                <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN (hidden until the super-admin guard passes) -->
+    <main class="main" id="mainContent" data-guarding>
+
+        <div class="page-header">
+            <div>
+                <h1>Audit Logs</h1>
+                <p>Append-only trail of admin actions, written by database triggers — it cannot be edited or skipped.</p>
+            </div>
+            <div class="header-right">
+                <span class="super-badge"><i data-lucide="shield-check"></i>Super Admin only</span>
+                <div class="date-badge" id="dateBadge">—</div>
+                <button class="icon-btn" title="Refresh" onclick="refreshAll()"><i data-lucide="refresh-cw"></i></button>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+            <div class="stat-card total" style="animation-delay:0.05s">
+                <div class="stat-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);"><i data-lucide="scroll-text"></i></div>
+                <div class="stat-label">Total entries</div>
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-sub">retained 1 year</div>
+            </div>
+            <div class="stat-card today" style="animation-delay:0.1s">
+                <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:var(--blue);"><i data-lucide="clock"></i></div>
+                <div class="stat-label">Last 24 hours</div>
+                <div class="stat-value" id="stat-today">0</div>
+                <div class="stat-sub">recent activity</div>
+            </div>
+            <div class="stat-card week" style="animation-delay:0.15s">
+                <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:var(--gold);"><i data-lucide="calendar"></i></div>
+                <div class="stat-label">Last 7 days</div>
+                <div class="stat-value" id="stat-week">0</div>
+                <div class="stat-sub">this week</div>
+            </div>
+            <div class="stat-card settings" style="animation-delay:0.2s">
+                <div class="stat-icon" style="background:rgba(192,132,252,0.12); color:var(--purple);"><i data-lucide="settings"></i></div>
+                <div class="stat-label">Settings changes</div>
+                <div class="stat-value" id="stat-settings">0</div>
+                <div class="stat-sub">incl. GCash details</div>
+            </div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filters">
+            <div class="filter-group">
+                <label for="adminFilter">Admin</label>
+                <select class="sort-filter" id="adminFilter" onchange="applyFilters()">
+                    <option value="">All admins</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="actionFilter">Action</label>
+                <select class="sort-filter" id="actionFilter" onchange="applyFilters()">
+                    <option value="">All actions</option>
+                    <optgroup label="Subscriptions">
+                        <option value="subscription.%">All subscription actions</option>
+                        <option value="subscription.approve">subscription.approve</option>
+                        <option value="subscription.reject">subscription.reject</option>
+                        <option value="subscription.update">subscription.update</option>
+                    </optgroup>
+                    <optgroup label="Listings">
+                        <option value="listing.%">All listing actions</option>
+                        <option value="listing.enable">listing.enable</option>
+                        <option value="listing.disable">listing.disable</option>
+                        <option value="listing.delete">listing.delete</option>
+                    </optgroup>
+                    <optgroup label="Announcements">
+                        <option value="announcement.%">All announcement actions</option>
+                        <option value="announcement.create">announcement.create</option>
+                        <option value="announcement.update">announcement.update</option>
+                        <option value="announcement.delete">announcement.delete</option>
+                    </optgroup>
+                    <optgroup label="Pricing & Settings">
+                        <option value="pricing.update">pricing.update</option>
+                        <option value="settings.update">settings.update</option>
+                        <option value="payment_method.%">All payment-method actions</option>
+                        <option value="payment_method.create">payment_method.create</option>
+                        <option value="payment_method.update">payment_method.update</option>
+                        <option value="payment_method.delete">payment_method.delete</option>
+                    </optgroup>
+                    <optgroup label="Admin accounts">
+                        <option value="admin.%">All admin-account actions</option>
+                        <option value="admin.create">admin.create</option>
+                        <option value="admin.role_change">admin.role_change</option>
+                        <option value="admin.status_change">admin.status_change</option>
+                        <option value="admin.delete">admin.delete</option>
+                    </optgroup>
+                    <optgroup label="Reports">
+                        <option value="report.%">All report actions</option>
+                        <option value="report.review">report.review</option>
+                        <option value="report.dismiss">report.dismiss</option>
+                    </optgroup>
+                    <optgroup label="Users">
+                        <option value="user.approve">user.approve</option>
+                        <option value="user.unverify">user.unverify</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="dateFrom">From</label>
+                <input type="date" class="date-input" id="dateFrom" onchange="applyFilters()">
+            </div>
+            <div class="filter-group">
+                <label for="dateTo">To</label>
+                <input type="date" class="date-input" id="dateTo" onchange="applyFilters()">
+            </div>
+            <button class="btn-clear" onclick="clearFilters()">Clear filters</button>
+            <div class="spacer"></div>
+            <div class="result-count" id="resultCount">—</div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:150px">Timestamp <span style="text-transform:none;letter-spacing:0">(Asia/Manila)</span></th>
+                            <th style="width:200px">Admin</th>
+                            <th style="width:190px">Action</th>
+                            <th>Target</th>
+                            <th style="width:40px"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsBody"></tbody>
+                </table>
+            </div>
+            <div id="emptyWrap"></div>
+
+            <!-- PAGINATION -->
+            <div class="pagination">
+                <div class="page-info" id="pageInfo">—</div>
+                <div class="page-btns">
+                    <button class="page-btn" id="prevBtn" onclick="changePage(-1)" disabled>
+                        <i data-lucide="chevron-left"></i>Previous
+                    </button>
+                    <button class="page-btn" id="nextBtn" onclick="changePage(1)" disabled>
+                        Next<i data-lucide="chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+    <i data-lucide="check-circle"></i>
+    <span id="toast-msg">Done.</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="logout-modal.js"></script>
+<script src="reports-badge.js"></script>
+<script src="role.js"></script>
+<script>
+// ─────────────────────────────────────────────────
+// DATA — public.audit_logs (migration 20260709002000). Rows are inserted only
+// by SECURITY DEFINER triggers; RLS lets ONLY super admins select (a regular
+// admin gets zero rows even with devtools). Server-side pagination via
+// .range() + count:'exact'. Timestamps rendered in Asia/Manila (UTC+8, no
+// DST). Admin names come from the admins roster (super admins may read all
+// rows — policy in 20260709000000); admin_email on the log row is the
+// fallback when the admin account was deleted.
+// ─────────────────────────────────────────────────
+const PAGE_SIZE = 25;
+const MANILA_TZ = 'Asia/Manila';
+
+let page = 0;
+let totalRows = 0;
+let adminsById = {};
+
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ─────────────────────────────────────────────────
+// ADMIN ROSTER (filter dropdown + name resolution)
+// ─────────────────────────────────────────────────
+async function loadAdmins() {
+    const { data, error } = await supabaseClient
+        .from('admins')
+        .select('id, email, first_name, last_name, role')
+        .order('email');
+
+    if (error) { console.error('LOAD ADMINS ERROR:', error); return; }
+
+    adminsById = {};
+    const sel = document.getElementById('adminFilter');
+    sel.length = 1;   // keep "All admins"
+
+    (data || []).forEach(a => {
+        const name = [a.first_name, a.last_name].filter(Boolean).join(' ').trim() || a.email;
+        adminsById[a.id] = { name, email: a.email, role: a.role };
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.textContent = name + (a.role === 'super_admin' ? ' ★' : '');
+        sel.appendChild(opt);
+    });
+}
+
+// ─────────────────────────────────────────────────
+// STATS — head-only count queries (no row data transferred)
+// ─────────────────────────────────────────────────
+async function loadStats() {
+    const dayAgo  = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+
+    const count = (mod) => {
+        let q = supabaseClient.from('audit_logs').select('id', { count: 'exact', head: true });
+        return mod(q).then(({ count, error }) => error ? null : (count || 0));
+    };
+
+    const [total, today, week, settings] = await Promise.all([
+        count(q => q),
+        count(q => q.gte('created_at', dayAgo)),
+        count(q => q.gte('created_at', weekAgo)),
+        count(q => q.eq('action', 'settings.update'))
+    ]);
+
+    if (total !== null)    document.getElementById('stat-total').textContent    = total;
+    if (today !== null)    document.getElementById('stat-today').textContent    = today;
+    if (week !== null)     document.getElementById('stat-week').textContent     = week;
+    if (settings !== null) document.getElementById('stat-settings').textContent = settings;
+}
+
+// ─────────────────────────────────────────────────
+// LOAD LOGS (one page, filtered server-side)
+// ─────────────────────────────────────────────────
+function buildQuery() {
+    let q = supabaseClient
+        .from('audit_logs')
+        .select('id, admin_id, admin_email, action, target_type, target_id, details, created_at',
+                { count: 'exact' })
+        .order('created_at', { ascending: false });
+
+    const adminId = document.getElementById('adminFilter').value;
+    const action  = document.getElementById('actionFilter').value;
+    const from    = document.getElementById('dateFrom').value;
+    const to      = document.getElementById('dateTo').value;
+
+    if (adminId) q = q.eq('admin_id', adminId);
+    if (action)  q = action.includes('%') ? q.like('action', action) : q.eq('action', action);
+    // Date filters are whole days in Asia/Manila (fixed UTC+8, no DST).
+    if (from) q = q.gte('created_at', `${from}T00:00:00+08:00`);
+    if (to)   q = q.lte('created_at', `${to}T23:59:59.999+08:00`);
+
+    return q.range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+}
+
+async function loadLogs() {
+    const { data, count, error } = await buildQuery();
+
+    const body  = document.getElementById('logsBody');
+    const empty = document.getElementById('emptyWrap');
+
+    if (error) {
+        console.error('LOAD AUDIT LOGS ERROR:', error);
+        body.innerHTML = '';
+        empty.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon"><i data-lucide="alert-triangle"></i></div>
+                <h3>Couldn't load audit logs</h3>
+                <p>${escapeHtml(error.message)}</p>
+            </div>`;
+        lucide.createIcons();
+        updatePagination(0);
+        return;
+    }
+
+    totalRows = count || 0;
+    renderRows(data || []);
+    updatePagination(totalRows);
+
+    const filtered = document.getElementById('adminFilter').value ||
+                     document.getElementById('actionFilter').value ||
+                     document.getElementById('dateFrom').value ||
+                     document.getElementById('dateTo').value;
+    document.getElementById('resultCount').textContent =
+        `${totalRows} ${filtered ? 'matching ' : ''}entr${totalRows === 1 ? 'y' : 'ies'}`;
+}
+
+// ─────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────
+function actionBadge(action) {
+    const cat = (action || '').split('.')[0];
+    const cls = ['subscription','listing','announcement','pricing','report','settings','user','admin','payment_method'].includes(cat)
+        ? 'ac-' + cat : 'ac-other';
+    return `<span class="action-badge ${cls}">${escapeHtml(action || '—')}</span>`;
+}
+
+function fmtManila(ts) {
+    if (!ts) return { date: '—', time: '' };
+    const d = new Date(ts);
+    return {
+        date: d.toLocaleDateString('en-PH', { timeZone: MANILA_TZ, year: 'numeric', month: 'short', day: 'numeric' }),
+        time: d.toLocaleTimeString('en-PH', { timeZone: MANILA_TZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+    };
+}
+
+function renderRows(rows) {
+    const body  = document.getElementById('logsBody');
+    const empty = document.getElementById('emptyWrap');
+    body.innerHTML = '';
+    empty.innerHTML = '';
+
+    if (rows.length === 0) {
+        empty.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon"><i data-lucide="scroll-text"></i></div>
+                <h3>No log entries</h3>
+                <p>No admin actions match the current filters. Actions are recorded automatically as admins work.</p>
+            </div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    rows.forEach(r => {
+        const known = r.admin_id ? adminsById[r.admin_id] : null;
+        const name  = known ? known.name : (r.admin_email || 'Unknown admin');
+        const email = r.admin_email || (known ? known.email : '');
+        const t = fmtManila(r.created_at);
+
+        const tr = document.createElement('tr');
+        tr.className = 'log-row';
+        tr.innerHTML = `
+            <td class="cell-time"><span class="t-date">${escapeHtml(t.date)}</span><br>${escapeHtml(t.time)}</td>
+            <td class="cell-admin">
+                <div class="a-name">${escapeHtml(name)}</div>
+                <div class="a-email">${escapeHtml(email)}</div>
+            </td>
+            <td>${actionBadge(r.action)}</td>
+            <td class="cell-target">
+                ${r.target_type ? `<span class="tg-type">${escapeHtml(r.target_type)}</span> ` : ''}
+                <span class="tg-id" title="${escapeHtml(r.target_id || '')}">${escapeHtml(r.target_id || '—')}</span>
+            </td>
+            <td><span class="expand-chevron"><i data-lucide="chevron-down"></i></span></td>
+        `;
+
+        const detailsTr = document.createElement('tr');
+        detailsTr.className = 'details-row';
+        detailsTr.hidden = true;
+        detailsTr.innerHTML = `<td colspan="5">${
+            r.details
+                ? `<pre class="details-json">${escapeHtml(JSON.stringify(r.details, null, 2))}</pre>`
+                : `<div class="details-empty">No extra details recorded for this entry.</div>`
+        }</td>`;
+
+        tr.addEventListener('click', () => {
+            detailsTr.hidden = !detailsTr.hidden;
+            tr.classList.toggle('expanded', !detailsTr.hidden);
+        });
+
+        body.appendChild(tr);
+        body.appendChild(detailsTr);
+    });
+
+    lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// PAGINATION / FILTERS
+// ─────────────────────────────────────────────────
+function updatePagination(total) {
+    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const fromN = total === 0 ? 0 : page * PAGE_SIZE + 1;
+    const toN   = Math.min(total, (page + 1) * PAGE_SIZE);
+
+    document.getElementById('pageInfo').textContent =
+        `${fromN}–${toN} of ${total} · page ${Math.min(page + 1, pages)}/${pages}`;
+    document.getElementById('prevBtn').disabled = page === 0;
+    document.getElementById('nextBtn').disabled = page >= pages - 1;
+}
+
+function changePage(delta) {
+    page = Math.max(0, page + delta);
+    loadLogs();
+}
+
+function applyFilters() {
+    page = 0;
+    loadLogs();
+}
+
+function clearFilters() {
+    ['adminFilter', 'actionFilter', 'dateFrom', 'dateTo'].forEach(id =>
+        document.getElementById(id).value = '');
+    applyFilters();
+}
+
+async function refreshAll() {
+    await Promise.all([loadStats(), loadLogs()]);
+    showToast('Audit logs refreshed.', 'success');
+}
+
+// ─────────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.className = `toast ${type} show`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3200);
+    lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// INIT — config.js bounces non-admins; requireSuperAdmin (role.js) bounces
+// regular admins to the dashboard before anything renders.
+// ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+    lucide.createIcons();
+    document.getElementById('dateBadge').textContent =
+        new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+
+    if (!(await requireSuperAdmin())) return;
+    document.getElementById('mainContent').removeAttribute('data-guarding');
+
+    await loadAdmins();
+    await Promise.all([loadStats(), loadLogs()]);
+});
+
+// Logout is handled by the shared styled modal in logout-modal.js.
+</script>
+</body>
+</html>

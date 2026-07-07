@@ -1143,7 +1143,10 @@ function mapSub(row) {
         startedAt:    row.started_at,
         expiresAt:    row.expires_at,
         requestedAt:  row.requested_at,
-        paymentRef:   row.payment_reference || '—'
+        paymentRef:   row.payment_reference || '—',
+        // Object PATH inside the private payment-receipts bucket (new
+        // pay-first flow) — viewed via a signed URL. Null on legacy rows.
+        receiptPath:  row.receipt_url || null
     };
 }
 
@@ -1170,7 +1173,7 @@ async function loadSubscriptions() {
     // column's migration hasn't been applied yet, so the page still loads.
     const { data, error } = await selectSubscriptions(
         supabaseClient,
-        'id, user_id, plan, price, billing_cycle, started_at, expires_at, requested_at, status, payment_reference, users(name, email, address, created_at)',
+        'id, user_id, plan, price, billing_cycle, started_at, expires_at, requested_at, status, payment_reference, receipt_url, users(name, email, address, created_at)',
         'id, user_id, plan, price, started_at, expires_at, requested_at, status, payment_reference, users(name, email, address, created_at)',
         q => q.order('requested_at', { ascending: false })
     );
@@ -1280,6 +1283,10 @@ function renderPending() {
                     ${planBadge(r.plan, r.planLabel)}
                     ${cycleBadge(r)}
                     ${isCycleUpgrade ? '<span class="dot"></span> Upgrading from monthly' : ''}
+                    <span class="dot"></span>
+                    ${r.receiptPath
+                        ? '<span style="color:var(--mint-dim);display:inline-flex;align-items:center;gap:3px;"><i data-lucide="receipt" style="width:11px;height:11px;"></i>Receipt attached</span>'
+                        : '<span style="color:var(--muted);display:inline-flex;align-items:center;gap:3px;"><i data-lucide="receipt" style="width:11px;height:11px;"></i>No receipt</span>'}
                     <span class="dot"></span>
                     Requested ${fmtDate(r.requestedAt)}
                 </div>
@@ -1517,13 +1524,43 @@ function openViewModal(id) {
         <div class="modal-detail-row"><span class="key">Member Since</span><span class="val">${fmtDate(r.memberSince)}</span></div>
         <div class="modal-detail-row"><span class="key">Current Listings</span><span class="val">0 listings</span></div>
         <div class="modal-detail-row"><span class="key">Payment Reference</span><span class="val" style="font-family:'DM Mono',monospace;">${r.paymentRef}</span></div>
+        <div class="modal-detail-row" style="align-items:flex-start;"><span class="key">Payment Receipt</span><span class="val" id="receiptSlot" style="text-align:right;">${r.receiptPath ? 'Loading…' : '<span style="color:var(--muted);font-style:italic;">None uploaded (older request)</span>'}</span></div>
     `;
+
+    if (r.receiptPath) loadReceiptInto('receiptSlot', r.receiptPath);
 
     document.getElementById('modal-approve-btn').onclick = () => { approveRequest(id); closeModal('viewModal'); };
     document.getElementById('modal-reject-btn').onclick = () => { closeModal('viewModal'); openRejectModal(id); };
 
     document.getElementById('viewModal').classList.add('open');
     lucide.createIcons();
+}
+
+// Receipts live in the PRIVATE payment-receipts bucket (mobile uploads them
+// before submitting the request — migration 20260709004000). receipt_url
+// stores the object PATH; admins may read via RLS, so a short-lived signed
+// URL renders it. Clicking opens the full-size image in a new tab.
+async function loadReceiptInto(slotId, path) {
+    const slot = document.getElementById(slotId);
+    if (!slot) return;
+    try {
+        let url = path;
+        if (!/^https?:\/\//i.test(path)) {
+            const { data, error } = await supabaseClient.storage
+                .from('payment-receipts')
+                .createSignedUrl(path, 3600);
+            if (error) throw error;
+            url = data.signedUrl;
+        }
+        slot.innerHTML = `
+            <a href="${url}" target="_blank" rel="noopener" title="Open full size">
+                <img src="${url}" alt="Payment receipt"
+                     style="max-width:180px;max-height:220px;border-radius:10px;border:1px solid var(--border);display:inline-block;background:#fff;">
+            </a>`;
+    } catch (e) {
+        console.error('RECEIPT LOAD ERROR:', e);
+        slot.innerHTML = '<span style="color:var(--danger);font-size:0.75rem;">Could not load receipt</span>';
+    }
 }
 
 function openRejectModal(id) {
@@ -2021,5 +2058,6 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 <script src="reports-badge.js"></script>
+<script src="role.js"></script>
 </body>
 </html>
