@@ -943,9 +943,14 @@ async function loadAnnouncements() {
         return;
     }
 
+    // Only broadcast announcements belong on this page. Personal per-user
+    // notifications (transaction updates like "Offer Accepted", "Purchase
+    // Completed" that the mobile app writes into the same `announcements` table)
+    // carry a `recipient_id`; filter those out so the admin view stays clean.
     const { data, error } = await supabaseClient
         .from('announcements')
         .select('*, announcement_tags(tag)')
+        .is('recipient_id', null)
         .order('created_at', { ascending: false });
 
     if (error) {
