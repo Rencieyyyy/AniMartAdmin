@@ -98,6 +98,80 @@ async function computeSubscriptionRevenue(client) {
     }
 }
 
+// Head-count of users split into sellers vs buyers (is_seller flag). Buyers =
+// everyone who isn't a seller. Two head-only count queries (no rows moved).
+// Returns { sellers, buyers, total }; zeros on error.
+async function computeUserCounts(client) {
+    try {
+        const totalRes = await client
+            .from('users')
+            .select('id', { count: 'exact', head: true });
+        if (totalRes.error) throw totalRes.error;
+
+        const sellerRes = await client
+            .from('users')
+            .select('id', { count: 'exact', head: true })
+            .eq('is_seller', true);
+        if (sellerRes.error) throw sellerRes.error;
+
+        const total   = totalRes.count || 0;
+        const sellers = sellerRes.count || 0;
+        return { sellers, buyers: Math.max(0, total - sellers), total };
+    } catch (e) {
+        console.error('USER COUNTS ERROR:', e);
+        return { sellers: 0, buyers: 0, total: 0 };
+    }
+}
+
+// Monthly subscription revenue for the last `months` calendar months (default
+// 6), ending with the current month. Revenue is booked to the month a plan was
+// paid for — approved rows use started_at (when it went active), expired rows
+// use started_at too (that's when the money came in). pending/rejected never
+// paid, so they're excluded. A yearly plan books its whole price to its start
+// month (matches how computeSubscriptionRevenue totals money collected).
+// Returns { labels:[…], data:[…], total } — labels like 'Feb', data in pesos.
+async function computeMonthlyRevenue(client, months = 6) {
+    const now = new Date();
+    // Build the ordered list of month buckets we care about.
+    const buckets = [];
+    for (let i = months - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        buckets.push({
+            key:   d.getFullYear() + '-' + d.getMonth(),
+            label: d.toLocaleDateString('en-PH', { month: 'short' }),
+            total: 0
+        });
+    }
+    const byKey = {};
+    buckets.forEach(b => { byKey[b.key] = b; });
+
+    try {
+        const { data, error } = await selectSubscriptions(
+            client,
+            'price, status, started_at, billing_cycle',
+            'price, status, started_at',
+            q => q.in('status', ['approved', 'expired'])
+        );
+        if (error) throw error;
+
+        (data || []).forEach(r => {
+            if (!r.started_at) return;
+            const d = new Date(r.started_at);
+            const key = d.getFullYear() + '-' + d.getMonth();
+            if (byKey[key]) byKey[key].total += Number(r.price) || 0;
+        });
+    } catch (e) {
+        console.error('MONTHLY REVENUE ERROR:', e);
+        // fall through with zeroed buckets so the chart still renders
+    }
+
+    return {
+        labels: buckets.map(b => b.label),
+        data:   buckets.map(b => b.total),
+        total:  buckets.reduce((s, b) => s + b.total, 0)
+    };
+}
+
 // Returns { 'Free', 'Premium', 'Super Premium', totalSellers }.
 // On any error, returns all-zero counts and logs (callers render zeros rather
 // than breaking the page).

@@ -33,7 +33,7 @@
 
         body {
             font-family: 'Sora', sans-serif;
-            background-color: white;
+            background-color: var(--dark);
             color: var(--text);
             min-height: 100vh;
             overflow-x: hidden;
@@ -182,7 +182,7 @@
 
         .page-header p {
             font-size: 0.875rem;
-            color:black;
+            color: var(--muted);
             margin-top: 3px;
         }
 
@@ -199,7 +199,7 @@
         /* ─── STAT CARDS ─── */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -550,31 +550,23 @@
             <div class="date-badge" id="dateBadge">—</div>
         </div>
 
-        <!-- STATS -->
+        <!-- STATS (all live from Supabase — see the loaders at the bottom) -->
         <div class="stats-grid">
             <div class="stat-card" style="--accent-bg: rgba(2,132,199,0.07);">
                 <div class="stat-icon" style="background:rgba(2,132,199,0.12); color:#38BDF8;">
                     <i data-lucide="store"></i>
                 </div>
                 <div class="stat-label">Total Sellers</div>
-                <div class="stat-value" data-count="1284">0</div>
-                <div class="stat-trend"><i data-lucide="trending-up"></i> +12% this month</div>
+                <div class="stat-value" id="stat-sellers">—</div>
+                <div class="stat-trend" id="stat-sellers-note"><i data-lucide="trending-up"></i> —</div>
             </div>
             <div class="stat-card" style="--accent-bg: rgba(126,255,197,0.05);">
                 <div class="stat-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);">
                     <i data-lucide="users"></i>
                 </div>
                 <div class="stat-label">Total Buyers</div>
-                <div class="stat-value" data-count="8432">0</div>
-                <div class="stat-trend"><i data-lucide="trending-up"></i> +8% this month</div>
-            </div>
-            <div class="stat-card" style="--accent-bg: rgba(251,191,36,0.06);">
-                <div class="stat-icon" style="background:rgba(251,191,36,0.12); color:#FBB824;">
-                    <i data-lucide="banknote"></i>
-                </div>
-                <div class="stat-label">Commission Revenue</div>
-                <div class="stat-value">₱42,500</div>
-                <div class="stat-trend"><i data-lucide="trending-up"></i> +21% this month</div>
+                <div class="stat-value" id="stat-buyers">—</div>
+                <div class="stat-trend" id="stat-buyers-note"><i data-lucide="trending-up"></i> —</div>
             </div>
             <div class="stat-card" style="--accent-bg: rgba(255,209,102,0.06);">
                 <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:#FFD166;">
@@ -589,9 +581,38 @@
                     <i data-lucide="beef"></i>
                 </div>
                 <div class="stat-label">Active Livestock</div>
-                <div class="stat-value" data-count="156">0</div>
-                <div class="stat-trend"><i data-lucide="activity"></i> Live now</div>
+                <div class="stat-value" id="stat-livestock">—</div>
+                <div class="stat-trend" id="stat-livestock-note"><i data-lucide="activity"></i> —</div>
             </div>
+        </div>
+
+        <!-- NEEDS ATTENTION — the admin's work queues, each links to its page -->
+        <div class="section-title">Needs Attention</div>
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <a href="premium.html" class="stat-card" style="--accent-bg: rgba(255,209,102,0.06); display:block; text-decoration:none; color:inherit;">
+                <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:#FFD166;">
+                    <i data-lucide="crown"></i>
+                </div>
+                <div class="stat-label">Pending Premium Requests</div>
+                <div class="stat-value" id="queue-premium">—</div>
+                <div class="stat-trend" style="color:#FFD166;"><i data-lucide="arrow-right"></i> Review payments</div>
+            </a>
+            <a href="reports.html" class="stat-card" style="--accent-bg: rgba(255,107,107,0.06); display:block; text-decoration:none; color:inherit;">
+                <div class="stat-icon" style="background:rgba(255,107,107,0.12); color:var(--danger);">
+                    <i data-lucide="flag"></i>
+                </div>
+                <div class="stat-label">Open Reports</div>
+                <div class="stat-value" id="queue-reports">—</div>
+                <div class="stat-trend" style="color:var(--danger);"><i data-lucide="arrow-right"></i> Moderate</div>
+            </a>
+            <a href="customer-service.html" class="stat-card" style="--accent-bg: rgba(56,189,248,0.06); display:block; text-decoration:none; color:inherit;">
+                <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:#38BDF8;">
+                    <i data-lucide="message-circle"></i>
+                </div>
+                <div class="stat-label">Unread Support Messages</div>
+                <div class="stat-value" id="queue-support">—</div>
+                <div class="stat-trend" style="color:#38BDF8;"><i data-lucide="arrow-right"></i> Reply</div>
+            </a>
         </div>
 
         <!-- SELLERS BY TIER -->
@@ -627,8 +648,8 @@
         <div class="charts-row">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Sales &amp; Commission Trend</div>
-                    <span class="card-badge">JAN – JUN 2025</span>
+                    <div class="card-title">Subscription Revenue Trend</div>
+                    <span class="card-badge" id="trend-range">—</span>
                 </div>
                 <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
             </div>
@@ -641,46 +662,23 @@
             </div>
         </div>
 
-        <!-- LIVESTOCK -->
-        <div class="section-title">Livestock Categories</div>
-        <div class="livestock-grid">
-            <a href="#" class="livestock-card">
+        <!-- LISTING CATEGORIES (built from the listings table by loadListingStats) -->
+        <div class="section-title">Listing Categories</div>
+        <div class="livestock-grid" id="categoryGrid">
+            <div class="livestock-card" style="cursor:default;">
                 <div class="livestock-info">
-                    <div class="livestock-name">Cattle</div>
-                    <div class="livestock-count">42 active listings</div>
+                    <div class="livestock-name" style="color:var(--muted);">Loading…</div>
                 </div>
-                <div class="livestock-dot"></div>
-            </a>
-            <a href="#" class="livestock-card">
-                <div class="livestock-info">
-                    <div class="livestock-name">Swine</div>
-                    <div class="livestock-count">89 active listings</div>
-                </div>
-                <div class="livestock-dot"></div>
-            </a>
-            <a href="#" class="livestock-card">
-                <div class="livestock-info">
-                    <div class="livestock-name">Poultry</div>
-                    <div class="livestock-count">12 active listings</div>
-                </div>
-                <div class="livestock-dot"></div>
-            </a>
-            <a href="#" class="livestock-card">
-                <div class="livestock-info">
-                    <div class="livestock-name">Goat / Sheep</div>
-                    <div class="livestock-count">13 active listings</div>
-                </div>
-                <div class="livestock-dot"></div>
-            </a>
+            </div>
         </div>
 
         <!-- BOTTOM ROW -->
         <div class="bottom-row">
-            <!-- Recent Transactions -->
+            <!-- Recent Transactions (live from the transactions table) -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">Recent Transactions</div>
-                    <a href="#" style="font-size:0.75rem; color:var(--mint); text-decoration:none; font-weight:600;">View all →</a>
+                    <a href="sellers.html" style="font-size:0.75rem; color:var(--mint); text-decoration:none; font-weight:600;">View all →</a>
                 </div>
                 <div class="table-wrap">
                     <table>
@@ -692,37 +690,8 @@
                                 <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="avatar">JD</span>Juan D.</td>
-                                <td>Black Angus Cattle</td>
-                                <td style="font-family:'DM Mono',monospace;">₱18,500</td>
-                                <td><span class="badge badge-green">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="avatar">ML</span>Maria L.</td>
-                                <td>Duroc Swine (×6)</td>
-                                <td style="font-family:'DM Mono',monospace;">₱9,200</td>
-                                <td><span class="badge badge-yellow">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="avatar">RC</span>Rico C.</td>
-                                <td>Broiler Chicken (×30)</td>
-                                <td style="font-family:'DM Mono',monospace;">₱4,800</td>
-                                <td><span class="badge badge-green">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="avatar">AS</span>Anna S.</td>
-                                <td>Nubian Goat (×2)</td>
-                                <td style="font-family:'DM Mono',monospace;">₱7,100</td>
-                                <td><span class="badge badge-red">Cancelled</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="avatar">BM</span>Ben M.</td>
-                                <td>Saanen Sheep</td>
-                                <td style="font-family:'DM Mono',monospace;">₱3,300</td>
-                                <td><span class="badge badge-yellow">Pending</span></td>
-                            </tr>
+                        <tbody id="txnBody">
+                            <tr><td colspan="4" style="color:var(--muted);text-align:center;padding:18px;">Loading…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -732,7 +701,7 @@
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">Pending Approvals</div>
-                    <span class="card-badge" id="approvals-badge">5 NEW</span>
+                    <span class="card-badge" id="approvals-badge" style="display:none;">0 NEW</span>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
                     <div id="approvals-list"></div>
@@ -923,6 +892,219 @@ async function loadSubscriptionRevenue() {
     lucide.createIcons();   // re-render the icon injected into the trend line
 }
 
+// Charts are created empty in DOMContentLoaded and filled by the loaders below,
+// so we keep module-level handles to update their data once queries return.
+let userPieChart = null;
+let revenueChart = null;
+
+// ── USER COUNTS (sellers / buyers cards + doughnut) ────────────────────────
+async function loadUserCounts() {
+    const c = await computeUserCounts(supabaseClient);
+
+    const sellersEl = document.getElementById('stat-sellers');
+    const buyersEl  = document.getElementById('stat-buyers');
+    if (sellersEl) sellersEl.textContent = c.sellers.toLocaleString();
+    if (buyersEl)  buyersEl.textContent  = c.buyers.toLocaleString();
+
+    const sNote = document.getElementById('stat-sellers-note');
+    const bNote = document.getElementById('stat-buyers-note');
+    if (sNote) sNote.innerHTML = `<i data-lucide="users"></i> ${c.total.toLocaleString()} total accounts`;
+    if (bNote) {
+        const pct = c.total > 0 ? Math.round((c.buyers / c.total) * 100) : 0;
+        bNote.innerHTML = `<i data-lucide="users"></i> ${pct}% of accounts`;
+    }
+
+    // Feed the same numbers into the User Distribution doughnut.
+    if (userPieChart) {
+        userPieChart.data.datasets[0].data = [c.sellers, c.buyers];
+        userPieChart.$total = c.sellers + c.buyers;
+        userPieChart.update();
+    }
+
+    lucide.createIcons();
+}
+
+// ── LISTING STATS (active livestock card + category grid) ───────────────────
+async function loadListingStats() {
+    const grid    = document.getElementById('categoryGrid');
+    const countEl = document.getElementById('stat-livestock');
+    const noteEl  = document.getElementById('stat-livestock-note');
+
+    const { data, error } = await supabaseClient
+        .from('listings')
+        .select('category, status');
+
+    if (error) {
+        console.error('LISTING STATS ERROR:', error);
+        if (countEl) countEl.textContent = '—';
+        if (noteEl)  noteEl.innerHTML = `<i data-lucide="alert-triangle"></i> Failed to load`;
+        if (grid)    grid.innerHTML = `<div class="livestock-card" style="cursor:default;"><div class="livestock-info"><div class="livestock-name" style="color:var(--danger);">Could not load listings</div></div></div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    const rows   = data || [];
+    const active = rows.filter(r => r.status === 'active');
+
+    if (countEl) countEl.textContent = active.length.toLocaleString();
+    if (noteEl)  noteEl.innerHTML = `<i data-lucide="activity"></i> ${rows.length.toLocaleString()} total listings`;
+
+    // Active listings grouped by category, most first.
+    const byCat = {};
+    active.forEach(r => {
+        const cat = (r.category && r.category.trim()) || 'Uncategorized';
+        byCat[cat] = (byCat[cat] || 0) + 1;
+    });
+    const cats = Object.keys(byCat).sort((a, b) => byCat[b] - byCat[a]);
+
+    if (grid) {
+        if (cats.length === 0) {
+            grid.innerHTML = `<div class="livestock-card" style="cursor:default;"><div class="livestock-info"><div class="livestock-name" style="color:var(--muted);">No active listings</div></div></div>`;
+        } else {
+            grid.innerHTML = cats.map(cat => `
+                <a href="sellers.html" class="livestock-card">
+                    <div class="livestock-info">
+                        <div class="livestock-name">${escapeHtml(cat)}</div>
+                        <div class="livestock-count">${byCat[cat]} active listing${byCat[cat] === 1 ? '' : 's'}</div>
+                    </div>
+                    <div class="livestock-dot"></div>
+                </a>`).join('');
+        }
+    }
+    lucide.createIcons();
+}
+
+// ── RECENT TRANSACTIONS ─────────────────────────────────────────────────────
+// transactions.seller_id/buyer_id FK to auth.users (not public.users), and
+// listing_id FK to listings, so PostgREST can't embed the seller name directly.
+// We fetch the rows, then resolve seller names and listing titles by id.
+async function loadRecentTransactions() {
+    const body = document.getElementById('txnBody');
+    if (!body) return;
+
+    const { data: txns, error } = await supabaseClient
+        .from('transactions')
+        .select('id, seller_id, listing_id, quantity, agreed_price, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+    if (error) {
+        console.error('RECENT TRANSACTIONS ERROR:', error);
+        body.innerHTML = `<tr><td colspan="4" style="color:var(--danger);text-align:center;padding:18px;">Failed to load: ${escapeHtml(error.message)}</td></tr>`;
+        return;
+    }
+    if (!txns || txns.length === 0) {
+        body.innerHTML = `<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:18px;">No transactions yet.</td></tr>`;
+        return;
+    }
+
+    // Resolve seller names + listing titles in two batched lookups.
+    const sellerIds  = [...new Set(txns.map(t => t.seller_id).filter(Boolean))];
+    const listingIds = [...new Set(txns.map(t => t.listing_id).filter(Boolean))];
+
+    const [sellerRes, listingRes] = await Promise.all([
+        sellerIds.length  ? supabaseClient.from('users').select('id, name').in('id', sellerIds)     : Promise.resolve({ data: [] }),
+        listingIds.length ? supabaseClient.from('listings').select('id, title').in('id', listingIds) : Promise.resolve({ data: [] })
+    ]);
+
+    const nameById  = {};
+    (sellerRes.data  || []).forEach(u => { nameById[u.id]  = u.name; });
+    const titleById = {};
+    (listingRes.data || []).forEach(l => { titleById[l.id] = l.title; });
+
+    body.innerHTML = txns.map(t => {
+        const name    = nameById[t.seller_id] || '(unknown seller)';
+        const initials = name.split(' ').map(n => n[0] || '').join('').slice(0, 2).toUpperCase() || '?';
+        const title   = titleById[t.listing_id] || '(listing removed)';
+        const qty     = t.quantity && t.quantity > 1 ? ` (×${t.quantity})` : '';
+        const amount  = '₱' + (Number(t.agreed_price) || 0).toLocaleString();
+        return `
+            <tr>
+                <td><span class="avatar">${escapeHtml(initials)}</span>${escapeHtml(name)}</td>
+                <td>${escapeHtml(title)}${qty}</td>
+                <td style="font-family:'DM Mono',monospace;">${amount}</td>
+                <td>${txnStatusBadge(t.status)}</td>
+            </tr>`;
+    }).join('');
+}
+
+function txnStatusBadge(status) {
+    const s = String(status || '').toLowerCase();
+    const map = {
+        completed: ['badge-green',  'Completed'],
+        reserved:  ['badge-yellow', 'Reserved'],
+        pending:   ['badge-yellow', 'Pending'],
+        cancelled: ['badge-red',    'Cancelled'],
+        canceled:  ['badge-red',    'Cancelled']
+    };
+    const [cls, label] = map[s] || ['badge-yellow', status || 'Unknown'];
+    return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+}
+
+// ── NEEDS-ATTENTION QUEUES ──────────────────────────────────────────────────
+// Three independent head-only counts feeding the action row. Each is isolated
+// so one failing query (e.g. an RLS gap) doesn't blank the others.
+async function loadQueues() {
+    // Pending premium requests.
+    try {
+        const { count, error } = await supabaseClient
+            .from('subscriptions')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'pending');
+        setQueue('queue-premium', error ? null : count);
+    } catch (e) { console.error('QUEUE premium:', e); setQueue('queue-premium', null); }
+
+    // Open reports.
+    try {
+        const { count, error } = await supabaseClient
+            .from('reports')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'open');
+        setQueue('queue-reports', error ? null : count);
+    } catch (e) { console.error('QUEUE reports:', e); setQueue('queue-reports', null); }
+
+    // Unread support messages FROM users (admin replies don't count as unread).
+    // Mirrors customer-service.html: a row is admin-side when admin_id is set or
+    // sender = 'admin'; unread = a non-admin row with read = false.
+    try {
+        const { data, error } = await supabaseClient
+            .from('support_messages')
+            .select('sender, admin_id, read')
+            .eq('read', false);
+        if (error) throw error;
+        const unread = (data || []).filter(r =>
+            !r.admin_id && String(r.sender || '').toLowerCase().trim() !== 'admin'
+        ).length;
+        setQueue('queue-support', unread);
+    } catch (e) { console.error('QUEUE support:', e); setQueue('queue-support', null); }
+}
+
+function setQueue(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value == null ? '—' : Number(value).toLocaleString();
+}
+
+// ── MONTHLY REVENUE TREND (replaces the fake sales/commission chart) ────────
+async function loadRevenueTrend() {
+    const r = await computeMonthlyRevenue(supabaseClient, 6);
+    const badge = document.getElementById('trend-range');
+    if (badge && r.labels.length) {
+        badge.textContent = `${r.labels[0]} – ${r.labels[r.labels.length - 1]} ${new Date().getFullYear()}`.toUpperCase();
+    }
+    if (revenueChart) {
+        revenueChart.data.labels = r.labels;
+        revenueChart.data.datasets[0].data = r.data;
+        revenueChart.update();
+    }
+}
+
+// Minimal HTML escaper for values interpolated into innerHTML.
+function escapeHtml(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // Icons
@@ -933,44 +1115,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dateBadge').textContent =
         now.toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
 
-    // Count-up animation
-    document.querySelectorAll('[data-count]').forEach(el => {
-        const target = parseInt(el.dataset.count);
-        const duration = 1200;
-        const step = 16;
-        const increment = target / (duration / step);
-        let current = 0;
-        const timer = setInterval(() => {
-            current = Math.min(current + increment, target);
-            el.textContent = Math.round(current).toLocaleString();
-            if (current >= target) clearInterval(timer);
-        }, step);
-    });
-
-    // Pending approvals — fetched live from the same `users` table used by the
-    // User Approvals page.
-    loadPendingApprovals();
-
-    // Seller tier breakdown (Free / Premium / Super Premium), live from Supabase.
-    loadTierStats();
-
-    // Subscription revenue from the mobile app, live from Supabase.
-    loadSubscriptionRevenue();
+    // Live data loaders (each is self-contained and logs its own errors).
+    loadPendingApprovals();     // pending account approvals (users table)
+    loadTierStats();            // Free / Premium / Super Premium seller counts
+    loadSubscriptionRevenue();  // subscription revenue stat card
+    loadUserCounts();           // seller/buyer cards + doughnut
+    loadListingStats();         // active livestock card + category grid
+    loadRecentTransactions();   // recent transactions table
+    loadQueues();               // needs-attention action row
+    loadRevenueTrend();         // monthly subscription revenue line chart
 
     // Charts
     Chart.defaults.color = '#7D8590';
     Chart.defaults.font.family = "'Sora', sans-serif";
     Chart.defaults.font.size = 11;
 
-    // Line Chart
-    new Chart(document.getElementById('lineChart'), {
+    // Line Chart — created empty, filled by loadRevenueTrend().
+    revenueChart = new Chart(document.getElementById('lineChart'), {
         type: 'line',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            labels: [],
             datasets: [
                 {
-                    label: 'Sales (₱)',
-                    data: [12000, 19000, 15000, 25000, 22000, 30000],
+                    label: 'Revenue (₱)',
+                    data: [],
                     borderColor: '#7EFFC5',
                     backgroundColor: 'rgba(126, 255, 197, 0.07)',
                     tension: 0.45,
@@ -980,17 +1148,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     pointBorderColor: '#161B22',
                     pointBorderWidth: 2,
                     borderWidth: 2
-                },
-                {
-                    label: 'Commission (₱)',
-                    data: [1200, 1900, 1500, 2500, 2200, 3000],
-                    borderColor: '#7D8590',
-                    backgroundColor: 'transparent',
-                    borderDash: [5, 4],
-                    tension: 0.45,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#7D8590',
-                    borderWidth: 1.5
                 }
             ]
         },
@@ -1021,13 +1178,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Doughnut Chart
-    new Chart(document.getElementById('pieChart'), {
+    // Doughnut Chart — created empty, filled by loadUserCounts().
+    userPieChart = new Chart(document.getElementById('pieChart'), {
         type: 'doughnut',
         data: {
             labels: ['Sellers', 'Buyers'],
             datasets: [{
-                data: [1284, 8432],
+                data: [0, 0],
                 backgroundColor: ['#7EFFC5', '#1C2333'],
                 borderColor: ['#161B22', '#161B22'],
                 borderWidth: 3,
@@ -1048,7 +1205,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     bodyColor: '#7D8590',
                     padding: 12,
                     callbacks: {
-                        label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${Math.round(ctx.parsed / (1284+8432) * 100)}%)`
+                        label: ctx => {
+                            const total = ctx.chart.$total || ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                            return ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${pct}%)`;
+                        }
                     }
                 }
             }

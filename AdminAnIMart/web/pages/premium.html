@@ -1143,7 +1143,9 @@ function mapSub(row) {
         startedAt:    row.started_at,
         expiresAt:    row.expires_at,
         requestedAt:  row.requested_at,
-        paymentRef:   row.payment_reference || '—',
+        // Mobile writes the GCash reference to reference_number; older rows
+        // (pre pay-first flow) used payment_reference.
+        paymentRef:   row.reference_number || row.payment_reference || '—',
         // Object PATH inside the private payment-receipts bucket (new
         // pay-first flow) — viewed via a signed URL. Null on legacy rows.
         receiptPath:  row.receipt_url || null
@@ -1173,7 +1175,7 @@ async function loadSubscriptions() {
     // column's migration hasn't been applied yet, so the page still loads.
     const { data, error } = await selectSubscriptions(
         supabaseClient,
-        'id, user_id, plan, price, billing_cycle, started_at, expires_at, requested_at, status, payment_reference, receipt_url, users(name, email, address, created_at)',
+        'id, user_id, plan, price, billing_cycle, started_at, expires_at, requested_at, status, payment_reference, reference_number, receipt_url, users(name, email, address, created_at)',
         'id, user_id, plan, price, started_at, expires_at, requested_at, status, payment_reference, users(name, email, address, created_at)',
         q => q.order('requested_at', { ascending: false })
     );
