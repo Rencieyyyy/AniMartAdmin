@@ -345,35 +345,6 @@
             white-space: nowrap;
         }
 
-        .messenger-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            padding: 10px 16px;
-            background: rgba(0, 132, 255, 0.12);
-            color: #52a8ff;
-            border: 1px solid rgba(0, 132, 255, 0.25);
-            border-radius: 10px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            font-family: 'Sora', sans-serif;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-
-        .messenger-btn:hover {
-            background: rgba(0, 132, 255, 0.22);
-            transform: translateY(-1px);
-        }
-
-        .messenger-btn svg {
-            width: 15px;
-            height: 15px;
-        }
-
         /* ─── RIGHT PANEL ─── */
         .right-panel {
             display: flex;
@@ -976,58 +947,6 @@
 
 
 
-                    <div class="profile-divider"></div>
-
-
-
-
-
-
-                    <!-- MESSENGER -->
-
-
-                    <div style="width:100%;">
-
-
-                        <div class="form-label" style="margin-bottom:8px;">
-
-                            My Messenger Link
-
-                        </div>
-
-
-
-
-                        <div class="input-wrap" style="margin-bottom:8px;">
-
-
-                            <i data-lucide="link" class="input-icon"></i>
-
-
-
-                            <input type="url" class="form-input" id="myMessengerLink" placeholder="m.me/example">
-
-
-
-                        </div>
-
-
-
-
-
-                        <a id="messengerPreviewBtn" href="#" target="_blank" class="messenger-btn">
-
-
-                            <i data-lucide="message-circle"></i>
-
-                            Open My Messenger
-
-
-                        </a>
-
-
-
-                    </div>
 
 
 
@@ -1444,11 +1363,6 @@
             // NOTE: The sidebar (name / email / phone / location) intentionally does
             // NOT update live as you type. It reflects only saved values and is
             // refreshed by loadAdminProfile() after a successful "Save Changes".
-            document.getElementById('myMessengerLink').addEventListener('input', e => {
-                const val = e.target.value.trim();
-                const href = val.startsWith('http') ? val : 'https://' + val;
-                document.getElementById('messengerPreviewBtn').href = href;
-            });
         });
 
         function updateSidebarName() {
