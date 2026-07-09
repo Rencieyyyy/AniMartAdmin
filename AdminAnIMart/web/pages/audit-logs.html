@@ -559,6 +559,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="escape.js"></script>
 <script src="logout-modal.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
@@ -579,10 +580,7 @@ let page = 0;
 let totalRows = 0;
 let adminsById = {};
 
-function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
+// escapeHtml is provided globally by escape.js.
 
 // ─────────────────────────────────────────────────
 // ADMIN ROSTER (filter dropdown + name resolution)

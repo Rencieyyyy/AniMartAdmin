@@ -494,6 +494,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="escape.js"></script>
 <script src="logout-modal.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
@@ -514,10 +515,7 @@ let admins = [];
 let myAdminId = null;
 let pendingAction = null;   // { kind, id, label }
 
-function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
+// escapeHtml is provided globally by escape.js.
 function initials(name) {
     return (name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
@@ -615,7 +613,7 @@ function renderTable() {
             <td>
                 <div class="admin-cell">
                     <div class="admin-avatar" style="background:${color}22;color:${color};border:1.5px solid ${color}44;">
-                        ${initials(name)}${a.pfp ? `<img src="${escapeHtml(a.pfp)}" alt="" onerror="this.remove()">` : ''}
+                        ${escapeHtml(initials(name))}${a.pfp ? `<img src="${escapeHtml(a.pfp)}" alt="" onerror="this.remove()">` : ''}
                     </div>
                     <div>
                         <div class="admin-name">${escapeHtml(name)}${a.id === myAdminId ? '<span class="you-chip">You</span>' : ''}</div>

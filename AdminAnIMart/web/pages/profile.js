@@ -248,7 +248,7 @@ async function loadAdminProfile() {
     if (data.pfp) {
 
         avatarEl.innerHTML =
-            `<img src="${data.pfp}" alt="Profile picture" ` +
+            `<img src="${escapeHtml(data.pfp)}" alt="Profile picture" ` +
             `style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
 
     } else {

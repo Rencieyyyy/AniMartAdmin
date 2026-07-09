@@ -530,6 +530,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="escape.js"></script>
 <script src="logout-modal.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
@@ -555,10 +556,7 @@ const INSTRUCTIONS_KEY = 'premium_payment_instructions';
 let accounts = [];
 let deletedIds = [];
 
-function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
+// escapeHtml is provided globally by escape.js.
 
 // ─────────────────────────────────────────────────
 // LOAD

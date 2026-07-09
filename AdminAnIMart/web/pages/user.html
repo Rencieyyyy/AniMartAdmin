@@ -845,6 +845,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="escape.js"></script>
 <script src="logout-modal.js"></script>
 <script>
 // ─────────────────────────────────────────────────
@@ -1002,12 +1003,12 @@ function renderList(type, data) {
             <div class="cell-name">
                 ${checkboxHTML}
                 <div class="user-avatar" style="background:${color}22; color:${color}; border: 1.5px solid ${color}44;">
-                    ${initials(u.name)}
+                    ${escapeHtml(initials(u.name))}
                     <span class="role-dot" style="background:${roleDotColor};"></span>
                 </div>
                 <div style="min-width:0;">
-                    <div class="user-name">${u.name}</div>
-                    ${u.role === 'Seller' && u.business !== '—' ? `<div class="cell-sub"><i data-lucide="store"></i> ${u.business}</div>` : ''}
+                    <div class="user-name">${escapeHtml(u.name)}</div>
+                    ${u.role === 'Seller' && u.business !== '—' ? `<div class="cell-sub"><i data-lucide="store"></i> ${escapeHtml(u.business)}</div>` : ''}
                 </div>
             </div>
             <div class="cell-role">
@@ -1016,9 +1017,9 @@ function renderList(type, data) {
                     ${u.role}
                 </span>
             </div>
-            <div class="cell-loc"><i data-lucide="map-pin"></i> <span>${u.location}</span></div>
-            <div class="cell-email"><i data-lucide="mail"></i> <span>${u.email}</span></div>
-            <div class="cell-time">${u.submitted}</div>
+            <div class="cell-loc"><i data-lucide="map-pin"></i> <span>${escapeHtml(u.location)}</span></div>
+            <div class="cell-email"><i data-lucide="mail"></i> <span>${escapeHtml(u.email)}</span></div>
+            <div class="cell-time">${escapeHtml(u.submitted)}</div>
             <div class="cell-actions">${actionsCell}</div>
         `;
         list.appendChild(card);
@@ -1282,10 +1283,10 @@ function openDetail(id) {
     document.getElementById('detailBody').innerHTML = `
         <div class="profile-block">
             <div class="profile-avatar" style="background:${color}22; color:${color}; border:2px solid ${color}44; width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;flex-shrink:0;">
-                ${initials(user.name)}
+                ${escapeHtml(initials(user.name))}
             </div>
             <div>
-                <div class="profile-name">${user.name}</div>
+                <div class="profile-name">${escapeHtml(user.name)}</div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                     <span class="role-badge ${user.role === 'Seller' ? 'role-seller' : 'role-buyer'}">
                         ${user.role}
@@ -1298,27 +1299,27 @@ function openDetail(id) {
         <div class="detail-grid">
             <div class="detail-item">
                 <div class="d-label">Email</div>
-                <div class="d-val">${user.email}</div>
+                <div class="d-val">${escapeHtml(user.email)}</div>
             </div>
             <div class="detail-item">
                 <div class="d-label">Phone</div>
-                <div class="d-val">${user.phone}</div>
+                <div class="d-val">${escapeHtml(user.phone)}</div>
             </div>
             <div class="detail-item">
                 <div class="d-label">Address</div>
-                <div class="d-val">${user.location}</div>
+                <div class="d-val">${escapeHtml(user.location)}</div>
             </div>
             <div class="detail-item">
                 <div class="d-label">Registered</div>
-                <div class="d-val">${user.registered}</div>
+                <div class="d-val">${escapeHtml(user.registered)}</div>
             </div>
             <div class="detail-item">
                 <div class="d-label">ID Type</div>
-                <div class="d-val">${user.id_type}</div>
+                <div class="d-val">${escapeHtml(user.id_type)}</div>
             </div>
             <div class="detail-item">
                 <div class="d-label">Business Name</div>
-                <div class="d-val">${user.business}</div>
+                <div class="d-val">${escapeHtml(user.business)}</div>
             </div>
         </div>
 
@@ -1327,11 +1328,11 @@ function openDetail(id) {
             <div class="doc-row">
                 <div class="doc-icon"><i data-lucide="id-card"></i></div>
                 <div>
-                    <div class="doc-name">${user.id_type !== '—' ? user.id_type : 'Valid ID'}</div>
+                    <div class="doc-name">${user.id_type !== '—' ? escapeHtml(user.id_type) : 'Valid ID'}</div>
                     <div class="doc-sub">Government-issued ID · ${user.valid_id_url ? 'Uploaded' : 'Not uploaded'}</div>
                 </div>
                 ${user.valid_id_url
-                    ? `<a href="${user.valid_id_url}" target="_blank" rel="noopener" class="btn-view-detail" style="margin-left:auto;">
+                    ? `<a href="${encodeURI(user.valid_id_url)}" target="_blank" rel="noopener" class="btn-view-detail" style="margin-left:auto;">
                            <i data-lucide="external-link"></i> View
                        </a>`
                     : `<div class="doc-check" style="margin-left:auto; background:rgba(255,107,107,0.1); border-color:rgba(255,107,107,0.25);">

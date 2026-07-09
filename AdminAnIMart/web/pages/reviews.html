@@ -486,6 +486,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="escape.js"></script>
 <script src="logout-modal.js"></script>
 <script>
 // ─────────────────────────────────────────────────
@@ -507,10 +508,7 @@ function initials(name) {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
-function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
+// escapeHtml is provided globally by escape.js.
 
 let reviews = [];       // [{ id, name, role, avatar, stars, comment, ts }]
 let currentStar = 'all';
@@ -652,8 +650,8 @@ function renderList() {
         const color = rndColor(r.name);
         const roleDotColor = r.role === 'Seller' ? 'var(--mint)' : '#38BDF8';
         const avInner = r.avatar
-            ? `${initials(r.name)}<img class="av-img" src="${escapeHtml(r.avatar)}" alt="" onerror="this.remove()">`
-            : initials(r.name);
+            ? `${escapeHtml(initials(r.name))}<img class="av-img" src="${escapeHtml(r.avatar)}" alt="" onerror="this.remove()">`
+            : escapeHtml(initials(r.name));
 
         const card = document.createElement('div');
         card.className = 'review-card';

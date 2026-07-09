@@ -1094,6 +1094,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="escape.js"></script>
 <script src="logout-modal.js"></script>
 <script src="tier-stats.js"></script>
 <script>
@@ -1227,7 +1228,7 @@ function initials(name) {
 
 function planBadge(plan, label) {
     const s = PLAN_STYLE[plan] || { cls: 'plan-premium', icon: 'crown' };
-    return `<span class="req-plan ${s.cls}"><i data-lucide="${s.icon}" style="width:10px;height:10px;"></i>${label || plan}</span>`;
+    return `<span class="req-plan ${s.cls}"><i data-lucide="${s.icon}" style="width:10px;height:10px;"></i>${escapeHtml(label || plan)}</span>`;
 }
 
 // Billing cycles only apply to the PAID tiers — Free has no recurring fee, so
@@ -1276,11 +1277,11 @@ function renderPending() {
         div.className = 'request-card';
         div.style.animationDelay = (idx * 0.06) + 's';
         div.innerHTML = `
-            <div class="req-avatar">${initials(r.name)}</div>
+            <div class="req-avatar">${escapeHtml(initials(r.name))}</div>
             <div class="req-info">
-                <div class="req-name">${r.name}</div>
+                <div class="req-name">${escapeHtml(r.name)}</div>
                 <div class="req-meta">
-                    <i data-lucide="map-pin" style="width:11px;height:11px;"></i> ${r.address}
+                    <i data-lucide="map-pin" style="width:11px;height:11px;"></i> ${escapeHtml(r.address)}
                     <span class="dot"></span>
                     ${planBadge(r.plan, r.planLabel)}
                     ${cycleBadge(r)}
@@ -1337,8 +1338,8 @@ function renderActive() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
-                <span class="avatar-sm">${initials(s.name)}</span>
-                ${s.name}
+                <span class="avatar-sm">${escapeHtml(initials(s.name))}</span>
+                ${escapeHtml(s.name)}
             </td>
             <td>${planBadge(s.plan, s.planLabel)} ${cycleBadge(s)}</td>
             <td style="color:var(--muted);font-size:0.78rem;">${fmtDate(s.startedAt)}</td>
@@ -1379,8 +1380,8 @@ function renderExpired() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
-                <span class="avatar-sm" style="color:var(--muted);">${initials(s.name)}</span>
-                ${s.name}
+                <span class="avatar-sm" style="color:var(--muted);">${escapeHtml(initials(s.name))}</span>
+                ${escapeHtml(s.name)}
             </td>
             <td>${planBadge(s.plan, s.planLabel)} ${cycleBadge(s)}</td>
             <td style="color:var(--muted);font-size:0.78rem;">${!hasBillingCycle(s) ? '—' : s.billingCycle === 'yearly' ? '1 year' : '1 month'}</td>
@@ -1411,8 +1412,8 @@ function renderRejected() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
-                <span class="avatar-sm" style="color:var(--danger);">${initials(s.name)}</span>
-                ${s.name}
+                <span class="avatar-sm" style="color:var(--danger);">${escapeHtml(initials(s.name))}</span>
+                ${escapeHtml(s.name)}
             </td>
             <td>${planBadge(s.plan, s.planLabel)} ${cycleBadge(s)}</td>
             <td style="color:var(--muted);font-size:0.78rem;">${fmtDate(s.requestedAt)}</td>
@@ -1522,10 +1523,10 @@ function openViewModal(id) {
         <div class="modal-detail-row"><span class="key">Plan Requested</span><span class="val">${planBadge(r.plan, r.planLabel)}</span></div>
         ${hasBillingCycle(r) ? `<div class="modal-detail-row"><span class="key">Billing Cycle</span><span class="val">${cycleBadge(r)}</span></div>` : ''}
         <div class="modal-detail-row"><span class="key">${!hasBillingCycle(r) ? 'Fee' : r.billingCycle === 'yearly' ? 'Yearly Fee' : 'Monthly Fee'}</span><span class="val" style="font-family:'DM Mono',monospace;">₱${r.amount.toLocaleString()}</span></div>
-        <div class="modal-detail-row"><span class="key">Address</span><span class="val">${r.address}</span></div>
+        <div class="modal-detail-row"><span class="key">Address</span><span class="val">${escapeHtml(r.address)}</span></div>
         <div class="modal-detail-row"><span class="key">Member Since</span><span class="val">${fmtDate(r.memberSince)}</span></div>
         <div class="modal-detail-row"><span class="key">Current Listings</span><span class="val">0 listings</span></div>
-        <div class="modal-detail-row"><span class="key">Payment Reference</span><span class="val" style="font-family:'DM Mono',monospace;">${r.paymentRef}</span></div>
+        <div class="modal-detail-row"><span class="key">Payment Reference</span><span class="val" style="font-family:'DM Mono',monospace;">${escapeHtml(r.paymentRef)}</span></div>
         <div class="modal-detail-row" style="align-items:flex-start;"><span class="key">Payment Receipt</span><span class="val" id="receiptSlot" style="text-align:right;">${r.receiptPath ? 'Loading…' : '<span style="color:var(--muted);font-style:italic;">None uploaded (older request)</span>'}</span></div>
     `;
 

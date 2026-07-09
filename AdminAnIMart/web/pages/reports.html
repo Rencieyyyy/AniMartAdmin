@@ -553,6 +553,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="escape.js"></script>
 <script src="logout-modal.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
@@ -580,10 +581,7 @@ function initials(name) {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
-function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
+// escapeHtml is provided globally by escape.js.
 
 let reports = [];
 let currentStatus = 'open';
@@ -783,8 +781,8 @@ function renderList() {
     filtered.forEach((r, idx) => {
         const color = rndColor(r.reporterName);
         const avInner = r.reporterAvatar
-            ? `${initials(r.reporterName)}<img class="av-img" src="${escapeHtml(r.reporterAvatar)}" alt="" onerror="this.remove()">`
-            : initials(r.reporterName);
+            ? `${escapeHtml(initials(r.reporterName))}<img class="av-img" src="${escapeHtml(r.reporterAvatar)}" alt="" onerror="this.remove()">`
+            : escapeHtml(initials(r.reporterName));
 
         const card = document.createElement('div');
         card.className = 'report-card';

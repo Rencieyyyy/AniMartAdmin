@@ -810,6 +810,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="escape.js"></script>
 <script src="logout-modal.js"></script>
 
 <script>
@@ -1081,12 +1082,12 @@ function renderAnnouncements() {
                         </span>
                         <span style="font-size:0.65rem;color:var(--muted);margin-left:auto;font-family:'DM Mono',monospace;">${audienceLabel(ann.audience)}</span>
                     </div>
-                    <div class="ann-title" title="${ann.title}">${ann.title}</div>
-                    <div class="ann-date">${ann.date}</div>
+                    <div class="ann-title" title="${escapeHtml(ann.title)}">${escapeHtml(ann.title)}</div>
+                    <div class="ann-date">${escapeHtml(ann.date)}</div>
                 </div>
             </div>
             <div class="ann-card-body">
-                <div class="ann-body-text">${ann.body}</div>
+                <div class="ann-body-text">${escapeHtml(ann.body)}</div>
             </div>
             <div class="ann-card-footer">
                 <div class="ann-stats">
@@ -1495,15 +1496,15 @@ function renderCommentsList(ann) {
         div.innerHTML = `
             <div class="comment-header">
                 <div class="comment-avatar" style="background:${c.color}22; color:${c.color}; border:1.5px solid ${c.color}44;">
-                    ${c.avatar}
+                    ${escapeHtml(c.avatar)}
                 </div>
                 <div>
-                    <div class="comment-name">${c.name}</div>
-                    <div class="comment-role">${c.role}</div>
+                    <div class="comment-name">${escapeHtml(c.name)}</div>
+                    <div class="comment-role">${escapeHtml(c.role)}</div>
                 </div>
-                <div class="comment-time">${c.time}</div>
+                <div class="comment-time">${escapeHtml(c.time)}</div>
             </div>
-            <div class="comment-body">${c.body}</div>
+            <div class="comment-body">${escapeHtml(c.body)}</div>
             <div class="comment-actions">
                 <button class="comment-like" id="like-${ann.id}-${c.id}" onclick="toggleLike('${ann.id}', '${c.id}', this)">
                     <i data-lucide="thumbs-up"></i> ${c.likes}

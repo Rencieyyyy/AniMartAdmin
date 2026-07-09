@@ -748,6 +748,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="escape.js"></script>
 <script src="tier-stats.js"></script>
 <script src="logout-modal.js"></script>
 <script>
@@ -847,11 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => (
-        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-    ));
-}
+// escapeHtml is provided globally by escape.js.
 
 // ─── RECENT TRANSACTIONS ───
 // transactions.seller_id/buyer_id FK to auth.users and listing_id FK to
@@ -1041,15 +1038,15 @@ function rowHTML(u) {
     return `<tr>
         <td>
             <div class="user-cell">
-                <div class="avatar">${initials(u.name)}</div>
+                <div class="avatar">${escapeHtml(initials(u.name))}</div>
                 <div>
-                    <div class="user-name">${u.name}</div>
-                    <div class="user-email">${u.email}</div>
+                    <div class="user-name">${escapeHtml(u.name)}</div>
+                    <div class="user-email">${escapeHtml(u.email)}</div>
                 </div>
             </div>
         </td>
         <td><span class="type-badge ${typeClass}">${u.type.charAt(0).toUpperCase()+u.type.slice(1)}</span></td>
-        <td class="location-cell">${u.location}</td>
+        <td class="location-cell">${escapeHtml(u.location)}</td>
         <td class="date-cell">${joinedDate}</td>
         <td><span class="status-badge ${u.status === 'active' ? 'status-active' : u.status === 'restricted' ? 'status-restricted' : 'status-blocked'}">${statusLabel[u.status]}</span></td>
         <td>
@@ -1097,10 +1094,10 @@ function viewUser(id) {
 
     document.getElementById('viewModalBody').innerHTML = `
         <div class="profile-hero">
-            <div class="profile-avatar">${initials(u.name)}</div>
+            <div class="profile-avatar">${escapeHtml(initials(u.name))}</div>
             <div>
-                <div class="profile-name">${u.name}</div>
-                <div class="profile-meta">${u.email} · ${u.phone}</div>
+                <div class="profile-name">${escapeHtml(u.name)}</div>
+                <div class="profile-meta">${escapeHtml(u.email)} · ${escapeHtml(u.phone)}</div>
                 <div class="profile-badges">
                     <span class="type-badge ${typeClass}">${u.type.charAt(0).toUpperCase()+u.type.slice(1)}</span>
                     <span class="status-badge ${statusClass[u.status]}">${statusLabel[u.status]}</span>
@@ -1112,15 +1109,15 @@ function viewUser(id) {
             <div>
                 <div class="detail-item-label">Messenger Link</div>
                 <div class="detail-item-value">
-                    <a href="${u.messenger.startsWith('http') ? u.messenger : 'https://' + u.messenger}" target="_blank" rel="noopener" class="messenger-link">${u.messenger}</a>
+                    <a href="${escapeHtml(u.messenger.startsWith('http') ? u.messenger : 'https://' + u.messenger)}" target="_blank" rel="noopener" class="messenger-link">${escapeHtml(u.messenger)}</a>
                 </div>
             </div>
-            <a href="${u.messenger.startsWith('http') ? u.messenger : 'https://' + u.messenger}" target="_blank" rel="noopener" class="messenger-link messenger-icon"><i data-lucide="link"></i></a>
+            <a href="${escapeHtml(u.messenger.startsWith('http') ? u.messenger : 'https://' + u.messenger)}" target="_blank" rel="noopener" class="messenger-link messenger-icon"><i data-lucide="link"></i></a>
         </div>` : ''}
         <div class="detail-grid">
             <div class="detail-item">
                 <div class="detail-item-label">Address</div>
-                <div class="detail-item-value">${u.location}</div>
+                <div class="detail-item-value">${escapeHtml(u.location)}</div>
             </div>
             <div class="detail-item">
                 <div class="detail-item-label">Member Since</div>
@@ -1132,11 +1129,11 @@ function viewUser(id) {
             </div>
             <div class="detail-item">
                 <div class="detail-item-label">Plan</div>
-                <div class="detail-item-value">${u.plan}${u.billing !== '—' ? ' · ' + u.billing : ''}</div>
+                <div class="detail-item-value">${escapeHtml(u.plan)}${u.billing !== '—' ? ' · ' + escapeHtml(u.billing) : ''}</div>
             </div>
             <div class="detail-item">
                 <div class="detail-item-label">Phone</div>
-                <div class="detail-item-value" style="font-family:'DM Mono',monospace;font-size:0.78rem;">${u.phone}</div>
+                <div class="detail-item-value" style="font-family:'DM Mono',monospace;font-size:0.78rem;">${escapeHtml(u.phone)}</div>
             </div>
         </div>
         <div class="modal-actions">
@@ -1155,7 +1152,7 @@ const actionConfig = {
         icon: `<i data-lucide="shield-alert" style="color:var(--warning)"></i>`,
         iconBg: 'rgba(251,184,36,0.12)', iconBorder: 'rgba(251,184,36,0.25)',
         title: 'Restrict Account',
-        desc: user => `You're about to restrict <strong>${user.name}</strong>. They will have limited access to the platform.`,
+        desc: user => `You're about to restrict <strong>${escapeHtml(user.name)}</strong>. They will have limited access to the platform.`,
         btnClass: 'modal-btn-warn', btnLabel: 'Restrict',
         newStatus: 'restricted', toastMsg: user => `${user.name} has been restricted.`, toastType: 'warn'
     },
@@ -1163,7 +1160,7 @@ const actionConfig = {
         icon: `<i data-lucide="ban" style="color:var(--danger)"></i>`,
         iconBg: 'rgba(255,107,107,0.12)', iconBorder: 'rgba(255,107,107,0.25)',
         title: 'Block Account',
-        desc: user => `You're about to block <strong>${user.name}</strong>. They will no longer be able to access the platform.`,
+        desc: user => `You're about to block <strong>${escapeHtml(user.name)}</strong>. They will no longer be able to access the platform.`,
         btnClass: 'modal-btn-danger', btnLabel: 'Block',
         newStatus: 'blocked', toastMsg: user => `${user.name} has been blocked.`, toastType: 'danger'
     },
@@ -1171,7 +1168,7 @@ const actionConfig = {
         icon: `<i data-lucide="shield-check" style="color:var(--mint-dim)"></i>`,
         iconBg: 'rgba(126,255,197,0.12)', iconBorder: 'rgba(126,255,197,0.25)',
         title: 'Restore Account',
-        desc: user => `You're about to restore full access for <strong>${user.name}</strong>.`,
+        desc: user => `You're about to restore full access for <strong>${escapeHtml(user.name)}</strong>.`,
         btnClass: 'modal-btn-success', btnLabel: 'Restore',
         newStatus: 'active', toastMsg: user => `${user.name}'s account has been restored.`, toastType: 'success'
     }
@@ -1294,7 +1291,7 @@ function showToast(msg, type='success') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    toast.innerHTML = `<i data-lucide="${icons[type] || 'info'}"></i><span>${msg}</span>`;
+    toast.innerHTML = `<i data-lucide="${icons[type] || 'info'}"></i><span>${escapeHtml(msg)}</span>`;
     container.appendChild(toast);
     lucide.createIcons({ nodes: [toast] });
     setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateY(-16px)'; toast.style.transition='all 0.3s'; setTimeout(()=>toast.remove(), 300); }, 3000);

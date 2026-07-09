@@ -755,6 +755,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
+<script src="escape.js"></script>
 <script>
 // ─── DATA — live from the shared `support_messages` table ─
 // Each conversation is one user's thread: every row with the same user_id.
@@ -945,10 +946,7 @@ function listTime(ts) {
     const lbl = dayLabel(ts);
     return lbl === 'Today' ? formatClock(ts) : lbl;
 }
-function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
+// escapeHtml is provided globally by escape.js.
 // Avatar contents: the initials always render underneath; if a photo URL is given
 // it overlays them, and removes itself on a load error so the initials show.
 function avatarMarkup(url, initials) {
