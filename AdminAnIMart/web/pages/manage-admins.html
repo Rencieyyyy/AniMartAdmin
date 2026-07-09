@@ -231,6 +231,21 @@
             border-radius: 20px; padding: 2px 8px; text-transform: uppercase;
         }
 
+        .owner-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.58rem; font-weight: 700; font-family: 'DM Mono', monospace;
+            background: rgba(255,209,102,0.12); color: var(--gold);
+            border: 1px solid rgba(255,209,102,0.3);
+            border-radius: 20px; padding: 2px 8px; text-transform: uppercase;
+        }
+        .owner-chip svg { width: 9px; height: 9px; }
+
+        .owner-locked {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 0.7rem; color: var(--gold); font-style: italic;
+        }
+        .owner-locked svg { width: 12px; height: 12px; }
+
         .role-badge, .status-badge {
             display: inline-flex; align-items: center; gap: 5px;
             font-size: 0.62rem; font-weight: 700; font-family: 'DM Mono', monospace;
@@ -533,7 +548,7 @@ async function loadAdmins() {
 
     const { data, error } = await supabaseClient
         .from('admins')
-        .select('id, email, first_name, last_name, role, status, created_at, pfp')
+        .select('id, email, first_name, last_name, role, status, created_at, pfp, is_owner')
         .order('created_at');
 
     if (error) {
@@ -578,6 +593,12 @@ function statusBadge(status) {
 }
 
 function actionButtons(a) {
+    // The owner is protected: no super admin (not even another owner) can
+    // demote, restrict, block or delete it. The DB trigger + Edge Function
+    // enforce this; hiding the buttons just avoids a guaranteed-to-fail click.
+    if (a.is_owner) {
+        return '<span class="owner-locked"><i data-lucide="shield-check"></i>Owner — protected account</span>';
+    }
     if (a.id === myAdminId) {
         return '<span style="font-size:0.7rem;color:var(--muted);font-style:italic;">Your own account — ask another super admin</span>';
     }
@@ -616,7 +637,7 @@ function renderTable() {
                         ${escapeHtml(initials(name))}${a.pfp ? `<img src="${escapeHtml(a.pfp)}" alt="" onerror="this.remove()">` : ''}
                     </div>
                     <div>
-                        <div class="admin-name">${escapeHtml(name)}${a.id === myAdminId ? '<span class="you-chip">You</span>' : ''}</div>
+                        <div class="admin-name">${escapeHtml(name)}${a.is_owner ? '<span class="owner-chip"><i data-lucide="crown"></i>Owner</span>' : ''}${a.id === myAdminId ? '<span class="you-chip">You</span>' : ''}</div>
                         <div class="admin-email">${escapeHtml(a.email)}</div>
                     </div>
                 </div>

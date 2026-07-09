@@ -136,10 +136,16 @@ Deno.serve(async (req) => {
 
       const { data: target } = await service
         .from("admins")
-        .select("id, email, role, status")
+        .select("id, email, role, status, is_owner")
         .eq("id", targetId)
         .maybeSingle();
       if (!target) return json({ error: "Admin not found" }, 404);
+
+      // The owner is protected — no super admin may delete it. (The DB trigger
+      // trusts the service role, so this guard is the real enforcement here.)
+      if (target.is_owner) {
+        return json({ error: "The owner account is protected and cannot be deleted" }, 403);
+      }
 
       if (target.role === "super_admin" && target.status === "active") {
         const { count } = await service
