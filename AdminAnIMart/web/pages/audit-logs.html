@@ -428,6 +428,7 @@
             <div class="header-right">
                 <span class="super-badge"><i data-lucide="shield-check"></i>Super Admin only</span>
                 <div class="date-badge" id="dateBadge">—</div>
+                <button class="icon-btn" title="Export CSV (current filters)" onclick="exportLogs()"><i data-lucide="download"></i></button>
                 <button class="icon-btn" title="Refresh" onclick="refreshAll()"><i data-lucide="refresh-cw"></i></button>
             </div>
         </div>
@@ -575,6 +576,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
 <script src="escape.js"></script>
+<script src="csv-export.js"></script>
 <script src="logout-modal.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
@@ -650,7 +652,7 @@ async function loadStats() {
 // ─────────────────────────────────────────────────
 // LOAD LOGS (one page, filtered server-side)
 // ─────────────────────────────────────────────────
-function buildQuery() {
+function buildBaseQuery() {
     let q = supabaseClient
         .from('audit_logs')
         .select('id, admin_id, admin_email, action, target_type, target_id, details, created_at',
@@ -668,7 +670,27 @@ function buildQuery() {
     if (from) q = q.gte('created_at', `${from}T00:00:00+08:00`);
     if (to)   q = q.lte('created_at', `${to}T23:59:59.999+08:00`);
 
-    return q.range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+    return q;
+}
+
+function buildQuery() {
+    return buildBaseQuery().range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+}
+
+// EXPORT — every row matching the current filters (not just this page),
+// capped at 10k. downloadCSV is provided globally by csv-export.js.
+async function exportLogs() {
+    const { data, error } = await buildBaseQuery().limit(10000);
+    if (error) { showToast('Export failed: ' + error.message, 'error'); return; }
+
+    const rows = (data || []).map(l => [
+        fmtManila(l.created_at), l.admin_email || l.admin_id || '', l.action || '',
+        l.target_type || '', l.target_id || '',
+        l.details ? JSON.stringify(l.details) : ''
+    ]);
+    downloadCSV('audit-logs',
+        ['Time (Manila)','Admin','Action','Target type','Target ID','Details'],
+        rows);
 }
 
 async function loadLogs() {

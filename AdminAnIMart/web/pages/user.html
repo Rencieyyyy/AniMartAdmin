@@ -692,6 +692,7 @@
             </div>
             <div class="header-right">
                 <div class="date-badge" id="dateBadge">—</div>
+                <button class="icon-btn" title="Export CSV" onclick="exportUsers()"><i data-lucide="download"></i></button>
             </div>
         </div>
 
@@ -849,6 +850,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
 <script src="escape.js"></script>
+<script src="csv-export.js"></script>
 <script src="image-lightbox.js"></script>
 <script src="logout-modal.js"></script>
 <script>
@@ -1050,6 +1052,20 @@ function renderList(type, data) {
     });
 
     lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// EXPORT — every loaded registration (all three tabs) to CSV.
+// downloadCSV is provided globally by csv-export.js.
+// ─────────────────────────────────────────────────
+function exportUsers() {
+    const rows = [...pending, ...approved, ...rejected].map(u => [
+        u.name, u.email, u.phone, u.location, u.role, u.business,
+        u.id_type, u.verified ? 'yes' : 'no', u.status, u.registered
+    ]);
+    downloadCSV('user-approvals',
+        ['Name','Email','Phone','Address','Role','Business','ID type','Verified','Status','Registered'],
+        rows);
 }
 
 // ─────────────────────────────────────────────────

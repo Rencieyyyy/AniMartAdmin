@@ -737,7 +737,10 @@
                 <h1>Premium Requests</h1>
                 <p>Manage seller premium subscriptions, approvals, and revenue.</p>
             </div>
-            <div class="date-badge" id="dateBadge">—</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="date-badge" id="dateBadge">—</div>
+                <button class="icon-btn" title="Export CSV" onclick="exportSubs()" style="width:36px;height:36px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);"><i data-lucide="download" style="width:15px;height:15px;"></i></button>
+            </div>
         </div>
 
         <!-- STATS -->
@@ -1097,6 +1100,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
 <script src="escape.js"></script>
+<script src="csv-export.js"></script>
 <script src="image-lightbox.js"></script>
 <script src="logout-modal.js"></script>
 <script src="tier-stats.js"></script>
@@ -1208,6 +1212,18 @@ async function loadSubscriptions() {
     updatePlanInsights();
     renderTierLegend();
     buildCharts();
+}
+
+// EXPORT — every loaded subscription (all four tabs) to CSV.
+// downloadCSV is provided globally by csv-export.js.
+function exportSubs() {
+    const rows = allSubs.map(s => [
+        s.name, s.email || '', s.plan, s.billingCycle, s.amount, s.status,
+        s.paymentRef, s.requestedAt || '', s.startedAt || '', s.expiresAt || ''
+    ]);
+    downloadCSV('subscriptions',
+        ['Seller','Email','Plan','Billing cycle','Amount','Status','Payment ref','Requested','Started','Expires'],
+        rows);
 }
 
 // Renders the Free/Premium/Super Premium count chips under the doughnut.
