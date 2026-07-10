@@ -56,13 +56,24 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Caller must be an ACTIVE super admin. Match by id OR email (one legacy
-    // admins row has an id that differs from its auth user id).
-    const { data: actor } = await service
-      .from("admins")
-      .select("id, email, role, status")
-      .or(`id.eq.${caller.id},email.ilike.${(caller.email ?? "").trim()}`)
-      .maybeSingle();
+    // Caller must be an ACTIVE super admin. Match by auth id first, then fall
+    // back to a case-insensitive email match (one legacy admins row has an id
+    // that differs from its auth user id). Use parameterized filters and never
+    // interpolate the caller-controlled email into a PostgREST .or() string.
+    const cols = "id, email, role, status";
+    let actor: { id: string; email: string; role: string; status: string } | null = null;
+
+    const byId = await service.from("admins").select(cols).eq("id", caller.id).maybeSingle();
+    actor = byId.data ?? null;
+
+    const callerEmail = (caller.email ?? "").trim();
+    if (!actor && callerEmail) {
+      // Escape LIKE metacharacters so the case-insensitive match is exact —
+      // '_' and '%' are valid email characters and must not act as wildcards.
+      const pattern = callerEmail.replace(/([\\%_])/g, "\\$1");
+      const byEmail = await service.from("admins").select(cols).ilike("email", pattern).maybeSingle();
+      actor = byEmail.data ?? null;
+    }
 
     if (!actor || actor.role !== "super_admin" || actor.status !== "active") {
       return json({ error: "Only an active super admin can manage admin accounts" }, 403);
