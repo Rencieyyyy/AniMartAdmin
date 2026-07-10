@@ -722,10 +722,16 @@ async function loadPendingApprovals() {
     const badge = document.getElementById('approvals-badge');
     if (!list) return;
 
-    const { data, error } = await supabaseClient
-        .from('users')
-        .select('id, name, address, status, created_at, seller_profiles(shop_name)')
-        .order('created_at', { ascending: false });
+    // Accounts created on the Manage Admins page also get a `users` row (same
+    // auth id + email) but never went through mobile signup — exclude them,
+    // same id+email keying as User Approvals (user.html loadUsers).
+    const [{ data, error }, adminsRes] = await Promise.all([
+        supabaseClient
+            .from('users')
+            .select('id, name, email, address, status, created_at, seller_profiles(shop_name)')
+            .order('created_at', { ascending: false }),
+        supabaseClient.from('admins').select('id, email')
+    ]);
 
     if (error) {
         console.error('LOAD PENDING APPROVALS ERROR:', error);
@@ -734,11 +740,18 @@ async function loadPendingApprovals() {
         return;
     }
 
+    if (adminsRes.error) console.error('LOAD ADMIN IDS ERROR:', adminsRes.error);
+    const adminKeys = new Set(
+        (adminsRes.data || []).map(a => String(a.id) + '|' + String(a.email || '').toLowerCase())
+    );
+    const isAdminAccount = u =>
+        adminKeys.has(String(u.id) + '|' + String(u.email || '').toLowerCase());
+
     // Anything not approved/rejected counts as pending (mirrors User Approvals).
     // Only brand-new accounts awaiting review — never approved/rejected/restricted/blocked
     // (restricted/blocked are managed on the Sellers & Buyers page).
     const HANDLED = ['approved', 'rejected', 'restricted', 'blocked'];
-    const pending = (data || []).filter(u => !HANDLED.includes(u.status));
+    const pending = (data || []).filter(u => !HANDLED.includes(u.status) && !isAdminAccount(u));
     pendingApprovalsData = pending;   // for the confirmation dialog
 
     if (badge) {
