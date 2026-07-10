@@ -573,6 +573,40 @@
         .send-btn:hover { background: var(--mint-dim); transform: scale(1.05); }
         .send-btn svg { width: 16px; height: 16px; }
 
+        /* ATTACHMENTS */
+        .attach-btn {
+            width: 44px; height: 44px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--muted);
+            transition: all 0.18s; flex-shrink: 0;
+        }
+        .attach-btn:hover { border-color: rgba(126,255,197,0.35); color: var(--mint); }
+        .attach-btn svg { width: 16px; height: 16px; }
+
+        .attach-chip {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 10px; padding: 6px 10px; margin-bottom: 8px;
+            font-size: 0.72rem; color: var(--text); max-width: 320px;
+        }
+        .attach-chip svg { width: 13px; height: 13px; color: var(--mint-dim); flex-shrink: 0; }
+        .attach-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .attach-chip button {
+            background: none; border: none; cursor: pointer; color: var(--muted);
+            display: flex; align-items: center; padding: 2px;
+        }
+        .attach-chip button:hover { color: var(--danger); }
+
+        .msg-img {
+            display: block; max-width: 260px; max-height: 220px;
+            border-radius: 10px; cursor: zoom-in;
+            border: 1px solid var(--border); object-fit: cover;
+        }
+        .msg-img:not(:last-child) { margin-bottom: 6px; }
+
         /* STATUS TAGS */
         .tag {
             display: inline-flex; align-items: center; gap: 4px;
@@ -744,7 +778,14 @@
                 <!-- Input -->
                 <div class="chat-input-wrap" id="chatInputWrap" style="display:none;">
                     <div class="quick-replies" id="quickReplies"></div>
+                    <div class="attach-chip" id="attachChip" hidden>
+                        <i data-lucide="image"></i>
+                        <span id="attachName">photo.jpg</span>
+                        <button type="button" onclick="clearAttachment()" title="Remove attachment"><i data-lucide="x"></i></button>
+                    </div>
                     <div class="input-row">
+                        <input type="file" id="attachInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden onchange="pickAttachment(event)">
+                        <button class="attach-btn" type="button" title="Attach a photo" onclick="document.getElementById('attachInput').click()"><i data-lucide="paperclip"></i></button>
                         <textarea class="chat-textarea" id="chatInput" placeholder="Type your reply…" rows="1" onkeydown="handleKey(event)"></textarea>
                         <button class="send-btn" onclick="sendMessage()"><i data-lucide="send"></i></button>
                     </div>
@@ -814,7 +855,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadConversations() {
     const { data: msgs, error } = await supabaseClient
         .from('support_messages')
-        .select('id, user_id, sender, admin_id, body, read, status, created_at')
+        .select('id, user_id, sender, admin_id, body, read, status, image_url, created_at')
         .order('created_at', { ascending: true });
 
     if (error) {
@@ -870,12 +911,13 @@ async function loadConversations() {
             dbStatus,
             unread,
             avatar:   u.avatar_url || null,   // the user's photo (list + header)
-            lastMsg:  last.body,
+            lastMsg:  last.body || (last.image_url ? '📷 Photo' : ''),
             lastTs:   last.created_at,
             lastTime: listTime(last.created_at),
             messages: list.map(r => ({
                 from:   rowIsAdmin(r) ? 'admin' : 'user',
                 text:   r.body,
+                image:  r.image_url || null,   // full URL, or a path in the private support-chat bucket
                 ts:     r.created_at,
                 avatar: rowIsAdmin(r)
                             ? ((adminsById[r.admin_id] && adminsById[r.admin_id].pfp) || adminPfp || null)
@@ -1079,18 +1121,55 @@ function renderMessages(conv) {
         row.style.animation = 'fadeIn 0.25s ease both';
         row.style.animationDelay = (i * 0.04) + 's';
 
+        const imgHtml = msg.image
+            ? `<img class="msg-img" data-chat-img="${escapeHtml(msg.image)}" alt="attachment" title="Click to enlarge">`
+            : '';
+        const textHtml = msg.text ? escapeHtml(msg.text) : '';
+
         row.innerHTML = `
             <div class="msg-avatar ${isAdmin ? 'admin-av' : 'user-av'}">${avatarMarkup(msg.avatar, initials)}</div>
             <div class="msg-content">
-                <div class="msg-bubble">${escapeHtml(msg.text)}</div>
+                <div class="msg-bubble">${imgHtml}${textHtml}</div>
                 <div class="msg-time">${formatClock(msg.ts)}</div>
             </div>
         `;
         area.appendChild(row);
     });
 
+    fillChatImages(area, conv.name);
+
     // Scroll to bottom
     area.scrollTop = area.scrollHeight;
+}
+
+// ─── CHAT ATTACHMENTS (display) ──────────────────────────
+// image_url is either a full URL (legacy/external) or an object PATH inside
+// the PRIVATE support-chat bucket (mobile uploads + our own replies), which
+// needs a short-lived signed URL. Signed URLs are cached per path.
+const chatImgCache = {};   // path → signed URL
+
+async function resolveChatImage(pathOrUrl) {
+    if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+    if (chatImgCache[pathOrUrl]) return chatImgCache[pathOrUrl];
+    const { data, error } = await supabaseClient
+        .storage.from('support-chat')
+        .createSignedUrl(pathOrUrl, 60 * 60);   // 1 hour
+    if (error || !data) { console.error('signed url:', error); return null; }
+    chatImgCache[pathOrUrl] = data.signedUrl;
+    return data.signedUrl;
+}
+
+function fillChatImages(area, threadName) {
+    area.querySelectorAll('img[data-chat-img]').forEach(async img => {
+        const raw = img.getAttribute('data-chat-img');
+        img.removeAttribute('data-chat-img');
+        const url = await resolveChatImage(raw);
+        if (!url) { img.remove(); return; }
+        img.src = url;
+        img.onclick = () => openImageLightbox({ url, title: 'Chat attachment', subtitle: threadName });
+        img.onload = () => { area.scrollTop = area.scrollHeight; };
+        img.onerror = () => img.remove();
+    });
 }
 
 // ─── QUICK REPLIES ───────────────────────────────────────
@@ -1108,13 +1187,37 @@ function renderQuickReplies() {
     });
 }
 
+// ─── ATTACHMENTS (send) ──────────────────────────────────
+// One optional image per reply, stored in the PRIVATE support-chat bucket
+// (storage policy support_chat_upload lets admins write any thread's folder);
+// support_messages.image_url stores the object PATH, like the receipts flow.
+let attachedFile = null;
+const ATTACH_MAX_BYTES = 5 * 1024 * 1024;   // 5 MB
+
+function pickAttachment(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';   // allow re-picking the same file
+    if (!file) return;
+    if (!/^image\//.test(file.type)) { alert('Please choose an image file (JPG, PNG, WEBP or GIF).'); return; }
+    if (file.size > ATTACH_MAX_BYTES) { alert('Image is too large. Please choose one under 5MB.'); return; }
+    attachedFile = file;
+    document.getElementById('attachName').textContent = file.name;
+    document.getElementById('attachChip').hidden = false;
+    lucide.createIcons();
+}
+
+function clearAttachment() {
+    attachedFile = null;
+    document.getElementById('attachChip').hidden = true;
+}
+
 // ─── SEND MESSAGE ────────────────────────────────────────
 // An admin reply is a support_messages row for this user_id with sender 'admin'
-// and admin_id stamped to the signed-in admin.
+// and admin_id stamped to the signed-in admin. May carry an image, text, or both.
 async function sendMessage() {
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
-    if (!text || !activeId) return;
+    if ((!text && !attachedFile) || !activeId) return;
 
     const sendBtn = document.querySelector('.send-btn');
     input.disabled = true; if (sendBtn) sendBtn.disabled = true;
@@ -1125,9 +1228,26 @@ async function sendMessage() {
     const conv = conversations.find(c => c.id === activeId);
     const status = conv ? conv.dbStatus : 'open';
 
-    const { error } = await supabaseClient
-        .from('support_messages')
-        .insert({ user_id: activeId, sender: 'admin', admin_id: adminId, body: text, read: false, status });
+    let error = null;
+    try {
+        let imagePath = null;
+        if (attachedFile) {
+            const ext = ({ 'image/jpeg':'jpg', 'image/png':'png', 'image/webp':'webp', 'image/gif':'gif' })[attachedFile.type] || 'jpg';
+            imagePath = `${activeId}/admin_${Date.now()}.${ext}`;
+            const up = await supabaseClient.storage
+                .from('support-chat')
+                .upload(imagePath, attachedFile, { contentType: attachedFile.type, cacheControl: '3600' });
+            if (up.error) throw up.error;
+        }
+
+        const res = await supabaseClient
+            .from('support_messages')
+            .insert({ user_id: activeId, sender: 'admin', admin_id: adminId,
+                      body: text, image_url: imagePath, read: false, status });
+        error = res.error;
+    } catch (e) {
+        error = e;
+    }
 
     input.disabled = false; if (sendBtn) sendBtn.disabled = false;
 
@@ -1135,6 +1255,7 @@ async function sendMessage() {
 
     input.value = '';
     input.style.height = 'auto';
+    clearAttachment();
     await loadConversations();   // re-fetch so the new bubble + list order reflect the DB
     input.focus();
 }
@@ -1180,6 +1301,7 @@ async function markResolved() {
 // Handled by the shared styled modal in logout-modal.js.
 </script>
 <script src="logout-modal.js"></script>
+<script src="image-lightbox.js"></script>
 <!-- Highlight the current page's link in the sidebar -->
 <script>
 (function () {

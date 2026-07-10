@@ -22,6 +22,17 @@
 -- admin status changes and deletions to audit_logs — no new triggers needed.
 -- ============================================================================
 
+-- ── 0) allow the 'removed' status ─────────────────────────────────────────────
+-- The mobile schema's CHECK allows active/disabled/sold/reserved/pending/draft.
+-- 'disabled' is the SELLER's own toggle, so the admin takedown gets its own
+-- distinct status ('removed') — additive, buyers only ever query active rows.
+alter table public.listings drop constraint if exists listings_status_check;
+alter table public.listings add constraint listings_status_check
+    check (status = any (array[
+        'active'::text, 'disabled'::text, 'sold'::text,
+        'reserved'::text, 'pending'::text, 'draft'::text, 'removed'::text
+    ]));
+
 -- ── 1) admins may update any listing ─────────────────────────────────────────
 drop policy if exists "Admins update listings" on public.listings;
 create policy "Admins update listings"
@@ -47,8 +58,11 @@ security definer
 set search_path to 'public'
 as $$
 begin
+    -- Only constrain real client sessions (authenticated role): the service
+    -- role and direct postgres maintenance must stay able to fix data.
     if old.status = 'removed'
        and new.status is distinct from old.status
+       and coalesce(auth.role(), '') = 'authenticated'
        and not public.is_admin() then
         raise exception 'This listing was removed by an admin and can only be restored by an admin.';
     end if;
