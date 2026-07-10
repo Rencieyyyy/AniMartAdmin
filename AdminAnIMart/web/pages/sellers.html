@@ -236,23 +236,6 @@
 
         .table-wrap { overflow-x: auto; }
 
-        /* ─── RECENT TRANSACTIONS SECTION ─── */
-        .txn-section { margin-top: 32px; scroll-margin-top: 24px; animation: fadeUp 0.5s ease both; }
-        .txn-section-head { margin-bottom: 16px; }
-        .txn-section-head h2 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
-        .txn-section-head p { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
-
-        .txn-badge {
-            display: inline-flex; align-items: center; gap: 4px;
-            font-size: 0.68rem; font-weight: 600;
-            padding: 3px 9px; border-radius: 20px;
-            font-family: 'DM Mono', monospace;
-        }
-        .txn-completed { background: rgba(126,255,197,0.1); color: var(--mint-dim); border: 1px solid rgba(126,255,197,0.18); }
-        .txn-pending   { background: rgba(251,184,36,0.1); color: var(--warning); border: 1px solid rgba(251,184,36,0.2); }
-        .txn-cancelled { background: rgba(255,107,107,0.1); color: var(--danger); border: 1px solid rgba(255,107,107,0.2); }
-        .txn-amount { font-family: 'DM Mono', monospace; color: var(--text); }
-
         table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
         thead th {
             text-align: left; font-size: 0.68rem; font-weight: 600;
@@ -688,34 +671,6 @@
             </div>
         </div>
 
-        <!-- RECENT TRANSACTIONS (deep-linked from the Dashboard "View all") -->
-        <div class="txn-section" id="transactions">
-            <div class="txn-section-head">
-                <div>
-                    <h2>Recent Transactions</h2>
-                    <p>Latest deals between sellers and buyers on the marketplace.</p>
-                </div>
-            </div>
-            <div class="table-card">
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Seller</th>
-                                <th>Buyer</th>
-                                <th>Item</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="txnBody">
-                            <tr><td colspan="6" style="color:var(--muted);text-align:center;padding:18px;">Loading…</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
     </main>
 </div>
 
@@ -841,93 +796,14 @@ async function loadUsers() {
 }
 
 // ─── INIT ───
+// (The old Recent Transactions section moved to its own page:
+//  transactions.html — the full browser with filters and CSV export.)
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
     loadUsers();
-    loadRecentTransactions();
-    // Arriving via the Dashboard "View all →" link (sellers.html#transactions):
-    // scroll the transactions section into view once it's in the DOM.
-    if (window.location.hash === '#transactions') {
-        setTimeout(() => document.getElementById('transactions')
-            ?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
-    }
 });
 
 // escapeHtml is provided globally by escape.js.
-
-// ─── RECENT TRANSACTIONS ───
-// transactions.seller_id/buyer_id FK to auth.users and listing_id FK to
-// listings, so PostgREST can't embed names directly — fetch the rows, then
-// resolve seller/buyer names and listing titles in batched lookups. Admin read
-// access is granted by migration 20260709005000_admin_read_transactions.sql.
-async function loadRecentTransactions() {
-    const body = document.getElementById('txnBody');
-    if (!body) return;
-
-    const { data: txns, error } = await supabaseClient
-        .from('transactions')
-        .select('id, seller_id, buyer_id, listing_id, quantity, agreed_price, status, created_at')
-        .order('created_at', { ascending: false })
-        .limit(25);
-
-    if (error) {
-        console.error('RECENT TRANSACTIONS ERROR:', error);
-        body.innerHTML = `<tr><td colspan="6" style="color:var(--danger);text-align:center;padding:18px;">Failed to load: ${escapeHtml(error.message)}</td></tr>`;
-        return;
-    }
-    if (!txns || txns.length === 0) {
-        body.innerHTML = `<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:18px;">No transactions yet.</td></tr>`;
-        return;
-    }
-
-    const userIds    = [...new Set(txns.flatMap(t => [t.seller_id, t.buyer_id]).filter(Boolean))];
-    const listingIds = [...new Set(txns.map(t => t.listing_id).filter(Boolean))];
-
-    const [userRes, listingRes] = await Promise.all([
-        userIds.length    ? supabaseClient.from('users').select('id, name').in('id', userIds)        : Promise.resolve({ data: [] }),
-        listingIds.length ? supabaseClient.from('listings').select('id, title').in('id', listingIds) : Promise.resolve({ data: [] })
-    ]);
-
-    const nameById = {};
-    (userRes.data || []).forEach(u => { nameById[u.id] = u.name; });
-    const titleById = {};
-    (listingRes.data || []).forEach(l => { titleById[l.id] = l.title; });
-
-    const initialsOf = name => name.split(' ').map(n => n[0] || '').join('').slice(0, 2).toUpperCase() || '?';
-
-    body.innerHTML = txns.map(t => {
-        const seller = nameById[t.seller_id] || '(unknown seller)';
-        const buyer  = nameById[t.buyer_id]  || '(unknown buyer)';
-        const title  = titleById[t.listing_id] || '(listing removed)';
-        const qty    = t.quantity && t.quantity > 1 ? ` (×${t.quantity})` : '';
-        const amount = '₱' + (Number(t.agreed_price) || 0).toLocaleString();
-        const date   = t.created_at
-            ? new Date(t.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
-            : '—';
-        return `
-            <tr>
-                <td><div class="user-cell"><span class="avatar">${escapeHtml(initialsOf(seller))}</span>${escapeHtml(seller)}</div></td>
-                <td><div class="user-cell"><span class="avatar">${escapeHtml(initialsOf(buyer))}</span>${escapeHtml(buyer)}</div></td>
-                <td>${escapeHtml(title)}${qty}</td>
-                <td class="txn-amount">${amount}</td>
-                <td>${txnStatusBadge(t.status)}</td>
-                <td class="date-cell">${date}</td>
-            </tr>`;
-    }).join('');
-}
-
-function txnStatusBadge(status) {
-    const s = String(status || '').toLowerCase();
-    const map = {
-        completed: ['txn-completed', 'Completed'],
-        reserved:  ['txn-pending',   'Reserved'],
-        pending:   ['txn-pending',   'Pending'],
-        cancelled: ['txn-cancelled', 'Cancelled'],
-        canceled:  ['txn-cancelled', 'Cancelled']
-    };
-    const [cls, label] = map[s] || ['txn-pending', status || 'Unknown'];
-    return `<span class="txn-badge ${cls}">${escapeHtml(label)}</span>`;
-}
 
 function updateStats() {
     const vis = currentTab === 'all' ? users : users.filter(u => u.type === currentTab);
