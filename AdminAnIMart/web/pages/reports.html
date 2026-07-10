@@ -447,6 +447,8 @@
             <div class="nav-label">Main</div>
             <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
             <a href="sellers.html"   class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+            <a href="listings.html" class="nav-link"><i data-lucide="package"></i><span>Listings</span></a>
+            <a href="transactions.html" class="nav-link"><i data-lucide="receipt"></i><span>Transactions</span></a>
             <a href="premium.html"   class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
 
             <div class="nav-label">Admin</div>
@@ -545,6 +547,36 @@
     </main>
 </div>
 
+<!-- ENFORCE CONFIRM MODAL -->
+<div class="modal-overlay" id="enforceModal" onclick="if(event.target===this)closeEnforce()">
+    <div class="modal">
+        <h2 id="enfTitle">Are you sure?</h2>
+        <div class="modal-sub" id="enfDesc"></div>
+        <div class="modal-actions">
+            <button class="btn-act" onclick="closeEnforce()">Cancel</button>
+            <button class="btn-act btn-dismiss" onclick="runEnforce()">Confirm</button>
+        </div>
+    </div>
+</div>
+<style>
+    /* Minimal modal styles for the enforcement confirm (page had none). */
+    .modal-overlay {
+        position: fixed; inset: 0; background: rgba(6,10,15,0.75);
+        backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;
+        padding: 20px; opacity: 0; visibility: hidden; transition: all 0.25s ease; z-index: 1000;
+    }
+    .modal-overlay.open { opacity: 1; visibility: visible; }
+    .modal-overlay .modal {
+        background: var(--surface); border: 1px solid var(--border-hover);
+        border-radius: 20px; padding: 26px; width: 100%; max-width: 420px;
+        transform: translateY(14px) scale(0.98); transition: transform 0.25s ease;
+    }
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+    .modal-overlay .modal h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; }
+    .modal-overlay .modal-sub { font-size: 0.8rem; color: var(--muted); line-height: 1.55; margin-bottom: 18px; }
+    .modal-overlay .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+</style>
+
 <!-- TOAST -->
 <div class="toast" id="toast">
     <i data-lucide="check-circle"></i>
@@ -615,7 +647,7 @@ async function loadReports() {
     if (userIds.length) {
         const { data: users, error: uErr } = await supabaseClient
             .from('users')
-            .select('id, name, avatar_url')
+            .select('id, name, avatar_url, status')
             .in('id', userIds);
         if (uErr) console.error('LOAD REPORT USERS ERROR:', uErr);
         (users || []).forEach(u => { usersById[u.id] = u; });
@@ -629,12 +661,12 @@ async function loadReports() {
     if (listingIds.length) {
         let res = await supabaseClient
             .from('listings')
-            .select('id, title, image_urls')
+            .select('id, title, image_urls, status')
             .in('id', listingIds);
         if (res.error) {
             res = await supabaseClient
                 .from('listings')
-                .select('id, title')
+                .select('id, title, status')
                 .in('id', listingIds);
         }
         if (res.error) console.error('LOAD REPORT LISTINGS ERROR:', res.error);
@@ -654,10 +686,13 @@ async function loadReports() {
             ts:             r.created_at,
             reporterName:   reporter.name || 'Unknown user',
             reporterAvatar: reporter.avatar_url || null,
+            sellerId:       r.seller_id || null,
             sellerName:     r.seller_id ? (seller.name || 'Unknown seller') : null,
+            sellerStatus:   r.seller_id ? (seller.status || null) : null,
             listingId:      r.listing_id || null,
             listingTitle:   r.listing_id ? (listing.title || 'Listing #' + r.listing_id) : null,
-            listingImage:   (listing.image_urls && listing.image_urls[0]) || null
+            listingImage:   (listing.image_urls && listing.image_urls[0]) || null,
+            listingStatus:  r.listing_id ? (listing.status || null) : null
         };
     });
 
@@ -713,33 +748,143 @@ function targetBox(r) {
             ? `<img class="target-thumb" src="${escapeHtml(r.listingImage)}" alt="" onerror="this.remove()">`
             : `<div class="target-thumb-ph"><i data-lucide="package"></i></div>`;
         const seller = r.sellerName ? ` — sold by ${escapeHtml(r.sellerName)}` : '';
+        const state = r.listingStatus === 'removed'
+            ? ' <span style="color:var(--danger);font-weight:700;font-size:0.68rem;">· REMOVED</span>' : '';
         return `
             <div class="target-box">
                 ${thumb}
                 <div class="target-info">
                     <div class="target-kicker">Reported listing</div>
-                    <div class="target-name">${escapeHtml(r.listingTitle)}${seller}</div>
+                    <div class="target-name">${escapeHtml(r.listingTitle)}${seller}${state}</div>
                 </div>
             </div>`;
     }
+    const sState = (r.sellerStatus === 'restricted' || r.sellerStatus === 'blocked')
+        ? ` <span style="color:var(--danger);font-weight:700;font-size:0.68rem;">· ${r.sellerStatus.toUpperCase()}</span>` : '';
     return `
         <div class="target-box">
             <div class="target-thumb-ph"><i data-lucide="store"></i></div>
             <div class="target-info">
                 <div class="target-kicker">Reported seller</div>
-                <div class="target-name">${escapeHtml(r.sellerName || 'Unknown seller')}</div>
+                <div class="target-name">${escapeHtml(r.sellerName || 'Unknown seller')}${sState}</div>
             </div>
         </div>`;
 }
 
 function actionButtons(r) {
+    // Enforcement buttons act on the reported TARGET (listing takedown /
+    // seller restrict-block via the same status columns the Listings and
+    // Sellers pages use); triage buttons act on the report row itself.
+    const enforce = [];
+    if (r.listingId && r.listingStatus) {
+        enforce.push(r.listingStatus === 'removed'
+            ? `<button class="btn-act btn-reviewed" onclick="confirmEnforce('${r.id}','listing-restore')"><i data-lucide="rotate-ccw"></i> Restore listing</button>`
+            : `<button class="btn-act btn-dismiss" onclick="confirmEnforce('${r.id}','listing-remove')"><i data-lucide="shield-off"></i> Remove listing</button>`);
+    }
+    if (r.sellerId && r.sellerStatus) {
+        if (r.sellerStatus === 'restricted' || r.sellerStatus === 'blocked') {
+            enforce.push(`<button class="btn-act btn-reviewed" onclick="confirmEnforce('${r.id}','seller-activate')"><i data-lucide="shield-check"></i> Lift ${r.sellerStatus === 'blocked' ? 'block' : 'restriction'}</button>`);
+        } else {
+            enforce.push(`<button class="btn-act btn-dismiss" onclick="confirmEnforce('${r.id}','seller-restrict')"><i data-lucide="shield-alert"></i> Restrict seller</button>`);
+            enforce.push(`<button class="btn-act btn-dismiss" onclick="confirmEnforce('${r.id}','seller-block')"><i data-lucide="ban"></i> Block seller</button>`);
+        }
+    }
+
     if (r.status === 'open') {
-        return `
+        return enforce.join('') + `
             <button class="btn-act btn-reviewed" onclick="setReportStatus('${r.id}', 'reviewed')"><i data-lucide="check"></i> Mark reviewed</button>
             <button class="btn-act btn-dismiss" onclick="setReportStatus('${r.id}', 'dismissed')"><i data-lucide="x"></i> Dismiss</button>`;
     }
-    return `
+    return enforce.join('') + `
         <button class="btn-act btn-reopen" onclick="setReportStatus('${r.id}', 'open')"><i data-lucide="rotate-ccw"></i> Reopen</button>`;
+}
+
+// ─────────────────────────────────────────────────
+// ENFORCEMENT — act on the reported target. Every action is a plain
+// status update guarded by RLS (admins only) and logged by the DB audit
+// triggers; removed listings can only be restored by an admin (DB trigger).
+// ─────────────────────────────────────────────────
+const ENFORCE = {
+    'listing-remove': {
+        title: 'Remove this listing?',
+        desc: r => `<strong>${escapeHtml(r.listingTitle)}</strong> will be hidden from every buyer in the app. Only an admin can restore it.`,
+        run: async r => updateListing(r.listingId, 'removed'),
+        done: 'Listing removed from the marketplace.'
+    },
+    'listing-restore': {
+        title: 'Restore this listing?',
+        desc: r => `<strong>${escapeHtml(r.listingTitle)}</strong> becomes visible in the app again.`,
+        run: async r => updateListing(r.listingId, 'active'),
+        done: 'Listing restored.'
+    },
+    'seller-restrict': {
+        title: 'Restrict this seller?',
+        desc: r => `<strong>${escapeHtml(r.sellerName)}</strong> keeps their account but the app limits what they can do while restricted.`,
+        run: async r => updateUserStatus(r.sellerId, 'restricted'),
+        done: 'Seller restricted.'
+    },
+    'seller-block': {
+        title: 'Block this seller?',
+        desc: r => `<strong>${escapeHtml(r.sellerName)}</strong> loses access to their account until an admin unblocks them.`,
+        run: async r => updateUserStatus(r.sellerId, 'blocked'),
+        done: 'Seller blocked.'
+    },
+    'seller-activate': {
+        title: 'Restore this seller?',
+        desc: r => `<strong>${escapeHtml(r.sellerName)}</strong> gets their normal account access back.`,
+        run: async r => updateUserStatus(r.sellerId, 'approved'),
+        done: 'Seller restored to active.'
+    }
+};
+
+let pendingEnforce = null;   // { reportId, kind }
+
+function confirmEnforce(reportId, kind) {
+    const r = reports.find(x => x.id === reportId);
+    if (!r) return;
+    pendingEnforce = { reportId, kind };
+    const cfg = ENFORCE[kind];
+    document.getElementById('enfTitle').textContent = cfg.title;
+    document.getElementById('enfDesc').innerHTML = cfg.desc(r);
+    document.getElementById('enforceModal').classList.add('open');
+    lucide.createIcons();
+}
+
+function closeEnforce() {
+    pendingEnforce = null;
+    document.getElementById('enforceModal').classList.remove('open');
+}
+
+async function runEnforce() {
+    if (!pendingEnforce) return;
+    const { reportId, kind } = pendingEnforce;
+    const r = reports.find(x => x.id === reportId);
+    closeEnforce();
+    if (!r) return;
+
+    try {
+        await ENFORCE[kind].run(r);
+        showToast(ENFORCE[kind].done, kind.endsWith('restore') || kind.endsWith('activate') ? 'success' : 'error');
+    } catch (e) {
+        showToast(e.message || String(e), 'error');
+    }
+    await loadReports();
+}
+
+// `.select()` after the update distinguishes an RLS-blocked write (0 rows)
+// from success, same as setReportStatus below.
+async function updateListing(listingId, status) {
+    const { data, error } = await supabaseClient
+        .from('listings').update({ status }).eq('id', listingId).select();
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) throw new Error('Update blocked — no permission (check RLS).');
+}
+
+async function updateUserStatus(userId, status) {
+    const { data, error } = await supabaseClient
+        .from('users').update({ status }).eq('id', userId).select();
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) throw new Error('Update blocked — no permission (check RLS).');
 }
 
 function renderList() {

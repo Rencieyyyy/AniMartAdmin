@@ -327,6 +327,60 @@
         }
         .review-comment.empty { color: var(--muted); font-style: italic; }
 
+        .review-delete {
+            align-self: flex-start; flex-shrink: 0;
+            width: 32px; height: 32px; border-radius: 9px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            color: var(--muted); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+        }
+        .review-delete svg { width: 14px; height: 14px; }
+        .review-delete:hover {
+            color: var(--danger); border-color: rgba(255,107,107,0.35);
+            background: rgba(255,107,107,0.08);
+        }
+
+        /* ── CONFIRM MODAL + TOAST ── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(6,10,15,0.75);
+            backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;
+            padding: 20px; opacity: 0; visibility: hidden; transition: all 0.25s ease; z-index: 1000;
+        }
+        .modal-overlay.open { opacity: 1; visibility: visible; }
+        .modal-overlay .modal {
+            background: var(--surface); border: 1px solid var(--border-hover);
+            border-radius: 20px; padding: 26px; width: 100%; max-width: 420px;
+            transform: translateY(14px) scale(0.98); transition: transform 0.25s ease;
+        }
+        .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+        .modal-overlay .modal h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; }
+        .modal-overlay .modal-sub { font-size: 0.8rem; color: var(--muted); line-height: 1.55; margin-bottom: 18px; }
+        .modal-overlay .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+        .modal-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 0.78rem; font-weight: 700; font-family: 'Sora', sans-serif;
+            padding: 9px 16px; border-radius: 9px; cursor: pointer;
+            border: 1px solid var(--border); background: var(--surface-2); color: var(--muted);
+            transition: all 0.15s;
+        }
+        .modal-btn:hover { color: var(--text); border-color: var(--border-hover); }
+        .modal-btn.danger { background: var(--danger); color: var(--dark); border-color: transparent; }
+        .modal-btn.danger:hover { filter: brightness(1.08); color: var(--dark); }
+
+        .toast {
+            position: fixed; bottom: 26px; right: 26px; z-index: 1200;
+            display: flex; align-items: center; gap: 9px;
+            background: var(--surface-2); border: 1px solid rgba(126,255,197,0.3);
+            color: var(--text); border-radius: 12px; padding: 13px 18px;
+            font-size: 0.82rem; font-weight: 600;
+            transform: translateY(80px); opacity: 0; transition: all 0.3s ease;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.error { border-color: rgba(255,107,107,0.4); }
+        .toast.error svg { color: var(--danger); }
+        .toast svg { width: 16px; height: 16px; color: var(--mint); }
+
         /* ── EMPTY STATE ── */
         .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
         .empty-icon {
@@ -383,6 +437,8 @@
             <div class="nav-label">Main</div>
             <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
             <a href="sellers.html"   class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+            <a href="listings.html" class="nav-link"><i data-lucide="package"></i><span>Listings</span></a>
+            <a href="transactions.html" class="nav-link"><i data-lucide="receipt"></i><span>Transactions</span></a>
             <a href="premium.html"   class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
 
             <div class="nav-label">Admin</div>
@@ -482,6 +538,24 @@
         <div class="review-list" id="reviewList"></div>
 
     </main>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="deleteModal" onclick="if(event.target===this)closeDeleteReview()">
+    <div class="modal">
+        <h2>Delete this review?</h2>
+        <div class="modal-sub" id="deleteDesc">The review is permanently removed. This cannot be undone.</div>
+        <div class="modal-actions">
+            <button class="modal-btn" onclick="closeDeleteReview()">Cancel</button>
+            <button class="modal-btn danger" onclick="deleteReview()"><i data-lucide="trash-2"></i>Delete review</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+    <i data-lucide="check-circle"></i>
+    <span id="toast-msg">Done.</span>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -674,6 +748,9 @@ function renderList() {
                     ? `<div class="review-comment">${escapeHtml(r.comment)}</div>`
                     : `<div class="review-comment empty">No written feedback.</div>`}
             </div>
+            <button class="review-delete" title="Delete this review" onclick="confirmDeleteReview('${r.id}')">
+                <i data-lucide="trash-2"></i>
+            </button>
         `;
         container.appendChild(card);
     });
@@ -690,6 +767,54 @@ function fmtDate(ts) {
     if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
     if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
     return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// ─────────────────────────────────────────────────
+// DELETE — admin moderation (RLS policy "Admins delete app reviews",
+// migration 20260710030000). Read-only admins are blocked by the DB.
+// ─────────────────────────────────────────────────
+let deleteTarget = null;
+
+function confirmDeleteReview(id) {
+    const r = reviews.find(x => x.id === id);
+    if (!r) return;
+    deleteTarget = id;
+    document.getElementById('deleteDesc').innerHTML =
+        `The ${r.stars}★ review by <strong>${escapeHtml(r.name)}</strong> is permanently removed. ` +
+        `They can submit a new one from the app. This cannot be undone.`;
+    document.getElementById('deleteModal').classList.add('open');
+    lucide.createIcons();
+}
+
+function closeDeleteReview() {
+    deleteTarget = null;
+    document.getElementById('deleteModal').classList.remove('open');
+}
+
+async function deleteReview() {
+    if (!deleteTarget) return;
+    const id = deleteTarget;
+    closeDeleteReview();
+
+    // `.select()` distinguishes an RLS-blocked delete (0 rows) from success.
+    const { data, error } = await supabaseClient
+        .from('app_reviews').delete().eq('id', id).select();
+
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    if (!data || data.length === 0) { showToast('Delete blocked — no permission (check RLS).', 'error'); return; }
+
+    showToast('Review deleted.');
+    await loadReviews();
+}
+
+let toastTimer;
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.className = `toast ${type} show`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3600);
+    lucide.createIcons();
 }
 
 // ─────────────────────────────────────────────────
