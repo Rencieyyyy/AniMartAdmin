@@ -5,7 +5,7 @@
 
   <meta charset="UTF-8">
   <title>AnImart</title>
-  <link rel="icon" type="image/png" href="C:\Users\ASUS\Documents\ANIfarm\flutter_application_1\web\assets\animart.png">
+  <link rel="icon" type="image/png" href="assets/animart.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     /* Senior Dev Design System */
@@ -416,7 +416,7 @@
             <input type="checkbox">
             <span>Remember me</span>
           </label>
-          <a href="#" class="forgot-link">Forgot Password?</a>
+          <a href="#" class="forgot-link" id="forgotLink">Forgot Password?</a>
         </div>
 
         <button type="submit" id="loginBtn" class="btn-submit">Sign In to Dashboard</button>
@@ -426,6 +426,19 @@
 
 
 
+
+    <!-- Forgot Password Popup -->
+    <div class="login-modal-overlay" id="forgotModal" onclick="closeForgotPw(event)">
+      <div class="login-modal" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
+        <div class="login-modal-icon" style="background:#D1FAE5; color:#059669;">?</div>
+        <h3 id="forgotTitle">Reset your password</h3>
+        <p id="forgotText">Enter your admin email and we'll send you a 6-digit code to set a new password.</p>
+        <div class="input-group" style="margin-bottom:18px;">
+          <input id="forgotEmail" type="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <button type="button" id="forgotSendBtn" onclick="sendResetLink()">Send reset link</button>
+      </div>
+    </div>
 
     <!-- Wrong Credentials Popup -->
     <div class="login-modal-overlay" id="loginErrorModal" onclick="closeLoginError(event)">
@@ -461,22 +474,64 @@
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           document.getElementById("loginErrorModal").classList.remove("show");
+          document.getElementById("forgotModal").classList.remove("show");
         }
       });
+
+      // ── Forgot password ──
+      // Sends a Supabase recovery email that links to reset-password.html.
+      // The response is deliberately the same whether or not the email exists,
+      // so the form can't be used to probe which accounts are registered.
+      document.getElementById("forgotLink").addEventListener("click", (e) => {
+        e.preventDefault();
+        const modal = document.getElementById("forgotModal");
+        document.getElementById("forgotEmail").value =
+          document.getElementById("email").value.trim();
+        document.getElementById("forgotText").innerText =
+          "Enter your admin email and we'll send you a 6-digit code to set a new password.";
+        modal.classList.add("show");
+        document.getElementById("forgotEmail").focus();
+      });
+
+      function closeForgotPw(event) {
+        if (event && event.target.id !== "forgotModal") return;
+        document.getElementById("forgotModal").classList.remove("show");
+      }
+
+      async function sendResetLink() {
+        const email = document.getElementById("forgotEmail").value.trim();
+        const text = document.getElementById("forgotText");
+        if (!email) {
+          text.innerText = "Please enter your email address first.";
+          return;
+        }
+
+        const btn = document.getElementById("forgotSendBtn");
+        btn.disabled = true;
+        btn.innerText = "Sending…";
+
+        // The recovery email carries a 6-digit code (shared template with the
+        // mobile app); reset-password.html verifies it and sets the password.
+        // redirectTo future-proofs the link flow if the template changes.
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+          redirectTo: new URL("reset-password.html", window.location.href).href
+        });
+
+        btn.disabled = false;
+        btn.innerText = "Send reset link";
+
+        if (error && error.status === 429) {
+          text.innerText = "Too many requests — please wait a minute and try again.";
+          return;
+        }
+        // Same message for success and unknown-email: no account probing.
+        // Hand off to the code-entry page either way.
+        window.location.href = "reset-password.html?email=" + encodeURIComponent(email);
+      }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
-
-    <script src="flutter_bootstrap.js" async>
-
-
-
-
-    </script>
-</body>
-
-</html>
 </body>
 
 </html>

@@ -1,15 +1,18 @@
-// AniMart — admin account lifecycle (create / delete).
+// AniMart — admin account lifecycle (create / delete / reset_password).
 //
 // Called by web/pages/manage-admins.html. Creating or deleting an ADMIN means
-// creating/deleting a Supabase AUTH user, which requires the service-role
-// key — so it must happen here, never in the browser.
+// creating/deleting a Supabase AUTH user, and setting a password requires the
+// service-role key — so it must happen here, never in the browser.
 //
 // Guards (server-side, cannot be bypassed by the client):
 //   • caller must be a signed-in ACTIVE super admin (public.admins.role =
 //     'super_admin', status = 'active');
 //   • callers cannot delete themselves;
 //   • the last active super admin can never be deleted (also enforced by the
-//     trg_protect_admins_row DB trigger as defense in depth).
+//     trg_protect_admins_row DB trigger as defense in depth);
+//   • nobody can reset the OWNER's password (that would be a full account
+//     takeover of the protected account), and you can't reset your own here
+//     (use the Profile page, which requires the current password).
 //
 // Role/status changes (block / restrict / promote) do NOT go through this
 // function — the panel updates public.admins directly under RLS, and the
@@ -188,7 +191,51 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
-    return json({ error: "Unknown action (use 'create' or 'delete')" }, 400);
+    // ── RESET PASSWORD ───────────────────────────────────────────────────────
+    if (body.action === "reset_password") {
+      const targetId = String(body.admin_id ?? "");
+      const password = String(body.password ?? "");
+      if (!targetId) return json({ error: "admin_id is required" }, 400);
+      if (password.length < 8) {
+        return json({ error: "Password must be at least 8 characters" }, 400);
+      }
+      if (targetId === actor.id) {
+        return json({ error: "Change your own password from the Profile page" }, 400);
+      }
+
+      const { data: target } = await service
+        .from("admins")
+        .select("id, email, role, status, is_owner")
+        .eq("id", targetId)
+        .maybeSingle();
+      if (!target) return json({ error: "Admin not found" }, 404);
+      if (target.is_owner) {
+        return json({ error: "The owner account is protected — its password cannot be reset here" }, 403);
+      }
+
+      // admins.id normally equals the auth user id; the one legacy row does
+      // not, so fall back to finding the auth user by email.
+      let authId = target.id;
+      let upd = await service.auth.admin.updateUserById(authId, { password });
+      if (upd.error) {
+        const { data: page } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
+        const match = page?.users?.find(
+          (u) => (u.email ?? "").toLowerCase() === target.email.toLowerCase(),
+        );
+        if (!match) return json({ error: "Auth user: " + upd.error.message }, 400);
+        authId = match.id;
+        upd = await service.auth.admin.updateUserById(authId, { password });
+        if (upd.error) return json({ error: "Auth user: " + upd.error.message }, 400);
+      }
+
+      // Never log the password itself — only that a reset happened.
+      await audit("admin.reset_password", target.id, {
+        email: target.email, role: target.role, status: target.status,
+      });
+      return json({ ok: true });
+    }
+
+    return json({ error: "Unknown action (use 'create', 'delete' or 'reset_password')" }, 400);
   } catch (e) {
     return json({ error: String(e) }, 500);
   }

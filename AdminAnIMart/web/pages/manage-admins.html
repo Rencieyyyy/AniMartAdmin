@@ -488,6 +488,27 @@
     </div>
 </div>
 
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-overlay" id="resetPwModal">
+    <div class="modal">
+        <h2>Reset password</h2>
+        <div class="modal-sub" id="resetPwWho">Set a new login password for this admin. Share it with them securely — they can change it afterwards on their Profile page.</div>
+
+        <div class="field">
+            <label for="rPassword">New password (min 8 chars)</label>
+            <div class="pw-row">
+                <input type="text" id="rPassword" placeholder="••••••••" autocomplete="off">
+                <button class="btn btn-secondary" type="button" onclick="generatePassword('rPassword')" title="Generate a strong password"><i data-lucide="dices"></i></button>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('resetPwModal')">Cancel</button>
+            <button class="btn btn-primary" id="resetPwBtn" onclick="resetPassword()"><i data-lucide="key-round"></i>Set new password</button>
+        </div>
+    </div>
+</div>
+
 <!-- CONFIRM MODAL -->
 <div class="modal-overlay" id="confirmModal">
     <div class="modal">
@@ -617,6 +638,7 @@ function actionButtons(a) {
     if (a.status !== 'blocked') {
         btns.push(`<button class="act-btn block" onclick="confirmAction('block','${a.id}')"><i data-lucide="ban"></i>Block</button>`);
     }
+    btns.push(`<button class="act-btn" onclick="openResetPw('${a.id}')"><i data-lucide="key-round"></i>Password</button>`);
     btns.push(`<button class="act-btn delete" onclick="confirmAction('delete','${a.id}')"><i data-lucide="trash-2"></i>Delete</button>`);
     return `<div class="row-actions">${btns.join('')}</div>`;
 }
@@ -742,12 +764,47 @@ function openCreate() {
     openModal('createModal');
 }
 
-function generatePassword() {
+function generatePassword(targetId = 'cPassword') {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
     const buf = new Uint32Array(14);
     crypto.getRandomValues(buf);
-    document.getElementById('cPassword').value =
+    document.getElementById(targetId).value =
         [...buf].map(n => chars[n % chars.length]).join('');
+}
+
+// ─────────────────────────────────────────────────
+// RESET PASSWORD — Edge Function (needs the service role to set an auth
+// user's password). Blocked server-side for the owner and your own account.
+// ─────────────────────────────────────────────────
+let resetPwTarget = null;
+
+function openResetPw(id) {
+    const a = admins.find(x => x.id === id);
+    if (!a) return;
+    resetPwTarget = id;
+    document.getElementById('rPassword').value = '';
+    document.getElementById('resetPwWho').innerHTML =
+        `Set a new login password for <strong>${escapeHtml(nameOf(a))}</strong> ` +
+        `(${escapeHtml(a.email)}). Share it with them securely — they can change ` +
+        `it afterwards on their Profile page.`;
+    openModal('resetPwModal');
+    lucide.createIcons();
+}
+
+async function resetPassword() {
+    const btn = document.getElementById('resetPwBtn');
+    btn.disabled = true;
+    try {
+        const password = document.getElementById('rPassword').value;
+        if (password.length < 8) throw new Error('Password must be at least 8 characters.');
+        await invokeAdminUsers({ action: 'reset_password', admin_id: resetPwTarget, password });
+        closeModal('resetPwModal');
+        showToast('Password updated — share it with them securely.', 'success');
+    } catch (e) {
+        showToast(e.message || String(e), 'error');
+    } finally {
+        btn.disabled = false;
+    }
 }
 
 async function createAdmin() {
