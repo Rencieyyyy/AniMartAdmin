@@ -749,6 +749,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
 <script src="escape.js"></script>
+<script src="image-lightbox.js"></script>
 <script src="tier-stats.js"></script>
 <script src="logout-modal.js"></script>
 <script>
@@ -777,7 +778,7 @@ async function loadUsers() {
     const [usersRes, subsRes] = await Promise.all([
         supabaseClient
             .from('users')
-            .select('id, name, email, phone, address, is_seller, status, created_at, messenger')
+            .select('id, name, email, phone, address, is_seller, status, created_at, messenger, valid_id_type, valid_id_url')
             .in('status', ['approved', 'restricted', 'blocked'])
             .order('created_at', { ascending: false }),
         // selectSubscriptions (tier-stats.js) retries without billing_cycle when
@@ -826,7 +827,9 @@ async function loadUsers() {
             plan:     planByUser[row.id]?.tier || 'Free',
             // 'Monthly' / 'Yearly' for paid plans; Free has no billing cycle.
             billing:  planByUser[row.id] ? billingCycleLabel(planByUser[row.id].cycle) : '—',
-            messenger: row.messenger || ''
+            messenger: row.messenger || '',
+            idType:      row.valid_id_type || null,
+            validIdUrl:  row.valid_id_url || null
         }));
     }
 
@@ -1136,6 +1139,18 @@ function viewUser(id) {
                 <div class="detail-item-value" style="font-family:'DM Mono',monospace;font-size:0.78rem;">${escapeHtml(u.phone)}</div>
             </div>
         </div>
+        <div class="detail-item" style="display:flex;align-items:center;gap:12px;margin-top:14px;">
+            <div style="width:34px;height:34px;border-radius:8px;background:rgba(56,189,248,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i data-lucide="id-card" style="width:16px;height:16px;color:#38BDF8;"></i>
+            </div>
+            <div>
+                <div class="detail-item-label">Submitted ID</div>
+                <div class="detail-item-value">${u.idType ? escapeHtml(u.idType) : 'Valid ID'} · ${u.validIdUrl ? 'Uploaded at signup' : 'Not uploaded'}</div>
+            </div>
+            ${u.validIdUrl
+                ? `<button class="modal-btn modal-btn-ghost" style="margin-left:auto;" onclick="viewUserId('${u.id}')"><i data-lucide="eye"></i> View</button>`
+                : ''}
+        </div>
         <div class="modal-actions">
             <button class="modal-btn modal-btn-ghost" onclick="closeModal('viewModal')"><i data-lucide="x"></i> Close</button>
             ${u.status !== 'restricted' ? `<button class="modal-btn modal-btn-warn" onclick="closeModal('viewModal');triggerAction('${u.id}','restrict')"><i data-lucide="shield-alert"></i> Restrict</button>` : `<button class="modal-btn modal-btn-success" onclick="closeModal('viewModal');triggerAction('${u.id}','activate')"><i data-lucide="shield-check"></i> Lift Restriction</button>`}
@@ -1144,6 +1159,19 @@ function viewUser(id) {
     `;
     openModal('viewModal');
     lucide.createIcons({ nodes: [document.getElementById('viewModalBody')] });
+}
+
+// Opens the ID the user submitted at signup in the shared image popup. The URL
+// is read from the in-memory user record (never built into markup) so nothing
+// user-controlled is injected. valid_id_url is a public image URL (Cloudinary).
+function viewUserId(id) {
+    const u = users.find(x => x.id === id);
+    if (!u || !u.validIdUrl) return;
+    openImageLightbox({
+        url: u.validIdUrl,
+        title: u.idType || 'Valid ID',
+        subtitle: `Government-issued ID submitted by ${u.name}.`
+    });
 }
 
 // ─── ACTIONS ───

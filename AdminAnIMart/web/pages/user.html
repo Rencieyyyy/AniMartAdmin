@@ -406,6 +406,7 @@
             border: 1px solid var(--border); border-radius: 9px;
             padding: 7px 14px; font-size: 0.78rem; font-weight: 600;
             font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.15s;
+            text-decoration: none;
         }
 
         .btn-view-detail:hover { color: var(--text); border-color: var(--border-hover); }
@@ -846,6 +847,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
 <script src="escape.js"></script>
+<script src="image-lightbox.js"></script>
 <script src="logout-modal.js"></script>
 <script>
 // ─────────────────────────────────────────────────
@@ -871,15 +873,23 @@ let rejected = [];
 let currentTab = 'pending';
 let selectedIds = new Set();
 let detailUserId = null;
+let currentDocUrl = null;
+let currentDocTitle = '';
 
 // ─────────────────────────────────────────────────
 // SUPABASE LOAD
 // ─────────────────────────────────────────────────
 async function loadUsers() {
-    const { data, error } = await supabaseClient
-        .from('users')
-        .select('id, name, email, phone, address, status, is_verified, valid_id_type, valid_id_url, business_name, created_at, seller_profiles(shop_name)')
-        .order('created_at', { ascending: true });
+    // Accounts created on the Manage Admins page also get a `users` row (same
+    // auth id), but they never went through mobile-app signup and must not show
+    // up for approval. Pull the admin ids and exclude those users below.
+    const [{ data, error }, adminsRes] = await Promise.all([
+        supabaseClient
+            .from('users')
+            .select('id, name, email, phone, address, status, is_verified, valid_id_type, valid_id_url, business_name, created_at, seller_profiles(shop_name)')
+            .order('created_at', { ascending: true }),
+        supabaseClient.from('admins').select('id, email')
+    ]);
 
     if (error) {
         console.error('LOAD USERS ERROR:', error);
@@ -887,7 +897,19 @@ async function loadUsers() {
         return;
     }
 
-    const mapped = (data || []).map(row => {
+    if (adminsRes.error) console.error('LOAD ADMIN IDS ERROR:', adminsRes.error);
+    // A Manage-Admins account auto-creates a users row sharing BOTH the auth id
+    // and the email. Key on id+email so a genuine mobile signup that only shares
+    // an id with an admin (seed-data uuid collisions) is still shown.
+    const adminKeys = new Set(
+        (adminsRes.data || []).map(a => String(a.id) + '|' + String(a.email || '').toLowerCase())
+    );
+    const isAdminAccount = row =>
+        adminKeys.has(String(row.id) + '|' + String(row.email || '').toLowerCase());
+
+    const mapped = (data || [])
+        .filter(row => !isAdminAccount(row))    // hide accounts created on Manage Admins
+        .map(row => {
         const isSeller = Array.isArray(row.seller_profiles) && row.seller_profiles.length > 0;
         return {
             id:        String(row.id),               // uuid -> string (used in onclick handlers)
@@ -1278,6 +1300,8 @@ function openDetail(id) {
     const user = pending.find(u => u.id === id);
     if (!user) return;
     detailUserId = id;
+    currentDocUrl = user.valid_id_url || null;
+    currentDocTitle = user.id_type !== '—' ? user.id_type : 'Valid ID';
     const color = rndColor(user.name);
 
     document.getElementById('detailBody').innerHTML = `
@@ -1332,9 +1356,9 @@ function openDetail(id) {
                     <div class="doc-sub">Government-issued ID · ${user.valid_id_url ? 'Uploaded' : 'Not uploaded'}</div>
                 </div>
                 ${user.valid_id_url
-                    ? `<a href="${encodeURI(user.valid_id_url)}" target="_blank" rel="noopener" class="btn-view-detail" style="margin-left:auto;">
-                           <i data-lucide="external-link"></i> View
-                       </a>`
+                    ? `<button type="button" onclick="openImageModal()" class="btn-view-detail" style="margin-left:auto;">
+                           <i data-lucide="eye"></i> View
+                       </button>`
                     : `<div class="doc-check" style="margin-left:auto; background:rgba(255,107,107,0.1); border-color:rgba(255,107,107,0.25);">
                            <i data-lucide="x" style="color:var(--danger);"></i>
                        </div>`}
@@ -1361,6 +1385,18 @@ function openDetail(id) {
 // ─────────────────────────────────────────────────
 function closeModal(id) {
     document.getElementById(id).classList.remove('open');
+}
+
+// ─────────────────────────────────────────────────
+// IMAGE LIGHTBOX (shared component — image-lightbox.js)
+// ─────────────────────────────────────────────────
+function openImageModal() {
+    if (!currentDocUrl) return;
+    openImageLightbox({
+        url: currentDocUrl,
+        title: currentDocTitle || 'Submitted Document',
+        subtitle: 'Government-issued ID uploaded by the user.'
+    });
 }
 
 // ─────────────────────────────────────────────────

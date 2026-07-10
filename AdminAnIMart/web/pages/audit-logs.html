@@ -292,6 +292,17 @@
             text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom;
         }
 
+        /* plain-English activity cell */
+        .act-line { display: flex; align-items: center; gap: 9px; }
+        .act-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .act-text { font-size: 0.82rem; color: var(--text); font-weight: 500; line-height: 1.4; }
+        .act-text strong { font-weight: 700; color: var(--mint-dim); }
+        .detail-meta {
+            font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted);
+            padding: 12px 4px 0; letter-spacing: 0.02em;
+        }
+        .detail-meta b { color: var(--text); font-weight: 500; }
+
         .expand-chevron { color: var(--muted); transition: transform 0.2s; }
         .expand-chevron svg { width: 14px; height: 14px; }
         tr.expanded .expand-chevron { transform: rotate(180deg); color: var(--mint); }
@@ -461,45 +472,48 @@
                     <option value="">All actions</option>
                     <optgroup label="Subscriptions">
                         <option value="subscription.%">All subscription actions</option>
-                        <option value="subscription.approve">subscription.approve</option>
-                        <option value="subscription.reject">subscription.reject</option>
-                        <option value="subscription.update">subscription.update</option>
+                        <option value="subscription.approve">Approved a subscription</option>
+                        <option value="subscription.reject">Rejected a subscription</option>
+                        <option value="subscription.update">Updated a subscription</option>
                     </optgroup>
                     <optgroup label="Listings">
                         <option value="listing.%">All listing actions</option>
-                        <option value="listing.enable">listing.enable</option>
-                        <option value="listing.disable">listing.disable</option>
-                        <option value="listing.delete">listing.delete</option>
+                        <option value="listing.enable">Enabled a listing</option>
+                        <option value="listing.disable">Disabled a listing</option>
+                        <option value="listing.delete">Deleted a listing</option>
                     </optgroup>
                     <optgroup label="Announcements">
                         <option value="announcement.%">All announcement actions</option>
-                        <option value="announcement.create">announcement.create</option>
-                        <option value="announcement.update">announcement.update</option>
-                        <option value="announcement.delete">announcement.delete</option>
+                        <option value="announcement.create">Posted an announcement</option>
+                        <option value="announcement.update">Edited an announcement</option>
+                        <option value="announcement.delete">Deleted an announcement</option>
                     </optgroup>
                     <optgroup label="Pricing & Settings">
-                        <option value="pricing.update">pricing.update</option>
-                        <option value="settings.update">settings.update</option>
+                        <option value="pricing.update">Updated plan pricing</option>
+                        <option value="settings.update">Updated settings</option>
                         <option value="payment_method.%">All payment-method actions</option>
-                        <option value="payment_method.create">payment_method.create</option>
-                        <option value="payment_method.update">payment_method.update</option>
-                        <option value="payment_method.delete">payment_method.delete</option>
+                        <option value="payment_method.create">Added a payment method</option>
+                        <option value="payment_method.update">Updated a payment method</option>
+                        <option value="payment_method.delete">Removed a payment method</option>
                     </optgroup>
                     <optgroup label="Admin accounts">
                         <option value="admin.%">All admin-account actions</option>
-                        <option value="admin.create">admin.create</option>
-                        <option value="admin.role_change">admin.role_change</option>
-                        <option value="admin.status_change">admin.status_change</option>
-                        <option value="admin.delete">admin.delete</option>
+                        <option value="admin.create">Created an admin account</option>
+                        <option value="admin.role_change">Changed an admin's role</option>
+                        <option value="admin.status_change">Changed an admin's status</option>
+                        <option value="admin.delete">Deleted an admin account</option>
                     </optgroup>
                     <optgroup label="Reports">
                         <option value="report.%">All report actions</option>
-                        <option value="report.review">report.review</option>
-                        <option value="report.dismiss">report.dismiss</option>
+                        <option value="report.review">Reviewed a report</option>
+                        <option value="report.dismiss">Dismissed a report</option>
                     </optgroup>
                     <optgroup label="Users">
-                        <option value="user.approve">user.approve</option>
-                        <option value="user.unverify">user.unverify</option>
+                        <option value="user.approve">Approved a user</option>
+                        <option value="user.unverify">Removed a user's verification</option>
+                    </optgroup>
+                    <optgroup label="Customer Service">
+                        <option value="conversation.resolve">Resolved a conversation</option>
                     </optgroup>
                 </select>
             </div>
@@ -522,10 +536,9 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:150px">Timestamp <span style="text-transform:none;letter-spacing:0">(Asia/Manila)</span></th>
-                            <th style="width:200px">Admin</th>
-                            <th style="width:190px">Action</th>
-                            <th>Target</th>
+                            <th style="width:160px">When <span style="text-transform:none;letter-spacing:0">(Asia/Manila)</span></th>
+                            <th style="width:220px">Admin</th>
+                            <th>Action</th>
                             <th style="width:40px"></th>
                         </tr>
                     </thead>
@@ -691,11 +704,75 @@ async function loadLogs() {
 // ─────────────────────────────────────────────────
 // RENDER
 // ─────────────────────────────────────────────────
-function actionBadge(action) {
-    const cat = (action || '').split('.')[0];
-    const cls = ['subscription','listing','announcement','pricing','report','settings','user','admin','payment_method'].includes(cat)
-        ? 'ac-' + cat : 'ac-other';
-    return `<span class="action-badge ${cls}">${escapeHtml(action || '—')}</span>`;
+// Small colour cue kept per category so entries are still scannable at a glance.
+const CAT_COLOR = {
+    subscription: 'var(--gold)',   listing: 'var(--blue)',    announcement: 'var(--purple)',
+    pricing: 'var(--warn)',        report: 'var(--danger)',   settings: 'var(--mint-dim)',
+    user: 'var(--orange)',         admin: 'var(--gold)',      payment_method: 'var(--mint-dim)',
+    conversation: 'var(--blue)',   other: 'var(--muted)'
+};
+
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const humanizeKey = k => (k || '').replace(/_/g, ' ');
+function providerLabel(d) {
+    const p = d.provider || (d.new && d.new.provider) || (d.old && d.old.provider);
+    if (!p) return 'GCash';
+    return p.toLowerCase() === 'gcash' ? 'GCash' : cap(p);
+}
+
+// Turns a raw "module.verb" action + its details JSON into a plain sentence.
+// Returns { verb, target } — both rendered escaped; `target` (a name/email the
+// admin acted on) is bolded. Falls back to a generic phrasing for any action
+// not listed, so new trigger types still read sensibly.
+function describeAction(r) {
+    const a = r.action || '';
+    const d = r.details || {};
+    const roleTo   = (d.new_role   || (d.new && d.new.role))     ? ` to ${d.new_role   || d.new.role}`     : '';
+    const statusTo = (d.new_status || (d.new && d.new.status))   ? ` to ${d.new_status || d.new.status}`   : '';
+    const prov = providerLabel(d);
+
+    const map = {
+        'user.approve':          { verb: 'Approved user',            target: d.name || d.email },
+        'user.unverify':         { verb: 'Removed verification from', target: d.name || d.email },
+        'admin.create':          { verb: 'Created admin account',     target: d.email },
+        'admin.delete':          { verb: 'Deleted admin account',     target: d.email },
+        'admin.role_change':     { verb: `Changed role${roleTo} for`,     target: d.email },
+        'admin.status_change':   { verb: `Changed status${statusTo} for`, target: d.email },
+        'subscription.approve':  { verb: `Approved a ${d.plan || 'premium'} subscription` },
+        'subscription.reject':   { verb: `Rejected a ${d.plan || 'premium'} subscription` },
+        'subscription.update':   { verb: 'Updated a subscription' },
+        'listing.enable':        { verb: 'Enabled a listing' },
+        'listing.disable':       { verb: 'Disabled a listing' },
+        'listing.delete':        { verb: 'Deleted a listing' },
+        'announcement.create':   { verb: 'Posted an announcement' },
+        'announcement.update':   { verb: 'Edited an announcement' },
+        'announcement.delete':   { verb: 'Deleted an announcement' },
+        'pricing.update':        { verb: 'Updated plan pricing' },
+        'settings.update':       { verb: 'Updated settings', target: d.key ? humanizeKey(d.key) : null },
+        'payment_method.create': { verb: `Added a ${prov} payment method` },
+        'payment_method.update': { verb: `Updated a ${prov} payment method` },
+        'payment_method.delete': { verb: `Removed a ${prov} payment method` },
+        'report.review':         { verb: 'Reviewed a report' },
+        'report.dismiss':        { verb: 'Dismissed a report' },
+        'conversation.resolve':  { verb: 'Resolved the conversation with', target: d.name || d.email },
+        'conversation.reopen':   { verb: 'Reopened the conversation with',  target: d.name || d.email }
+    };
+    if (map[a]) return map[a];
+
+    // Generic fallback: "module.verb_word" → "Verb word module".
+    const [mod, verb] = a.split('.');
+    return { verb: cap(((verb || 'updated') + ' ' + (mod || 'record')).replace(/_/g, ' ')) };
+}
+
+function activityCell(r) {
+    const cat = (r.action || '').split('.')[0];
+    const color = CAT_COLOR[cat] || CAT_COLOR.other;
+    const { verb, target } = describeAction(r);
+    const targetHtml = target ? ` <strong>${escapeHtml(String(target))}</strong>` : '';
+    return `<div class="act-line">
+                <span class="act-dot" style="background:${color}"></span>
+                <span class="act-text">${escapeHtml(verb)}${targetHtml}</span>
+            </div>`;
 }
 
 function fmtManila(ts) {
@@ -738,18 +815,21 @@ function renderRows(rows) {
                 <div class="a-name">${escapeHtml(name)}</div>
                 <div class="a-email">${escapeHtml(email)}</div>
             </td>
-            <td>${actionBadge(r.action)}</td>
-            <td class="cell-target">
-                ${r.target_type ? `<span class="tg-type">${escapeHtml(r.target_type)}</span> ` : ''}
-                <span class="tg-id" title="${escapeHtml(r.target_id || '')}">${escapeHtml(r.target_id || '—')}</span>
-            </td>
+            <td>${activityCell(r)}</td>
             <td><span class="expand-chevron"><i data-lucide="chevron-down"></i></span></td>
         `;
+
+        // The expand panel keeps the raw technical facts (action code, target) for
+        // anyone who needs them, so the row itself can stay plain-English.
+        const meta = `<div class="detail-meta">Action <b>${escapeHtml(r.action || '—')}</b>` +
+            (r.target_type || r.target_id
+                ? ` · Target <b>${escapeHtml(r.target_type || '')} ${escapeHtml(r.target_id || '')}</b>`
+                : '') + `</div>`;
 
         const detailsTr = document.createElement('tr');
         detailsTr.className = 'details-row';
         detailsTr.hidden = true;
-        detailsTr.innerHTML = `<td colspan="5">${
+        detailsTr.innerHTML = `<td colspan="4">${meta}${
             r.details
                 ? `<pre class="details-json">${escapeHtml(JSON.stringify(r.details, null, 2))}</pre>`
                 : `<div class="details-empty">No extra details recorded for this entry.</div>`

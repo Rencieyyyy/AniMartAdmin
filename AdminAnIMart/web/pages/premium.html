@@ -1095,6 +1095,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
 <script src="escape.js"></script>
+<script src="image-lightbox.js"></script>
 <script src="logout-modal.js"></script>
 <script src="tier-stats.js"></script>
 <script>
@@ -1542,7 +1543,8 @@ function openViewModal(id) {
 // Receipts live in the PRIVATE payment-receipts bucket (mobile uploads them
 // before submitting the request — migration 20260709004000). receipt_url
 // stores the object PATH; admins may read via RLS, so a short-lived signed
-// URL renders it. Clicking opens the full-size image in a new tab.
+// URL renders it. Clicking the thumbnail opens the full-size image in the
+// shared in-page popup (image-lightbox.js) instead of a new browser tab.
 async function loadReceiptInto(slotId, path) {
     const slot = document.getElementById(slotId);
     if (!slot) return;
@@ -1555,11 +1557,15 @@ async function loadReceiptInto(slotId, path) {
             if (error) throw error;
             url = data.signedUrl;
         }
-        slot.innerHTML = `
-            <a href="${url}" target="_blank" rel="noopener" title="Open full size">
-                <img src="${url}" alt="Payment receipt"
-                     style="max-width:180px;max-height:220px;border-radius:10px;border:1px solid var(--border);display:inline-block;background:#fff;">
-            </a>`;
+        const thumb = document.createElement('img');
+        thumb.src = url;
+        thumb.alt = 'Payment receipt';
+        thumb.title = 'Click to view full size';
+        thumb.style.cssText = 'max-width:180px;max-height:220px;border-radius:10px;border:1px solid var(--border);display:inline-block;background:#fff;cursor:zoom-in;';
+        // Resolved URL captured in the closure — never built into markup.
+        thumb.onclick = () => openImageLightbox({ url, title: 'Payment Receipt', subtitle: 'Proof of payment submitted with this request.' });
+        slot.innerHTML = '';
+        slot.appendChild(thumb);
     } catch (e) {
         console.error('RECEIPT LOAD ERROR:', e);
         slot.innerHTML = '<span style="color:var(--danger);font-size:0.75rem;">Could not load receipt</span>';
