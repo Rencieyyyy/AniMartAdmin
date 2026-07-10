@@ -261,6 +261,13 @@
             font-size: 0.68rem; font-weight: 700;
             background: var(--surface-2); border: 1.5px solid var(--border);
             color: var(--mint); flex-shrink: 0;
+            position: relative; overflow: hidden;
+        }
+        /* Mobile-app profile picture, layered over the initials (which stay
+           visible as the fallback while loading / when the URL is dead). */
+        .avatar .av-img, .profile-avatar .av-img {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            border-radius: 50%; object-fit: cover;
         }
         .user-name { font-weight: 600; font-size: 0.84rem; }
         .user-email { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
@@ -399,7 +406,9 @@
             font-size: 1.1rem; font-weight: 800;
             background: var(--mint-glow); border: 2px solid rgba(126,255,197,0.2);
             color: var(--mint); flex-shrink: 0;
+            position: relative; overflow: hidden;
         }
+        .profile-avatar .av-img { border-radius: 12px; }
         .profile-name { font-size: 1.05rem; font-weight: 700; }
         .profile-meta { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
         .profile-badges { display: flex; gap: 6px; margin-top: 6px; }
@@ -735,7 +744,7 @@ async function loadUsers() {
     const [usersRes, subsRes] = await Promise.all([
         supabaseClient
             .from('users')
-            .select('id, name, email, phone, address, is_seller, status, created_at, messenger, valid_id_type, valid_id_url')
+            .select('id, name, email, phone, address, is_seller, status, created_at, messenger, valid_id_type, valid_id_url, avatar_url')
             .in('status', ['approved', 'restricted', 'blocked'])
             .order('created_at', { ascending: false }),
         // selectSubscriptions (tier-stats.js) retries without billing_cycle when
@@ -786,7 +795,8 @@ async function loadUsers() {
             billing:  planByUser[row.id] ? billingCycleLabel(planByUser[row.id].cycle) : '—',
             messenger: row.messenger || '',
             idType:      row.valid_id_type || null,
-            validIdUrl:  row.valid_id_url || null
+            validIdUrl:  row.valid_id_url || null,
+            avatar:      row.avatar_url || null       // mobile-app profile picture
         }));
     }
 
@@ -919,7 +929,7 @@ function rowHTML(u) {
     return `<tr>
         <td>
             <div class="user-cell">
-                <div class="avatar">${escapeHtml(initials(u.name))}</div>
+                <div class="avatar">${escapeHtml(initials(u.name))}${u.avatar ? `<img class="av-img" src="${escapeHtml(u.avatar)}" alt="" onerror="this.remove()">` : ''}</div>
                 <div>
                     <div class="user-name">${escapeHtml(u.name)}</div>
                     <div class="user-email">${escapeHtml(u.email)}</div>
@@ -975,7 +985,7 @@ function viewUser(id) {
 
     document.getElementById('viewModalBody').innerHTML = `
         <div class="profile-hero">
-            <div class="profile-avatar">${escapeHtml(initials(u.name))}</div>
+            <div class="profile-avatar">${escapeHtml(initials(u.name))}${u.avatar ? `<img class="av-img" src="${escapeHtml(u.avatar)}" alt="" onerror="this.remove()">` : ''}</div>
             <div>
                 <div class="profile-name">${escapeHtml(u.name)}</div>
                 <div class="profile-meta">${escapeHtml(u.email)} · ${escapeHtml(u.phone)}</div>

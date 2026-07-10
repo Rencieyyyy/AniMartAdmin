@@ -277,6 +277,12 @@
             width: 30px; height: 30px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-size: 0.6rem; font-weight: 800; flex-shrink: 0;
+            position: relative; overflow: hidden;
+        }
+        /* Mobile-app profile picture, layered over the initials fallback. */
+        .party-avatar .av-img {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            border-radius: 50%; object-fit: cover;
         }
         .party-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
 
@@ -556,12 +562,13 @@ async function loadTransactions() {
     const listingIds = [...new Set(list.map(t => t.listing_id).filter(Boolean))];
 
     const [userRes, listingRes] = await Promise.all([
-        userIds.length ? supabaseClient.from('users').select('id, name').in('id', userIds) : Promise.resolve({ data: [] }),
+        userIds.length ? supabaseClient.from('users').select('id, name, avatar_url').in('id', userIds) : Promise.resolve({ data: [] }),
         listingIds.length ? supabaseClient.from('listings').select('id, title').in('id', listingIds) : Promise.resolve({ data: [] })
     ]);
 
     const nameById = {};
-    (userRes.data || []).forEach(u => { nameById[u.id] = u.name; });
+    const avatarById = {};
+    (userRes.data || []).forEach(u => { nameById[u.id] = u.name; avatarById[u.id] = u.avatar_url || null; });
     const titleById = {};
     (listingRes.data || []).forEach(l => { titleById[String(l.id)] = l.title; });
 
@@ -570,6 +577,8 @@ async function loadTransactions() {
         listing:     titleById[String(t.listing_id)] || '(listing removed)',
         seller:      nameById[t.seller_id] || '(unknown seller)',
         buyer:       nameById[t.buyer_id] || '(unknown buyer)',
+        sellerAvatar: avatarById[t.seller_id] || null,
+        buyerAvatar:  avatarById[t.buyer_id] || null,
         qty:         Number(t.quantity) || 1,
         amount:      Number(t.agreed_price) || 0,
         status:      (t.status || '').trim() || 'reserved',
@@ -681,13 +690,13 @@ function renderTable() {
             </td>
             <td>
                 <div class="party-cell">
-                    <span class="party-avatar" style="background:${sColor}22;color:${sColor};border:1.5px solid ${sColor}44;">${escapeHtml(initials(t.seller))}</span>
+                    <span class="party-avatar" style="background:${sColor}22;color:${sColor};border:1.5px solid ${sColor}44;">${escapeHtml(initials(t.seller))}${t.sellerAvatar ? `<img class="av-img" src="${escapeHtml(t.sellerAvatar)}" alt="" onerror="this.remove()">` : ''}</span>
                     <span class="party-name">${escapeHtml(t.seller)}</span>
                 </div>
             </td>
             <td>
                 <div class="party-cell">
-                    <span class="party-avatar" style="background:${bColor}22;color:${bColor};border:1.5px solid ${bColor}44;">${escapeHtml(initials(t.buyer))}</span>
+                    <span class="party-avatar" style="background:${bColor}22;color:${bColor};border:1.5px solid ${bColor}44;">${escapeHtml(initials(t.buyer))}${t.buyerAvatar ? `<img class="av-img" src="${escapeHtml(t.buyerAvatar)}" alt="" onerror="this.remove()">` : ''}</span>
                     <span class="party-name">${escapeHtml(t.buyer)}</span>
                 </div>
             </td>
