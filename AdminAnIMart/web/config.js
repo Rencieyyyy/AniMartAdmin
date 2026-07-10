@@ -1,10 +1,61 @@
 SUPABASE_URL = "https://kzhlhrhhfupgvpzjllce.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6aGxocmhoZnVwZ3ZwempsbGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyOTg5MzcsImV4cCI6MjA5Njg3NDkzN30.asNT0AIXPO_cXKDK_YLV9wozWnCHlg9Bb1L8pMNAPxM"
 
+
+// ── "Remember me" ──
+// supabase-js keeps the session in localStorage (survives closing the
+// browser). When the user UNchecks "Remember me" at login we set this flag
+// and route the session through sessionStorage instead, so it dies with the
+// browser. The flag itself lives in localStorage so every page (and tab)
+// agrees on where to look. Absent flag = remember (matches old behaviour).
+const REMEMBER_FLAG = "animart_remember_me";
+
+const authStorage = {
+    _store() {
+        return localStorage.getItem(REMEMBER_FLAG) === "no" ? sessionStorage : localStorage;
+    },
+    getItem(key)        { return authStorage._store().getItem(key); },
+    setItem(key, value) { authStorage._store().setItem(key, value); },
+    removeItem(key)     { localStorage.removeItem(key); sessionStorage.removeItem(key); }
+};
+
 const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
-    SUPABASE_ANON_KEY
+    SUPABASE_ANON_KEY,
+    { auth: { storage: authStorage } }
 );
+
+
+// ── Idle-session timeout ──
+// An abandoned admin tab full of user PII should not stay signed in forever.
+// Any activity (mouse, keys, scroll, touch) refreshes a shared timestamp in
+// localStorage (shared so several tabs count as one session); after
+// IDLE_TIMEOUT_MS with no activity in ANY tab, the session is signed out and
+// the user is bounced to the login page with a friendly message.
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;   // 30 minutes
+const IDLE_STAMP_KEY  = "animart_last_activity";
+
+function stampActivity() {
+    localStorage.setItem(IDLE_STAMP_KEY, String(Date.now()));
+}
+
+function idleExpired() {
+    const last = Number(localStorage.getItem(IDLE_STAMP_KEY) || 0);
+    return last > 0 && (Date.now() - last) > IDLE_TIMEOUT_MS;
+}
+
+async function enforceIdleTimeout() {
+    if (!idleExpired()) return false;
+    localStorage.removeItem(IDLE_STAMP_KEY);
+    await supabaseClient.auth.signOut();
+    window.location.replace(pathToLogin() + "?timeout=1");
+    return true;
+}
+
+// Login page lives one level above /pages/.
+function pathToLogin() {
+    return /\/pages\//.test(window.location.pathname) ? "../index.html" : "index.html";
+}
 
 
 // Formal message shown when a valid Supabase account that is NOT an admin tries
@@ -57,6 +108,11 @@ if (loginForm) {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
 
+        // Decide where the session will live BEFORE signing in (see
+        // REMEMBER_FLAG above). Missing checkbox = remember, old behaviour.
+        const rememberBox = document.getElementById("rememberMe");
+        localStorage.setItem(REMEMBER_FLAG, rememberBox && !rememberBox.checked ? "no" : "yes");
+
 
         const { error } = await supabaseClient.auth.signInWithPassword({
 
@@ -95,6 +151,7 @@ if (loginForm) {
 
 
         // Admin confirmed → enter the dashboard.
+        stampActivity();
         const loginBtn = document.getElementById("loginBtn");
 
         loginBtn.innerText = "Authenticating...";
@@ -116,12 +173,19 @@ if (loginForm) {
     if (params.get("denied") === "1") {
         denyAccess();
     }
+    if (params.get("timeout") === "1" && typeof showLoginError === "function") {
+        showLoginError("You were signed out after 30 minutes of inactivity. Please sign in again.");
+    }
 
 } else {
 
     // ── PROTECTED PAGES ──
     // Defense-in-depth: a signed-out or non-admin session that lands on any
     // admin page directly is signed out and bounced back to the login screen.
+
+    // Snapshot BEFORE the first stampActivity() below overwrites the stored
+    // timestamp — this is what catches "tab reopened hours later".
+    const idleAtLoad = idleExpired();
 
     document.addEventListener("DOMContentLoaded", async () => {
 
@@ -132,6 +196,15 @@ if (loginForm) {
             return;
         }
 
+        // Session exists but sat idle past the limit (e.g. tab reopened
+        // hours later) → end it before any data loads.
+        if (idleAtLoad) {
+            localStorage.removeItem(IDLE_STAMP_KEY);
+            await supabaseClient.auth.signOut();
+            window.location.replace("../index.html?timeout=1");
+            return;
+        }
+
         const admin = await getAdminForCurrentUser();
 
         if(!admin){
@@ -139,6 +212,26 @@ if (loginForm) {
             window.location.replace("../index.html?denied=1");
         }
 
+    });
+
+    // Activity tracking + periodic idle check (only on protected pages —
+    // the login page has nothing to time out).
+    if (!idleAtLoad) stampActivity();
+    ["mousemove", "mousedown", "keydown", "scroll", "touchstart"].forEach(evt =>
+        window.addEventListener(evt, throttleStamp, { passive: true }));
+
+    let lastStampWrite = 0;
+    function throttleStamp() {
+        const now = Date.now();
+        if (now - lastStampWrite > 30 * 1000) {   // write at most every 30s
+            lastStampWrite = now;
+            stampActivity();
+        }
+    }
+
+    setInterval(enforceIdleTimeout, 60 * 1000);
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) enforceIdleTimeout();
     });
 
 }
