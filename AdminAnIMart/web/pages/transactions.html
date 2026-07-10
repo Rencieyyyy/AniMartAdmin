@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions | AniMart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --mint: #7EFFC5;
+            --mint-dim: #5CE8A8;
+            --mint-glow: rgba(126,255,197,0.15);
+            --dark: #0D1117;
+            --surface: #161B22;
+            --surface-2: #1C2333;
+            --surface-3: #21293a;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.13);
+            --text: #E6EDF3;
+            --muted: #7D8590;
+            --danger: #FF6B6B;
+            --warn: #FBB824;
+            --gold: #FFD166;
+            --blue: #38BDF8;
+            --sidebar-w: 260px;
+            --radius: 16px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: white;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -25%; left: -5%;
+            width: 50%; height: 50%;
+            background: radial-gradient(ellipse, rgba(126,255,197,0.045) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .wrapper { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; height: 100vh;
+            z-index: 100; padding: 0 12px 20px;
+        }
+
+        .sidebar-brand {
+            padding: 28px 12px 24px;
+            display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid var(--border); margin-bottom: 16px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px; background: var(--mint);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
+        }
+
+        .brand-icon svg { width: 18px; height: 18px; color: var(--dark); }
+        .brand-name { font-size: 1.1rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+        .brand-name span { color: var(--mint); }
+
+        .nav { display: flex; flex-direction: column; flex: 1; gap: 3px; }
+
+        .nav-label {
+            font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--muted); padding: 14px 12px 6px;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+            border-radius: 10px; text-decoration: none; color: var(--muted);
+            font-size: 0.875rem; font-weight: 500; transition: all 0.18s;
+            border: none; background: transparent; cursor: pointer; width: 100%; text-align: left;
+        }
+
+        .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .nav-link:hover { color: var(--dark); background: var(--mint); }
+        .nav-link.active { background: var(--mint); color: var(--dark); font-weight: 700; }
+        .nav-link.logout { color: var(--danger); }
+        .nav-link.logout:hover { background: rgba(255,107,107,0.1); color: var(--danger); }
+
+        .nav-bottom {
+            border-top: 1px solid var(--border); padding-top: 12px;
+            margin-top: auto; display: flex; flex-direction: column; gap: 3px;
+        }
+
+        /* ── MAIN ── */
+        .main {
+            margin-left: var(--sidebar-w); flex: 1;
+            padding: 36px 40px;
+            max-width: calc(100vw - var(--sidebar-w));
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header {
+            display: flex; align-items: flex-start;
+            justify-content: space-between; margin-bottom: 32px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem; font-weight: 800;
+            letter-spacing: -0.04em; color: var(--mint);
+        }
+
+        .page-header p { font-size: 0.875rem; color: var(--muted); margin-top: 3px; }
+
+        .header-right { display: flex; align-items: center; gap: 10px; }
+
+        .date-badge {
+            font-family: 'DM Mono', monospace; font-size: 0.75rem;
+            color: var(--muted); background: var(--surface-2);
+            border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+        }
+
+        .icon-btn {
+            width: 36px; height: 36px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 9px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--muted); transition: all 0.18s;
+        }
+        .icon-btn:hover { border-color: rgba(126,255,197,0.3); color: var(--mint); }
+        .icon-btn svg { width: 15px; height: 15px; }
+
+        .export-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 9px; padding: 8px 14px;
+            font-size: 0.78rem; font-weight: 700; font-family: 'Sora', sans-serif;
+            color: var(--muted); cursor: pointer; transition: all 0.18s;
+        }
+        .export-btn:hover { border-color: rgba(126,255,197,0.3); color: var(--mint); }
+        .export-btn svg { width: 13px; height: 13px; }
+
+        /* ── STATS ── */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 14px; margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px;
+            transition: border-color 0.2s, transform 0.2s;
+            animation: fadeUp 0.4s ease both;
+            position: relative; overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 2px; border-radius: 0 0 var(--radius) var(--radius);
+        }
+
+        .stat-card.total::after     { background: var(--blue); }
+        .stat-card.completed::after { background: var(--mint); }
+        .stat-card.reserved::after  { background: var(--gold); }
+        .stat-card.cancelled::after { background: var(--danger); }
+        .stat-card:hover { transform: translateY(-2px); }
+
+        .stat-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+        }
+
+        .stat-icon svg { width: 17px; height: 17px; }
+        .stat-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+        .stat-value { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+        .stat-sub { font-size: 0.7rem; color: var(--muted); margin-top: 7px; font-family: 'DM Mono', monospace; }
+
+        /* ── TABS + CONTROLS ── */
+        .tabs-wrap {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+            animation: fadeUp 0.45s ease both;
+        }
+
+        .tabs-row {
+            display: flex; align-items: center; gap: 4px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 5px;
+        }
+
+        .tab-btn {
+            padding: 8px 14px; border-radius: 8px; border: none;
+            background: transparent; color: var(--muted);
+            font-size: 0.8rem; font-weight: 600; font-family: 'Sora', sans-serif;
+            cursor: pointer; transition: all 0.18s;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .tab-count {
+            font-size: 0.62rem; font-family: 'DM Mono', monospace;
+            padding: 2px 7px; border-radius: 20px;
+            background: var(--surface-2); color: var(--muted);
+        }
+
+        .tab-btn:hover:not(.active) { color: var(--text); background: var(--surface-2); }
+        .tab-btn.active { background: rgba(126,255,197,0.15); color: var(--mint-dim); }
+        .tab-btn.active .tab-count { background: rgba(126,255,197,0.15); color: var(--mint-dim); }
+        .tab-btn.tab-cancelled.active { background: rgba(255,107,107,0.15); color: var(--danger); }
+        .tab-btn.tab-cancelled.active .tab-count { background: rgba(255,107,107,0.18); color: var(--danger); }
+
+        .controls-right { display: flex; align-items: center; gap: 10px; }
+
+        .sort-filter {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 9px; padding: 8px 32px 8px 12px;
+            font-size: 0.8rem; color: var(--text); font-family: 'Sora', sans-serif;
+            outline: none; cursor: pointer; transition: border-color 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237D8590' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+            background-color: var(--surface);
+        }
+        .sort-filter option { background: var(--surface-2); }
+        .sort-filter:focus { border-color: rgba(126,255,197,0.35); }
+
+        .search-wrap { position: relative; }
+        .search-wrap input {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 9px; padding: 8px 14px 8px 36px;
+            font-size: 0.8rem; color: var(--text); font-family: 'Sora', sans-serif;
+            width: 230px; outline: none; transition: border-color 0.2s;
+        }
+        .search-wrap input::placeholder { color: var(--muted); }
+        .search-wrap input:focus { border-color: rgba(126,255,197,0.35); }
+        .search-icon {
+            position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+            width: 14px; height: 14px; color: var(--muted); pointer-events: none;
+        }
+
+        /* ── TABLE ── */
+        .table-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden;
+            animation: fadeUp 0.5s ease both;
+        }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 940px; }
+
+        thead th {
+            text-align: left; font-size: 0.68rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+            padding: 14px 16px; border-bottom: 1px solid var(--border);
+            background: var(--surface-2); white-space: nowrap;
+        }
+
+        tbody td { padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 0.82rem; vertical-align: middle; }
+        tbody tr { transition: background 0.15s; cursor: pointer; }
+        tbody tr:hover { background: rgba(255,255,255,0.02); }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .party-cell { display: flex; align-items: center; gap: 9px; min-width: 0; }
+        .party-avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.6rem; font-weight: 800; flex-shrink: 0;
+        }
+        .party-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+
+        .listing-cell-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+        .listing-cell-sub { font-size: 0.7rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+        .price-cell { font-family: 'DM Mono', monospace; font-weight: 500; color: var(--gold); white-space: nowrap; }
+        .cell-date { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.68rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; white-space: nowrap;
+        }
+        .status-badge svg { width: 11px; height: 11px; }
+        .st-completed { background: rgba(126,255,197,0.1); color: var(--mint-dim); border: 1px solid rgba(126,255,197,0.2); }
+        .st-reserved  { background: rgba(255,209,102,0.1); color: var(--gold); border: 1px solid rgba(255,209,102,0.2); }
+        .st-cancelled { background: rgba(255,107,107,0.1); color: var(--danger); border: 1px solid rgba(255,107,107,0.2); }
+        .st-other     { background: rgba(56,189,248,0.1); color: var(--blue); border: 1px solid rgba(56,189,248,0.2); }
+
+        /* ── EMPTY STATE ── */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+        .empty-icon {
+            width: 56px; height: 56px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 16px; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+        }
+        .empty-icon svg { width: 24px; height: 24px; opacity: 0.4; }
+        .empty-state h3 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+        .empty-state p  { font-size: 0.8rem; color: var(--muted); }
+
+        /* ── DETAIL MODAL ── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(6,10,15,0.75);
+            backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;
+            padding: 20px; opacity: 0; visibility: hidden; transition: all 0.25s ease; z-index: 1000;
+        }
+        .modal-overlay.open { opacity: 1; visibility: visible; }
+        .modal {
+            background: var(--surface); border: 1px solid var(--border-hover);
+            border-radius: 20px; padding: 28px; width: 100%; max-width: 520px;
+            max-height: 88vh; overflow-y: auto;
+            transform: translateY(14px) scale(0.98); transition: transform 0.25s ease;
+        }
+        .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+        .modal h2 { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
+        .modal-sub { font-size: 0.8rem; color: var(--muted); line-height: 1.55; margin-bottom: 18px; }
+
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-bottom: 16px; }
+        .detail-item { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+        .detail-item.wide { grid-column: 1 / -1; }
+        .detail-item .k { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 3px; }
+        .detail-item .v { font-size: 0.82rem; font-weight: 600; word-break: break-word; }
+
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            font-size: 0.8rem; font-weight: 700; font-family: 'Sora', sans-serif;
+            padding: 10px 18px; border-radius: 10px; cursor: pointer;
+            border: 1px solid transparent; transition: all 0.18s;
+        }
+        .btn-secondary { background: var(--surface-2); color: var(--muted); border-color: var(--border); }
+        .btn-secondary:hover { color: var(--text); border-color: var(--border-hover); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+        @media (max-width: 900px) {
+            :root { --sidebar-w: 64px; }
+            .sidebar-brand, .nav-link span, .nav-label { display: none; }
+            .nav-link { justify-content: center; padding: 10px; }
+            .main { padding: 24px 18px; }
+        }
+        @media (max-width: 700px) {
+            .tabs-wrap { flex-direction: column; align-items: flex-start; }
+            .controls-right { width: 100%; flex-wrap: wrap; }
+            .search-wrap input { width: 150px; }
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="brand-name">Ani<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-label">Main</div>
+            <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+            <a href="sellers.html"   class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+            <a href="listings.html"  class="nav-link"><i data-lucide="package"></i><span>Listings</span></a>
+            <a href="transactions.html" class="nav-link"><i data-lucide="receipt"></i><span>Transactions</span></a>
+            <a href="premium.html"   class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
+
+            <div class="nav-label">Admin</div>
+            <a href="announcements.html"  class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
+            <a href="user.html"           class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
+            <a href="customer-service.html" class="nav-link"><i data-lucide="message-circle"></i><span>Customer Service</span></a>
+            <a href="reviews.html"        class="nav-link"><i data-lucide="star"></i><span>Reviews</span></a>
+            <a href="reports.html"        class="nav-link"><i data-lucide="flag"></i><span>Reports</span><span class="reports-badge" data-reports-badge hidden>0</span></a>
+
+            <div class="nav-bottom">
+                <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
+                <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <div class="page-header">
+            <div>
+                <h1>Transactions</h1>
+                <p>Every marketplace deal between buyers and sellers — reserved, completed, and cancelled.</p>
+            </div>
+            <div class="header-right">
+                <div class="date-badge" id="dateBadge">—</div>
+                <button class="export-btn" onclick="exportCSV()"><i data-lucide="download"></i>Export CSV</button>
+                <button class="icon-btn" title="Refresh" onclick="loadTransactions()"><i data-lucide="refresh-cw"></i></button>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-grid">
+            <div class="stat-card total" style="animation-delay:0.05s">
+                <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:var(--blue);"><i data-lucide="receipt"></i></div>
+                <div class="stat-label">Total transactions</div>
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-sub">all time</div>
+            </div>
+            <div class="stat-card completed" style="animation-delay:0.1s">
+                <div class="stat-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);"><i data-lucide="badge-check"></i></div>
+                <div class="stat-label">Completed</div>
+                <div class="stat-value" id="stat-completed">0</div>
+                <div class="stat-sub" id="stat-completed-value">₱0 total value</div>
+            </div>
+            <div class="stat-card reserved" style="animation-delay:0.15s">
+                <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:var(--gold);"><i data-lucide="clock"></i></div>
+                <div class="stat-label">Reserved / in progress</div>
+                <div class="stat-value" id="stat-reserved">0</div>
+                <div class="stat-sub">awaiting completion</div>
+            </div>
+            <div class="stat-card cancelled" style="animation-delay:0.2s">
+                <div class="stat-icon" style="background:rgba(255,107,107,0.12); color:var(--danger);"><i data-lucide="x-circle"></i></div>
+                <div class="stat-label">Cancelled</div>
+                <div class="stat-value" id="stat-cancelled">0</div>
+                <div class="stat-sub">fell through</div>
+            </div>
+        </div>
+
+        <!-- TABS + CONTROLS -->
+        <div class="tabs-wrap">
+            <div class="tabs-row" id="statusTabs">
+                <button class="tab-btn active" data-status="all" onclick="switchTab('all', this)">All <span class="tab-count" id="tc-all">0</span></button>
+                <button class="tab-btn" data-status="completed" onclick="switchTab('completed', this)">Completed <span class="tab-count" id="tc-completed">0</span></button>
+                <button class="tab-btn" data-status="reserved" onclick="switchTab('reserved', this)">Reserved <span class="tab-count" id="tc-reserved">0</span></button>
+                <button class="tab-btn tab-cancelled" data-status="cancelled" onclick="switchTab('cancelled', this)">Cancelled <span class="tab-count" id="tc-cancelled">0</span></button>
+            </div>
+
+            <div class="controls-right">
+                <select class="sort-filter" id="sortFilter" onchange="renderTable()">
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                    <option value="amount-high">Amount: high → low</option>
+                    <option value="amount-low">Amount: low → high</option>
+                </select>
+                <div class="search-wrap">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search buyer, seller, listing…" oninput="renderTable()">
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Listing</th>
+                            <th>Seller</th>
+                            <th>Buyer</th>
+                            <th>Qty</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="txnBody"></tbody>
+                </table>
+            </div>
+            <div id="emptyWrap"></div>
+        </div>
+
+    </main>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <h2 id="dTitle">Transaction</h2>
+        <div class="modal-sub" id="dSub">—</div>
+        <div class="detail-grid" id="dGrid"></div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="escape.js"></script>
+<script src="logout-modal.js"></script>
+<script>
+// ─────────────────────────────────────────────────
+// DATA — live from `transactions` (admin-wide SELECT via the
+// "Admins read transactions" policy, migration 20260709005000). Read-only:
+// deals belong to the buyer and seller; the panel observes but never edits.
+// seller_id / buyer_id FK auth.users and listing_id is TEXT, so names and
+// titles come from batched users/listings lookups (same as dashboard.html).
+// ─────────────────────────────────────────────────
+const COLORS = ['#38BDF8','#7EFFC5','#FBB824','#C084FC','#FB923C','#F472B6','#34D399','#60A5FA'];
+
+function rndColor(name) {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h += name.charCodeAt(i);
+    return COLORS[h % COLORS.length];
+}
+function initials(name) {
+    return (name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?';
+}
+
+// escapeHtml is provided globally by escape.js.
+
+let txns = [];
+let currentStatus = 'all';
+
+function bucketOf(status) {
+    if (status === 'completed') return 'completed';
+    if (status === 'cancelled') return 'cancelled';
+    if (status === 'reserved')  return 'reserved';
+    return 'other';
+}
+
+// ─────────────────────────────────────────────────
+// LOAD
+// ─────────────────────────────────────────────────
+async function loadTransactions() {
+    const { data: rows, error } = await supabaseClient
+        .from('transactions')
+        .select('id, listing_id, seller_id, buyer_id, quantity, agreed_price, status, cancelled_by, cancel_reason, created_at, completed_at, buyer_confirmed_at')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('LOAD TRANSACTIONS ERROR:', error);
+        document.getElementById('emptyWrap').innerHTML =
+            `<div class="empty-state">
+                <div class="empty-icon"><i data-lucide="alert-triangle"></i></div>
+                <h3>Couldn't load transactions</h3>
+                <p>${escapeHtml(error.message)}</p>
+            </div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    const list = rows || [];
+
+    const userIds = [...new Set(list.flatMap(t => [t.seller_id, t.buyer_id, t.cancelled_by]).filter(Boolean))];
+    const listingIds = [...new Set(list.map(t => t.listing_id).filter(Boolean))];
+
+    const [userRes, listingRes] = await Promise.all([
+        userIds.length ? supabaseClient.from('users').select('id, name').in('id', userIds) : Promise.resolve({ data: [] }),
+        listingIds.length ? supabaseClient.from('listings').select('id, title').in('id', listingIds) : Promise.resolve({ data: [] })
+    ]);
+
+    const nameById = {};
+    (userRes.data || []).forEach(u => { nameById[u.id] = u.name; });
+    const titleById = {};
+    (listingRes.data || []).forEach(l => { titleById[String(l.id)] = l.title; });
+
+    txns = list.map(t => ({
+        id:          String(t.id),
+        listing:     titleById[String(t.listing_id)] || '(listing removed)',
+        seller:      nameById[t.seller_id] || '(unknown seller)',
+        buyer:       nameById[t.buyer_id] || '(unknown buyer)',
+        qty:         Number(t.quantity) || 1,
+        amount:      Number(t.agreed_price) || 0,
+        status:      (t.status || '').trim() || 'reserved',
+        cancelledBy: t.cancelled_by ? (nameById[t.cancelled_by] || 'unknown') : null,
+        cancelReason:(t.cancel_reason || '').trim(),
+        ts:          t.created_at,
+        completedTs: t.completed_at,
+        confirmedTs: t.buyer_confirmed_at
+    }));
+
+    updateStats();
+    renderTable();
+}
+
+// ─────────────────────────────────────────────────
+// STATS
+// ─────────────────────────────────────────────────
+function fmtPrice(n) {
+    return '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function updateStats() {
+    const completed = txns.filter(t => bucketOf(t.status) === 'completed');
+    const reserved  = txns.filter(t => bucketOf(t.status) === 'reserved' || bucketOf(t.status) === 'other');
+    const cancelled = txns.filter(t => bucketOf(t.status) === 'cancelled');
+
+    document.getElementById('stat-total').textContent     = txns.length;
+    document.getElementById('stat-completed').textContent = completed.length;
+    document.getElementById('stat-completed-value').textContent =
+        fmtPrice(completed.reduce((a, t) => a + t.amount, 0)) + ' total value';
+    document.getElementById('stat-reserved').textContent  = reserved.length;
+    document.getElementById('stat-cancelled').textContent = cancelled.length;
+
+    document.getElementById('tc-all').textContent       = txns.length;
+    document.getElementById('tc-completed').textContent = completed.length;
+    document.getElementById('tc-reserved').textContent  = reserved.length;
+    document.getElementById('tc-cancelled').textContent = cancelled.length;
+}
+
+// ─────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────
+function statusBadge(status) {
+    const bucket = bucketOf(status);
+    if (bucket === 'completed') return `<span class="status-badge st-completed"><i data-lucide="badge-check"></i>Completed</span>`;
+    if (bucket === 'cancelled') return `<span class="status-badge st-cancelled"><i data-lucide="x-circle"></i>Cancelled</span>`;
+    if (bucket === 'reserved')  return `<span class="status-badge st-reserved"><i data-lucide="clock"></i>Reserved</span>`;
+    return `<span class="status-badge st-other"><i data-lucide="circle-dashed"></i>${escapeHtml(status)}</span>`;
+}
+
+function fmtDate(ts) {
+    if (!ts) return '—';
+    return new Date(ts).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function matchesTab(t) {
+    if (currentStatus === 'all') return true;
+    if (currentStatus === 'reserved') return bucketOf(t.status) === 'reserved' || bucketOf(t.status) === 'other';
+    return bucketOf(t.status) === currentStatus;
+}
+
+function filteredTxns() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    const sort = document.getElementById('sortFilter').value;
+
+    let filtered = txns.filter(t => {
+        const haystack = [t.listing, t.seller, t.buyer, t.cancelReason].filter(Boolean).join(' ').toLowerCase();
+        return matchesTab(t) && (!q || haystack.includes(q));
+    });
+
+    filtered.sort((a, b) => {
+        if (sort === 'oldest')      return new Date(a.ts) - new Date(b.ts);
+        if (sort === 'amount-high') return b.amount - a.amount;
+        if (sort === 'amount-low')  return a.amount - b.amount;
+        return new Date(b.ts) - new Date(a.ts);
+    });
+    return filtered;
+}
+
+function renderTable() {
+    const body = document.getElementById('txnBody');
+    const filtered = filteredTxns();
+
+    body.innerHTML = '';
+    document.getElementById('emptyWrap').innerHTML = '';
+
+    if (filtered.length === 0) {
+        document.getElementById('emptyWrap').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon"><i data-lucide="receipt"></i></div>
+                <h3>${txns.length === 0 ? 'No transactions yet' : 'No transactions match your filters'}</h3>
+                <p>${txns.length === 0
+                    ? 'Deals made between buyers and sellers in the app will appear here.'
+                    : 'Try a different status tab or search term.'}</p>
+            </div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    filtered.forEach(t => {
+        const sColor = rndColor(t.seller);
+        const bColor = rndColor(t.buyer);
+        const tr = document.createElement('tr');
+        tr.onclick = () => openDetail(t.id);
+        tr.innerHTML = `
+            <td>
+                <div class="listing-cell-title">${escapeHtml(t.listing)}</div>
+                <div class="listing-cell-sub">#${escapeHtml(t.id.slice(0, 8))}</div>
+            </td>
+            <td>
+                <div class="party-cell">
+                    <span class="party-avatar" style="background:${sColor}22;color:${sColor};border:1.5px solid ${sColor}44;">${escapeHtml(initials(t.seller))}</span>
+                    <span class="party-name">${escapeHtml(t.seller)}</span>
+                </div>
+            </td>
+            <td>
+                <div class="party-cell">
+                    <span class="party-avatar" style="background:${bColor}22;color:${bColor};border:1.5px solid ${bColor}44;">${escapeHtml(initials(t.buyer))}</span>
+                    <span class="party-name">${escapeHtml(t.buyer)}</span>
+                </div>
+            </td>
+            <td class="cell-date">${t.qty}</td>
+            <td class="price-cell">${fmtPrice(t.amount)}</td>
+            <td class="cell-date">${fmtDate(t.ts)}</td>
+            <td>${statusBadge(t.status)}</td>
+        `;
+        body.appendChild(tr);
+    });
+
+    lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// DETAIL MODAL
+// ─────────────────────────────────────────────────
+function openDetail(id) {
+    const t = txns.find(x => x.id === id);
+    if (!t) return;
+
+    document.getElementById('dTitle').textContent = t.listing;
+    document.getElementById('dSub').textContent = `Transaction #${t.id}`;
+
+    const items = [
+        ['Status',    bucketOf(t.status) === 'other' ? t.status : t.status],
+        ['Amount',    fmtPrice(t.amount)],
+        ['Seller',    t.seller],
+        ['Buyer',     t.buyer],
+        ['Quantity',  String(t.qty)],
+        ['Created',   fmtDate(t.ts)],
+        ['Completed', fmtDate(t.completedTs)],
+        ['Buyer confirmed', fmtDate(t.confirmedTs)]
+    ];
+    if (bucketOf(t.status) === 'cancelled') {
+        items.push(['Cancelled by', t.cancelledBy || '—']);
+    }
+
+    let html = items.map(([k, v]) =>
+        `<div class="detail-item"><div class="k">${k}</div><div class="v">${escapeHtml(v)}</div></div>`).join('');
+    if (bucketOf(t.status) === 'cancelled') {
+        html += `<div class="detail-item wide"><div class="k">Cancel reason</div><div class="v">${escapeHtml(t.cancelReason || 'No reason given.')}</div></div>`;
+    }
+    document.getElementById('dGrid').innerHTML = html;
+
+    document.getElementById('detailModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('detailModal').classList.remove('open'); }
+document.getElementById('detailModal').addEventListener('click', e => {
+    if (e.target.id === 'detailModal') closeModal();
+});
+
+// ─────────────────────────────────────────────────
+// CSV EXPORT — current tab + filters, same approach as sellers.html
+// ─────────────────────────────────────────────────
+function exportCSV() {
+    const rows = filteredTxns();
+    const header = ['Transaction ID','Listing','Seller','Buyer','Quantity','Amount','Status','Created','Completed','Cancelled by','Cancel reason'];
+    const csvEscape = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const lines = [header.map(csvEscape).join(',')];
+    rows.forEach(t => {
+        lines.push([
+            t.id, t.listing, t.seller, t.buyer, t.qty, t.amount, t.status,
+            t.ts || '', t.completedTs || '', t.cancelledBy || '', t.cancelReason || ''
+        ].map(csvEscape).join(','));
+    });
+
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `animart-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+// ─────────────────────────────────────────────────
+// TABS / INIT
+// ─────────────────────────────────────────────────
+function switchTab(status, btn) {
+    currentStatus = status;
+    document.querySelectorAll('#statusTabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    document.getElementById('dateBadge').textContent =
+        new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+    loadTransactions();
+});
+
+// Logout is handled by the shared styled modal in logout-modal.js.
+</script>
+<!-- Highlight the current page's link in the sidebar -->
+<script>
+(function () {
+    var here = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+    document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {
+        var href = (link.getAttribute('href') || '').split('/').pop().toLowerCase();
+        link.classList.toggle('active', !!href && href === here);
+    });
+})();
+</script>
+<script src="reports-badge.js"></script>
+<script src="role.js"></script>
+</body>
+</html>
