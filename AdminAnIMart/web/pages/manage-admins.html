@@ -324,6 +324,50 @@
         }
         .confirm-icon svg { width: 20px; height: 20px; }
 
+        /* ── VIEW PROFILE MODAL ── */
+        .profile-head {
+            display: flex; align-items: center; gap: 16px;
+            padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 18px;
+        }
+        .profile-avatar {
+            width: 64px; height: 64px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; font-weight: 800; flex-shrink: 0;
+            position: relative; overflow: hidden;
+        }
+        .profile-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .profile-head-name { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .profile-head-email { font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 3px; word-break: break-all; }
+        .profile-head-badges { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+        .profile-details { display: flex; flex-direction: column; gap: 0; }
+        .detail-row {
+            display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+            padding: 9px 0; border-bottom: 1px solid var(--border);
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-key {
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.07em; color: var(--muted); white-space: nowrap;
+        }
+        .detail-val { font-size: 0.78rem; font-weight: 600; text-align: right; word-break: break-word; }
+        .detail-val.mono { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted); }
+
+        .profile-section-label {
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.07em; color: var(--muted); margin: 18px 0 8px;
+        }
+        .activity-list { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
+        .activity-item {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 9px; padding: 8px 12px;
+        }
+        .activity-action { font-size: 0.74rem; font-weight: 500; color: var(--text); line-height: 1.4; }
+        .activity-action strong { font-weight: 700; }
+        .activity-when { font-size: 0.64rem; color: var(--muted); font-family: 'DM Mono', monospace; white-space: nowrap; }
+        .activity-empty { font-size: 0.72rem; color: var(--muted); font-style: italic; padding: 6px 2px; }
+
         /* ── TOAST ── */
         .toast {
             position: fixed; bottom: 28px; right: 28px;
@@ -497,6 +541,10 @@
         <div class="modal-sub" id="resetPwWho">Set a new login password for this admin. Share it with them securely — they can change it afterwards on their Profile page.</div>
 
         <div class="field">
+            <label for="rOwnPassword">Your current password (to confirm it's you)</label>
+            <input type="password" id="rOwnPassword" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div class="field">
             <label for="rPassword">New password (min 8 chars)</label>
             <div class="pw-row">
                 <input type="text" id="rPassword" placeholder="••••••••" autocomplete="off">
@@ -507,6 +555,31 @@
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="closeModal('resetPwModal')">Cancel</button>
             <button class="btn btn-primary" id="resetPwBtn" onclick="resetPassword()"><i data-lucide="key-round"></i>Set new password</button>
+        </div>
+    </div>
+</div>
+
+<!-- VIEW PROFILE MODAL -->
+<div class="modal-overlay" id="profileModal">
+    <div class="modal">
+        <div class="profile-head">
+            <div class="profile-avatar" id="pAvatar"></div>
+            <div>
+                <div class="profile-head-name" id="pName"></div>
+                <div class="profile-head-email" id="pEmail"></div>
+                <div class="profile-head-badges" id="pBadges"></div>
+            </div>
+        </div>
+
+        <div class="profile-details" id="pDetails"></div>
+
+        <div class="profile-section-label">Recent activity (audit log)</div>
+        <div class="activity-list" id="pActivity">
+            <div class="activity-empty">Loading…</div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('profileModal')">Close</button>
         </div>
     </div>
 </div>
@@ -551,6 +624,7 @@ const COLORS = ['#38BDF8','#7EFFC5','#FBB824','#C084FC','#FB923C','#F472B6','#34
 
 let admins = [];
 let myAdminId = null;
+let lastActiveById = {};    // admin id -> last_sign_in_at (from admins_last_sign_in())
 let pendingAction = null;   // { kind, id, label }
 
 // escapeHtml is provided globally by escape.js.
@@ -585,6 +659,11 @@ async function loadAdmins() {
         (a.email || '').trim().toLowerCase() === (user?.email || '').trim().toLowerCase());
     myAdminId = mine ? mine.id : null;
 
+    // Last sign-in per admin (auth.users, via the super-admin-only function).
+    const { data: signIns } = await supabaseClient.rpc('admins_last_sign_in');
+    lastActiveById = {};
+    (signIns || []).forEach(r => { lastActiveById[r.admin_id] = r.last_sign_in_at; });
+
     renderStats();
     renderTable();
 }
@@ -616,6 +695,8 @@ function statusBadge(status) {
 }
 
 function actionButtons(a) {
+    const viewBtn = `<button class="act-btn" onclick="openViewProfile('${a.id}')"><i data-lucide="user"></i>View</button>`;
+
     // The owner is protected: no super admin (not even another owner) can
     // demote, restrict, block or delete it. The DB trigger + Edge Function
     // enforce this; hiding the buttons just avoids a guaranteed-to-fail click.
@@ -623,10 +704,10 @@ function actionButtons(a) {
         return '<span class="owner-locked"><i data-lucide="shield-check"></i>Owner — protected account</span>';
     }
     if (a.id === myAdminId) {
-        return '<span style="font-size:0.7rem;color:var(--muted);font-style:italic;">Your own account — ask another super admin</span>';
+        return `<div class="row-actions">${viewBtn}<span style="font-size:0.7rem;color:var(--muted);font-style:italic;align-self:center;">Your own account — ask another super admin</span></div>`;
     }
 
-    const btns = [];
+    const btns = [viewBtn];
     btns.push(a.role === 'super_admin'
         ? `<button class="act-btn" onclick="confirmAction('demote','${a.id}')"><i data-lucide="arrow-down"></i>Demote</button>`
         : `<button class="act-btn promote" onclick="confirmAction('promote','${a.id}')"><i data-lucide="crown"></i>Promote</button>`);
@@ -784,6 +865,7 @@ function openResetPw(id) {
     const a = admins.find(x => x.id === id);
     if (!a) return;
     resetPwTarget = id;
+    document.getElementById('rOwnPassword').value = '';
     document.getElementById('rPassword').value = '';
     document.getElementById('resetPwWho').innerHTML =
         `Set a new login password for <strong>${escapeHtml(nameOf(a))}</strong> ` +
@@ -797,8 +879,21 @@ async function resetPassword() {
     const btn = document.getElementById('resetPwBtn');
     btn.disabled = true;
     try {
+        const ownPassword = document.getElementById('rOwnPassword').value;
         const password = document.getElementById('rPassword').value;
-        if (password.length < 8) throw new Error('Password must be at least 8 characters.');
+        if (!ownPassword) throw new Error('Enter your current password to confirm.');
+        if (password.length < 8) throw new Error('New password must be at least 8 characters.');
+
+        // Confirm it's really the signed-in super admin by re-authenticating
+        // with their own password (same pattern as the Profile page).
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) throw new Error('Session expired — please log in again.');
+        const { error: authError } = await supabaseClient.auth.signInWithPassword({
+            email: user.email,
+            password: ownPassword
+        });
+        if (authError) throw new Error('Your current password is incorrect.');
+
         await invokeAdminUsers({ action: 'reset_password', admin_id: resetPwTarget, password });
         closeModal('resetPwModal');
         showToast('Password updated — share it with them securely.', 'success');
@@ -807,6 +902,123 @@ async function resetPassword() {
     } finally {
         btn.disabled = false;
     }
+}
+
+// ─────────────────────────────────────────────────
+// VIEW PROFILE — everything on the admins row, plus their
+// recent actions from audit_logs (super admins can read it).
+// ─────────────────────────────────────────────────
+function openViewProfile(id) {
+    const a = admins.find(x => x.id === id);
+    if (!a) return;
+
+    const name = nameOf(a);
+    const color = rndColor(name);
+
+    const avatar = document.getElementById('pAvatar');
+    avatar.style.cssText = `background:${color}22;color:${color};border:2px solid ${color}44;`;
+    avatar.innerHTML = `${escapeHtml(initials(name))}${a.pfp ? `<img src="${escapeHtml(a.pfp)}" alt="" onerror="this.remove()">` : ''}`;
+
+    document.getElementById('pName').innerHTML =
+        `${escapeHtml(name)}${a.is_owner ? '<span class="owner-chip"><i data-lucide="crown"></i>Owner</span>' : ''}${a.id === myAdminId ? '<span class="you-chip">You</span>' : ''}`;
+    document.getElementById('pEmail').textContent = a.email || '—';
+    document.getElementById('pBadges').innerHTML = roleBadge(a.role) + statusBadge(a.status);
+
+    const added = a.created_at
+        ? new Date(a.created_at).toLocaleString('en-PH', { year:'numeric', month:'long', day:'numeric', hour:'numeric', minute:'2-digit' })
+        : '—';
+    const lastActive = lastActiveById[a.id]
+        ? new Date(lastActiveById[a.id]).toLocaleDateString('en-PH', { year:'numeric', month:'long', day:'numeric' })
+        : 'Never signed in';
+    const rows = [
+        ['First name', escapeHtml(a.first_name || '—')],
+        ['Last name',  escapeHtml(a.last_name || '—')],
+        ['Role',       a.role === 'super_admin' ? 'Super Admin' : 'Admin'],
+        ['Status',     escapeHtml((a.status || 'active').charAt(0).toUpperCase() + (a.status || 'active').slice(1))],
+        ...(a.is_owner ? [['Owner account', 'Yes — protected']] : []),
+        ['Last active', escapeHtml(lastActive)],
+        ['Added',      escapeHtml(added)],
+        ['Admin ID',   `<span class="detail-val mono">${escapeHtml(a.id)}</span>`]
+    ];
+    document.getElementById('pDetails').innerHTML = rows.map(([k, v]) =>
+        `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`).join('');
+
+    document.getElementById('pActivity').innerHTML = '<div class="activity-empty">Loading…</div>';
+    openModal('profileModal');
+    lucide.createIcons();
+    loadAdminActivity(id);
+}
+
+// Turns a raw "module.verb" action + its details JSON into a plain sentence.
+// Same phrasing as the Audit Logs page. Returns { verb, target }.
+function describeAction(r) {
+    const a = r.action || '';
+    const d = r.details || {};
+    const capWord = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+    const roleTo   = (d.new_role   || (d.new && d.new.role))   ? ` to ${d.new_role   || d.new.role}`   : '';
+    const statusTo = (d.new_status || (d.new && d.new.status)) ? ` to ${d.new_status || d.new.status}` : '';
+    const p = d.provider || (d.new && d.new.provider) || (d.old && d.old.provider);
+    const prov = !p ? 'GCash' : (p.toLowerCase() === 'gcash' ? 'GCash' : capWord(p));
+
+    const map = {
+        'user.approve':          { verb: 'Approved user',             target: d.name || d.email },
+        'user.unverify':         { verb: 'Removed verification from', target: d.name || d.email },
+        'admin.create':          { verb: 'Created admin account',     target: d.email },
+        'admin.delete':          { verb: 'Deleted admin account',     target: d.email },
+        'admin.role_change':     { verb: `Changed role${roleTo} for`,     target: d.email },
+        'admin.status_change':   { verb: `Changed status${statusTo} for`, target: d.email },
+        'subscription.approve':  { verb: `Approved a ${d.plan || 'premium'} subscription` },
+        'subscription.reject':   { verb: `Rejected a ${d.plan || 'premium'} subscription` },
+        'subscription.update':   { verb: 'Updated a subscription' },
+        'listing.enable':        { verb: 'Enabled a listing' },
+        'listing.disable':       { verb: 'Disabled a listing' },
+        'listing.delete':        { verb: 'Deleted a listing' },
+        'announcement.create':   { verb: 'Posted an announcement' },
+        'announcement.update':   { verb: 'Edited an announcement' },
+        'announcement.delete':   { verb: 'Deleted an announcement' },
+        'pricing.update':        { verb: 'Updated plan pricing' },
+        'settings.update':       { verb: 'Updated settings', target: d.key ? d.key.replace(/_/g, ' ') : null },
+        'payment_method.create': { verb: `Added a ${prov} payment method` },
+        'payment_method.update': { verb: `Updated a ${prov} payment method` },
+        'payment_method.delete': { verb: `Removed a ${prov} payment method` },
+        'report.review':         { verb: 'Reviewed a report' },
+        'report.dismiss':        { verb: 'Dismissed a report' },
+        'conversation.resolve':  { verb: 'Resolved the conversation with', target: d.name || d.email },
+        'conversation.reopen':   { verb: 'Reopened the conversation with', target: d.name || d.email }
+    };
+    if (map[a]) return map[a];
+
+    // Generic fallback: "module.verb_word" → "Verb word module".
+    const [mod, verb] = a.split('.');
+    return { verb: capWord(((verb || 'updated') + ' ' + (mod || 'record')).replace(/_/g, ' ')) };
+}
+
+async function loadAdminActivity(id) {
+    const wrap = document.getElementById('pActivity');
+    const { data, error } = await supabaseClient
+        .from('audit_logs')
+        .select('action, details, created_at')
+        .eq('admin_id', id)
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+    if (error) {
+        wrap.innerHTML = `<div class="activity-empty">Couldn't load activity: ${escapeHtml(error.message)}</div>`;
+        return;
+    }
+    if (!data || data.length === 0) {
+        wrap.innerHTML = '<div class="activity-empty">No logged actions yet.</div>';
+        return;
+    }
+    wrap.innerHTML = data.map(log => {
+        const when = new Date(log.created_at).toLocaleString('en-PH', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+        const { verb, target } = describeAction(log);
+        const targetHtml = target ? ` <strong>${escapeHtml(String(target))}</strong>` : '';
+        return `<div class="activity-item">
+            <div class="activity-action">${escapeHtml(verb)}${targetHtml}</div>
+            <div class="activity-when">${escapeHtml(when)}</div>
+        </div>`;
+    }).join('');
 }
 
 async function createAdmin() {
