@@ -423,6 +423,34 @@
         }
         .detail-item-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
         .detail-item-value { font-size: 0.85rem; font-weight: 600; }
+        /* ── LIVENESS CHECK (4 sign-up selfies) ── */
+        .liveness-head { display: flex; align-items: center; gap: 12px; }
+        .liveness-status {
+            margin-left: auto; flex-shrink: 0;
+            font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            padding: 3px 8px; border-radius: 999px;
+            background: rgba(251,184,36,0.12); border: 1px solid rgba(251,184,36,0.25); color: var(--warning);
+        }
+        .liveness-status.ok  { background: rgba(126,255,197,0.1); border-color: rgba(126,255,197,0.25); color: var(--mint-dim); }
+        .liveness-status.bad { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.25); color: var(--danger); }
+        .liveness-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+        .pose-card {
+            padding: 0; border: 1px solid var(--border); border-radius: 9px;
+            background: var(--surface); overflow: hidden; cursor: pointer;
+            font-family: inherit; text-align: center; transition: all 0.15s; display: block; width: 100%;
+        }
+        .pose-card:hover { border-color: var(--border-hover); transform: translateY(-1px); }
+        .pose-card img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; background: #000; }
+        .pose-card .pose-label {
+            font-size: 0.6rem; font-weight: 600; color: var(--muted);
+            padding: 5px 2px; letter-spacing: 0.04em; text-transform: uppercase;
+        }
+        .pose-card.missing { cursor: default; border-style: dashed; background: transparent; }
+        .pose-card.missing:hover { border-color: var(--border); transform: none; }
+        .pose-card.missing .pose-empty { aspect-ratio: 3 / 4; display: flex; align-items: center; justify-content: center; }
+        .pose-card.missing .pose-empty svg { width: 15px; height: 15px; color: var(--muted); opacity: 0.5; }
+        .liveness-remarks { font-size: 0.68rem; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+
         .messenger-box { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .messenger-link {
             display: inline-flex; align-items: center; gap: 6px;
@@ -737,6 +765,39 @@ let pendingUserId = null;
 function dbStatusToUi(s) { return s === 'approved' ? 'active' : s; }
 function uiStatusToDb(s) { return s === 'active' ? 'approved' : s; }
 
+// ─── LIVENESS CHECK (sign-up selfies) ───
+// The mobile sign-up runs a 4-pose liveness check (center / right / left /
+// down); each pose is uploaded to Cloudinary and a database trigger records the
+// URLs in public.user_liveness_verification, one row per user. Same block as
+// the User Approvals page, shown here so an admin can re-check the faces of an
+// account that was already approved.
+let livenessByUser = new Map();
+
+const LIVENESS_POSES = [
+    { key: 'center_image_url', label: 'Center', hint: 'Looking straight at the camera' },
+    { key: 'right_image_url',  label: 'Right',  hint: 'Head turned to their right' },
+    { key: 'left_image_url',   label: 'Left',   hint: 'Head turned to their left' },
+    { key: 'down_image_url',   label: 'Down',   hint: 'Head tilted down' }
+];
+
+// Supplementary evidence only: a failure here (table not migrated yet, RLS
+// policy missing) is logged and the profile simply reports no liveness record,
+// never blocking the user list.
+async function loadLiveness() {
+    livenessByUser = new Map();
+
+    const { data, error } = await supabaseClient
+        .from('user_liveness_verification')
+        .select('user_id, center_image_url, right_image_url, left_image_url, down_image_url, verification_status, remarks, created_at');
+
+    if (error) {
+        console.error('LOAD LIVENESS ERROR:', error);
+        return;
+    }
+
+    (data || []).forEach(row => livenessByUser.set(String(row.user_id), row));
+}
+
 async function loadUsers() {
     // Plans come from the subscriptions table (what the mobile app uses), not
     // the stale users.plan column: a user's plan = their approved subscription,
@@ -754,7 +815,8 @@ async function loadUsers() {
             'user_id, plan, billing_cycle',
             'user_id, plan',
             q => q.eq('status', 'approved')
-        )
+        ),
+        loadLiveness()
     ]);
 
     const planByUser = {};
@@ -1039,6 +1101,7 @@ function viewUser(id) {
                 ? `<button class="modal-btn modal-btn-ghost" style="margin-left:auto;" onclick="viewUserId('${u.id}')"><i data-lucide="eye"></i> View</button>`
                 : ''}
         </div>
+        ${livenessBlockHtml(u.id)}
         <div class="modal-actions">
             <button class="modal-btn modal-btn-ghost" onclick="closeModal('viewModal')"><i data-lucide="x"></i> Close</button>
             ${u.status !== 'restricted' ? `<button class="modal-btn modal-btn-warn" onclick="closeModal('viewModal');triggerAction('${u.id}','restrict')"><i data-lucide="shield-alert"></i> Restrict</button>` : `<button class="modal-btn modal-btn-success" onclick="closeModal('viewModal');triggerAction('${u.id}','activate')"><i data-lucide="shield-check"></i> Lift Restriction</button>`}
@@ -1059,6 +1122,83 @@ function viewUserId(id) {
         url: u.validIdUrl,
         title: u.idType || 'Valid ID',
         subtitle: `Government-issued ID submitted by ${u.name}.`
+    });
+}
+
+// Only render remote images we can vouch for the shape of. The URLs come from
+// the database (written by the mobile app's Cloudinary upload), so anything
+// that is not a plain http(s) link is treated as "missing" rather than
+// interpolated into an <img src>.
+function safeImageUrl(url) {
+    return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : null;
+}
+
+function livenessBlockHtml(userId) {
+    const row = livenessByUser.get(String(userId));
+
+    if (!row) {
+        return `
+        <div class="detail-item" style="display:flex;align-items:center;gap:12px;margin-top:12px;">
+            <div style="width:34px;height:34px;border-radius:8px;background:rgba(192,132,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i data-lucide="scan-face" style="width:16px;height:16px;color:#C084FC;"></i>
+            </div>
+            <div>
+                <div class="detail-item-label">Liveness Check</div>
+                <div class="detail-item-value">4 sign-up selfies · Not submitted</div>
+            </div>
+        </div>`;
+    }
+
+    const poses = LIVENESS_POSES.map(pose => ({ ...pose, url: safeImageUrl(row[pose.key]) }));
+    const captured = poses.filter(p => p.url).length;
+
+    const status = String(row.verification_status || 'pending').toLowerCase();
+    const statusClass = status === 'approved' || status === 'verified' ? 'ok'
+                      : status === 'rejected' || status === 'failed'   ? 'bad'
+                      : '';
+
+    const cards = poses.map(pose => pose.url
+        ? `<button type="button" class="pose-card" onclick="viewUserPose('${escapeAttr(userId)}','${pose.key}')"
+                   title="View ${escapeAttr(pose.label)} pose">
+               <img src="${escapeHtml(pose.url)}" alt="${escapeAttr(pose.label)} pose selfie" loading="lazy">
+               <div class="pose-label">${escapeHtml(pose.label)}</div>
+           </button>`
+        : `<div class="pose-card missing" title="${escapeAttr(pose.label)} pose was not captured">
+               <div class="pose-empty"><i data-lucide="image-off"></i></div>
+               <div class="pose-label">${escapeHtml(pose.label)}</div>
+           </div>`
+    ).join('');
+
+    return `
+        <div class="detail-item" style="margin-top:12px;">
+            <div class="liveness-head">
+                <div style="width:34px;height:34px;border-radius:8px;background:rgba(192,132,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i data-lucide="scan-face" style="width:16px;height:16px;color:#C084FC;"></i>
+                </div>
+                <div>
+                    <div class="detail-item-label">Liveness Check</div>
+                    <div class="detail-item-value">${captured} of ${LIVENESS_POSES.length} selfies captured at signup</div>
+                </div>
+                <span class="liveness-status ${statusClass}">${escapeHtml(status)}</span>
+            </div>
+            <div class="liveness-grid">${cards}</div>
+            ${row.remarks ? `<div class="liveness-remarks">${escapeHtml(row.remarks)}</div>` : ''}
+        </div>`;
+}
+
+// Opens one pose in the shared lightbox. The URL is looked up here instead of
+// being baked into the onclick attribute.
+function viewUserPose(userId, poseKey) {
+    const row  = livenessByUser.get(String(userId));
+    const pose = LIVENESS_POSES.find(p => p.key === poseKey);
+    const url  = row && pose ? safeImageUrl(row[poseKey]) : null;
+    if (!url) return;
+
+    const u = users.find(x => x.id === String(userId));
+    openImageLightbox({
+        url,
+        title: `Liveness Check · ${pose.label}`,
+        subtitle: `${pose.hint} — captured at signup${u ? ' by ' + u.name : ''}.`
     });
 }
 
