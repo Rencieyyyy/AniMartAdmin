@@ -1,4 +1,3 @@
-
 let toastTimer;
 
 function showToast(message, isError = false){
@@ -78,8 +77,7 @@ const PROFILE_FIELDS = [
     "lastName",
     "email",
     "phone",
-    "location",
-    "myMessengerLink"
+    "location"
 ];
 
 let originalProfile = {};
@@ -287,22 +285,6 @@ async function loadAdminProfile() {
         data.location;
 
 
-
-
-    // MESSENGER
-
-
-    document.getElementById("myMessengerLink").value =
-
-        data.messenger;
-
-
-
-    document.getElementById("messengerPreviewBtn").href =
-
-        data.messenger;
-
-
     // Snapshot loaded values + disable Save until something changes.
     initProfileChangeTracking();
 
@@ -353,11 +335,7 @@ async function savePersonalInfo(){
 
 
         location:
-        document.getElementById("location").value,
-
-
-        messenger:
-        document.getElementById("myMessengerLink").value
+        document.getElementById("location").value
 
 
     };
