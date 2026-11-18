@@ -1,33 +1,8 @@
--- ============================================================================
--- AniMart Admin — owner-protected super admin
---
--- Adds public.admins.is_owner. An owner is a super admin that NO other super
--- admin can touch through the panel: they cannot be demoted, restricted,
--- blocked or deleted, and the owner flag itself cannot be granted or revoked
--- from the client. Only a direct database / migration change (a trusted
--- "server context" — no admin JWT) can alter an owner.
---
--- This is a hard rule in the database, so it holds even if the UI is bypassed
--- (devtools / direct PostgREST). The Edge Function `admin-users` re-checks it
--- for delete, because that path runs as the service role (a server context the
--- trigger below deliberately trusts).
---
--- Must NOT rename/drop public.admins or public.protect_admins_row() — the
--- trigger function is redefined in place with the same signature.
--- ============================================================================
-
 -- ── 1) is_owner column ───────────────────────────────────────────────────────
 alter table public.admins
     add column if not exists is_owner boolean not null default false;
 
 -- ── 2) guard trigger — add owner protection ──────────────────────────────────
--- Redefines protect_admins_row() from 20260709003000, adding three owner rules
--- on top of the existing self / last-super-admin guards:
---   • an owner cannot be demoted, restricted, blocked or deleted from the panel;
---   • the is_owner flag can only be changed in a server context (so a super
---     admin can't strip the flag first and then demote the owner);
---   • server contexts (migrations / the admin-users Edge Function) are still
---     trusted — the Edge Function separately refuses to delete an owner.
 create or replace function public.protect_admins_row()
 returns trigger
 language plpgsql
@@ -57,8 +32,6 @@ begin
 
     -- UPDATE
 
-    -- Owner flag itself: only a trusted server context may grant or revoke it,
-    -- so no super admin can un-own the owner (via the client) and then demote.
     if new.is_owner is distinct from old.is_owner and not v_is_server then
         raise exception 'Owner status can only be changed directly in the database'
             using errcode = '42501';
@@ -103,9 +76,6 @@ end
 $fn$;
 
 -- ── 3) designate the owner ───────────────────────────────────────────────────
--- The owner is a super admin. Ensure the account is a super admin and active,
--- then mark it as owner. To move ownership later, run this update for the new
--- email (and set is_owner = false on the old one) directly in the database.
 update public.admins
     set role = 'super_admin',
         status = 'active',
