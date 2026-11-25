@@ -4,10 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | AniMart</title>
+    <link rel="icon" type="image/png" href="../assets/animart_logoV2.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="escape.js"></script>
+    <script src="logout-modal.js"></script>
+    <script src="tier-stats.js"></script>
 
     <style>
         :root {
@@ -138,6 +144,7 @@
 
       
 
+        .nav-link.active { background: var(--mint); color: var(--dark); font-weight: 700; }
         .nav-link.active svg { color: var(--dark); }
 
         .nav-link.logout { color: var(--danger); margin-top: auto; }
@@ -177,7 +184,7 @@
 
         .page-header p {
             font-size: 0.875rem;
-            color:black;
+            color: var(--muted);
             margin-top: 3px;
         }
 
@@ -441,6 +448,7 @@
         .stat-card:nth-child(2) { animation-delay: 0.10s; }
         .stat-card:nth-child(3) { animation-delay: 0.15s; }
         .stat-card:nth-child(4) { animation-delay: 0.20s; }
+        .stat-card:nth-child(5) { animation-delay: 0.25s; }
         .livestock-card:nth-child(1) { animation-delay: 0.10s; }
         .livestock-card:nth-child(2) { animation-delay: 0.15s; }
         .livestock-card:nth-child(3) { animation-delay: 0.20s; }
@@ -451,27 +459,59 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
+        .queue-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .tier-grid  { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
         /* ─── RESPONSIVE ─── */
         @media (max-width: 1200px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .queue-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .tier-grid  { grid-template-columns: repeat(3, minmax(0, 1fr)); }
             .charts-row { grid-template-columns: 1fr; }
             .livestock-grid { grid-template-columns: repeat(2, 1fr); }
             .bottom-row { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 900px) {
-            :root { --sidebar-w: 64px; }
-            .sidebar-brand, .nav-link span, .nav-label { display: none; }
-            .nav-link { justify-content: center; padding: 10px; }
             .main { padding: 24px 20px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .queue-grid, .tier-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
 
         @media (max-width: 600px) {
             .stats-grid { grid-template-columns: 1fr; }
             .livestock-grid { grid-template-columns: 1fr 1fr; }
         }
+
+        /* APPROVAL CONFIRMATION MODAL */
+        .confirm-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px);
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+            opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; z-index: 1000;
+        }
+        .confirm-overlay.show { opacity: 1; visibility: visible; }
+        .confirm-box {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+            padding: 26px 24px 22px; max-width: 380px; width: 100%; text-align: center;
+            transform: translateY(12px) scale(0.98); transition: transform 0.2s;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+        }
+        .confirm-overlay.show .confirm-box { transform: translateY(0) scale(1); }
+        .confirm-box h3 { font-size: 1.05rem; font-weight: 800; color: var(--text); margin-bottom: 8px; letter-spacing: -0.02em; }
+        .confirm-box p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin-bottom: 22px; }
+        .confirm-actions { display: flex; gap: 10px; }
+        .confirm-actions button {
+            flex: 1; padding: 9px 16px; border-radius: 9px; font-size: 0.82rem; font-weight: 700;
+            font-family: 'Sora', sans-serif; cursor: pointer; border: 1px solid transparent; transition: all 0.15s;
+        }
+        .cb-cancel { background: transparent; color: var(--muted); border-color: var(--border); }
+        .cb-cancel:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+        .cb-approve { background: rgba(126,255,197,0.15); color: var(--mint-dim); border-color: rgba(126,255,197,0.45); }
+        .cb-approve:hover { background: rgba(126,255,197,0.25); }
+        .cb-reject { background: rgba(255,107,107,0.15); color: var(--danger); border-color: rgba(255,107,107,0.45); }
+        .cb-reject:hover { background: rgba(255,107,107,0.25); }
     </style>
+    <link rel="stylesheet" href="admin-shell.css">
 </head>
 <body>
 
@@ -490,12 +530,16 @@
     <div class="nav-label">Main</div>
     <a href="dashboard.html" class="nav-link" data-icon="layout-dashboard"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
     <a href="sellers.html" class="nav-link" data-icon="store"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+    <a href="listings.html" class="nav-link"><i data-lucide="package"></i><span>Listings</span></a>
+    <a href="transactions.html" class="nav-link"><i data-lucide="receipt"></i><span>Transactions</span></a>
     <a href="premium.html" class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
     
     <div class="nav-label">Admin</div>
     <a href="announcements.html" class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
     <a href="user.html" class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
      <a href="customer-service.html" class="nav-link "><i data-lucide="message-circle"></i><span>Customer Service</span></a>
+    <a href="reviews.html" class="nav-link"><i data-lucide="star"></i><span>Reviews</span></a>
+    <a href="reports.html" class="nav-link"><i data-lucide="flag"></i><span>Reports</span><span class="reports-badge" data-reports-badge hidden>0</span></a>
     <div class="nav-bottom">
         <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
         <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
@@ -514,48 +558,82 @@
             <div class="date-badge" id="dateBadge">—</div>
         </div>
 
-        <!-- STATS -->
+        <!-- STATS (all live from Supabase — see the loaders at the bottom) -->
         <div class="stats-grid">
             <div class="stat-card" style="--accent-bg: rgba(2,132,199,0.07);">
                 <div class="stat-icon" style="background:rgba(2,132,199,0.12); color:#38BDF8;">
                     <i data-lucide="store"></i>
                 </div>
                 <div class="stat-label">Total Sellers</div>
-                <div class="stat-value" data-count="1284">0</div>
-                <div class="stat-trend"><i data-lucide="trending-up"></i> +12% this month</div>
+                <div class="stat-value" id="stat-sellers">—</div>
+                <div class="stat-trend" id="stat-sellers-note"><i data-lucide="trending-up"></i> —</div>
             </div>
             <div class="stat-card" style="--accent-bg: rgba(126,255,197,0.05);">
                 <div class="stat-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);">
                     <i data-lucide="users"></i>
                 </div>
                 <div class="stat-label">Total Buyers</div>
-                <div class="stat-value" data-count="8432">0</div>
-                <div class="stat-trend"><i data-lucide="trending-up"></i> +8% this month</div>
+                <div class="stat-value" id="stat-buyers">—</div>
+                <div class="stat-trend" id="stat-buyers-note"><i data-lucide="trending-up"></i> —</div>
             </div>
-            <div class="stat-card" style="--accent-bg: rgba(251,191,36,0.06);">
-                <div class="stat-icon" style="background:rgba(251,191,36,0.12); color:#FBB824;">
-                    <i data-lucide="banknote"></i>
+            <div class="stat-card" style="--accent-bg: rgba(255,209,102,0.06);">
+                <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:#FFD166;">
+                    <i data-lucide="wallet"></i>
                 </div>
-                <div class="stat-label">Commission Revenue</div>
-                <div class="stat-value">₱42,500</div>
-                <div class="stat-trend"><i data-lucide="trending-up"></i> +21% this month</div>
+                <div class="stat-label">Subscription Revenue</div>
+                <div class="stat-value" id="stat-sub-revenue">₱0</div>
+                <div class="stat-trend" id="stat-sub-revenue-note" style="color:#FFD166;"><i data-lucide="coins"></i> — from active plans</div>
             </div>
             <div class="stat-card" style="--accent-bg: rgba(234,88,12,0.06);">
                 <div class="stat-icon" style="background:rgba(234,88,12,0.12); color:#FB923C;">
                     <i data-lucide="beef"></i>
                 </div>
                 <div class="stat-label">Active Livestock</div>
-                <div class="stat-value" data-count="156">0</div>
-                <div class="stat-trend"><i data-lucide="activity"></i> Live now</div>
+                <div class="stat-value" id="stat-livestock">—</div>
+                <div class="stat-trend" id="stat-livestock-note"><i data-lucide="activity"></i> —</div>
             </div>
         </div>
+
+        <!-- NEEDS ATTENTION — the admin's work queues, each links to its page -->
+        <div class="section-title">Needs Attention</div>
+        <div class="stats-grid queue-grid">
+            <a href="premium.html" class="stat-card" style="--accent-bg: rgba(255,209,102,0.06); display:block; text-decoration:none; color:inherit;">
+                <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:#FFD166;">
+                    <i data-lucide="crown"></i>
+                </div>
+                <div class="stat-label">Pending Premium Requests</div>
+                <div class="stat-value" id="queue-premium">—</div>
+                <div class="stat-trend" style="color:#FFD166;"><i data-lucide="arrow-right"></i> Review payments</div>
+            </a>
+            <a href="reports.html" class="stat-card" style="--accent-bg: rgba(255,107,107,0.06); display:block; text-decoration:none; color:inherit;">
+                <div class="stat-icon" style="background:rgba(255,107,107,0.12); color:var(--danger);">
+                    <i data-lucide="flag"></i>
+                </div>
+                <div class="stat-label">Open Reports</div>
+                <div class="stat-value" id="queue-reports">—</div>
+                <div class="stat-trend" style="color:var(--danger);"><i data-lucide="arrow-right"></i> Moderate</div>
+            </a>
+            <a href="customer-service.html" class="stat-card" style="--accent-bg: rgba(56,189,248,0.06); display:block; text-decoration:none; color:inherit;">
+                <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:#38BDF8;">
+                    <i data-lucide="message-circle"></i>
+                </div>
+                <div class="stat-label">Unread Support Messages</div>
+                <div class="stat-value" id="queue-support">—</div>
+                <div class="stat-trend" style="color:#38BDF8;"><i data-lucide="arrow-right"></i> Reply</div>
+            </a>
+        </div>
+
+        <!-- SELLERS BY PLAN — cards rendered by loadTierStats() from TIER_META
+             (tier-stats.js): the four Animart plans + sellers with no plan. -->
+        <div class="section-title">Sellers by Plan</div>
+        <div class="stats-grid tier-grid" id="tier-cards"></div>
 
         <!-- CHARTS -->
         <div class="charts-row">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Sales &amp; Commission Trend</div>
-                    <span class="card-badge">JAN – JUN 2025</span>
+                    <div class="card-title">Subscription Revenue Trend</div>
+                    <span class="card-badge" id="trend-range">—</span>
                 </div>
                 <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
             </div>
@@ -568,46 +646,23 @@
             </div>
         </div>
 
-        <!-- LIVESTOCK -->
-        <div class="section-title">Livestock Categories</div>
-        <div class="livestock-grid">
-            <a href="#" class="livestock-card">
+        <!-- LISTING CATEGORIES (built from the listings table by loadListingStats) -->
+        <div class="section-title">Listing Categories</div>
+        <div class="livestock-grid" id="categoryGrid">
+            <div class="livestock-card" style="cursor:default;">
                 <div class="livestock-info">
-                    <div class="livestock-name">Cattle</div>
-                    <div class="livestock-count">42 active listings</div>
+                    <div class="livestock-name" style="color:var(--muted);">Loading…</div>
                 </div>
-                <div class="livestock-dot"></div>
-            </a>
-            <a href="#" class="livestock-card">
-                <div class="livestock-info">
-                    <div class="livestock-name">Swine</div>
-                    <div class="livestock-count">89 active listings</div>
-                </div>
-                <div class="livestock-dot"></div>
-            </a>
-            <a href="#" class="livestock-card">
-                <div class="livestock-info">
-                    <div class="livestock-name">Poultry</div>
-                    <div class="livestock-count">12 active listings</div>
-                </div>
-                <div class="livestock-dot"></div>
-            </a>
-            <a href="#" class="livestock-card">
-                <div class="livestock-info">
-                    <div class="livestock-name">Goat / Sheep</div>
-                    <div class="livestock-count">13 active listings</div>
-                </div>
-                <div class="livestock-dot"></div>
-            </a>
+            </div>
         </div>
 
         <!-- BOTTOM ROW -->
         <div class="bottom-row">
-            <!-- Recent Transactions -->
+            <!-- Recent Transactions (live from the transactions table) -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">Recent Transactions</div>
-                    <a href="#" style="font-size:0.75rem; color:var(--mint); text-decoration:none; font-weight:600;">View all →</a>
+                    <a href="transactions.html" style="font-size:0.75rem; color:var(--mint); text-decoration:none; font-weight:600;">View all →</a>
                 </div>
                 <div class="table-wrap">
                     <table>
@@ -619,37 +674,8 @@
                                 <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="avatar">JD</span>Juan D.</td>
-                                <td>Black Angus Cattle</td>
-                                <td style="font-family:'DM Mono',monospace;">₱18,500</td>
-                                <td><span class="badge badge-green">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="avatar">ML</span>Maria L.</td>
-                                <td>Duroc Swine (×6)</td>
-                                <td style="font-family:'DM Mono',monospace;">₱9,200</td>
-                                <td><span class="badge badge-yellow">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="avatar">RC</span>Rico C.</td>
-                                <td>Broiler Chicken (×30)</td>
-                                <td style="font-family:'DM Mono',monospace;">₱4,800</td>
-                                <td><span class="badge badge-green">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="avatar">AS</span>Anna S.</td>
-                                <td>Nubian Goat (×2)</td>
-                                <td style="font-family:'DM Mono',monospace;">₱7,100</td>
-                                <td><span class="badge badge-red">Cancelled</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="avatar">BM</span>Ben M.</td>
-                                <td>Saanen Sheep</td>
-                                <td style="font-family:'DM Mono',monospace;">₱3,300</td>
-                                <td><span class="badge badge-yellow">Pending</span></td>
-                            </tr>
+                        <tbody id="txnBody">
+                            <tr><td colspan="4" style="color:var(--muted);text-align:center;padding:18px;">Loading…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -659,7 +685,7 @@
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">Pending Approvals</div>
-                    <span class="card-badge">5 NEW</span>
+                    <span class="card-badge" id="approvals-badge" style="display:none;">0 NEW</span>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
                     <div id="approvals-list"></div>
@@ -671,13 +697,408 @@
 </div>
 
 <script>
-const approvals = [
-    { name: "Cardo Dalisay", role: "Seller", location: "Batangas" },
-    { name: "Nena Reyes", role: "Seller", location: "Laguna" },
-    { name: "Ferdie Santos", role: "Buyer", location: "Quezon" },
-    { name: "Liza Manalo", role: "Seller", location: "Cavite" },
-    { name: "Andres Cruz", role: "Buyer", location: "Rizal" }
-];
+// ── PENDING APPROVALS (live from the users table) ──────────────────────────
+async function loadPendingApprovals() {
+    const list  = document.getElementById('approvals-list');
+    const badge = document.getElementById('approvals-badge');
+    if (!list) return;
+
+    // Accounts created on the Manage Admins page also get a `users` row (same
+    // auth id + email) but never went through mobile signup — exclude them,
+    // same id+email keying as User Approvals (user.html loadUsers).
+    const [{ data, error }, adminsRes] = await Promise.all([
+        supabaseClient
+            .from('users')
+            .select('id, name, email, address, status, created_at, seller_profiles(shop_name)')
+            .order('created_at', { ascending: false }),
+        supabaseClient.from('admins').select('id, email')
+    ]);
+
+    if (error) {
+        console.error('LOAD PENDING APPROVALS ERROR:', error);
+        list.innerHTML = `<div style="padding:14px;color:var(--danger);font-size:0.8rem;">Failed to load: ${error.message}</div>`;
+        if (badge) badge.style.display = 'none';
+        return;
+    }
+
+    if (adminsRes.error) console.error('LOAD ADMIN IDS ERROR:', adminsRes.error);
+    const adminKeys = new Set(
+        (adminsRes.data || []).map(a => String(a.id) + '|' + String(a.email || '').toLowerCase())
+    );
+    const isAdminAccount = u =>
+        adminKeys.has(String(u.id) + '|' + String(u.email || '').toLowerCase());
+
+    // Anything not approved/rejected counts as pending (mirrors User Approvals).
+    // Only brand-new accounts awaiting review — never approved/rejected/restricted/blocked
+    // (restricted/blocked are managed on the Sellers & Buyers page).
+    const HANDLED = ['approved', 'rejected', 'restricted', 'blocked'];
+    const pending = (data || []).filter(u => !HANDLED.includes(u.status) && !isAdminAccount(u));
+    pendingApprovalsData = pending;   // for the confirmation dialog
+
+    if (badge) {
+        badge.textContent = pending.length + ' NEW';
+        badge.style.display = pending.length ? '' : 'none';
+    }
+
+    if (pending.length === 0) {
+        list.innerHTML = `<div style="padding:16px;color:var(--muted);font-size:0.8rem;text-align:center;">No pending approvals.</div>`;
+        return;
+    }
+
+    list.innerHTML = '';
+    pending.forEach(u => {
+        const isSeller = Array.isArray(u.seller_profiles) && u.seller_profiles.length > 0;
+        const role     = isSeller ? 'Seller' : 'Buyer';
+        const location = u.address || '—';
+        const name     = u.name || '(no name)';
+        const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+        const div = document.createElement('div');
+        div.id = 'approval-' + u.id;
+        div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);';
+        div.innerHTML = `
+            <span class="avatar" style="flex-shrink:0;">${escapeHtml(initials)}</span>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:0.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(name)}</div>
+                <div style="font-size:0.7rem;color:var(--muted);">${escapeHtml(role)} · ${escapeHtml(location)}</div>
+            </div>
+            <div class="approval-actions" style="display:flex;gap:6px;flex-shrink:0;">
+                <button title="Approve" onclick="confirmApproval('${u.id}','approved')" style="background:rgba(126,255,197,0.12);color:var(--mint-dim);border:1px solid rgba(126,255,197,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✓</button>
+                <button title="Reject" onclick="confirmApproval('${u.id}','rejected')" style="background:rgba(255,107,107,0.1);color:var(--danger);border:1px solid rgba(255,107,107,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✕</button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+// ── APPROVAL CONFIRMATION ──
+let pendingApprovalsData = [];
+let pendingApprovalId = null;
+let pendingApprovalDecision = null;
+
+function confirmApproval(id, decision) {
+    pendingApprovalId = id;
+    pendingApprovalDecision = decision;
+
+    const u = pendingApprovalsData.find(x => String(x.id) === String(id));
+    const name = (u && u.name) ? u.name : 'this account';
+    const isApprove = decision === 'approved';
+
+    document.getElementById('ac-title').textContent = isApprove ? 'Approve this account?' : 'Reject this account?';
+    document.getElementById('ac-text').textContent  = isApprove
+        ? `${name} will be approved and marked as verified.`
+        : `${name}'s registration will be rejected.`;
+
+    const btn = document.getElementById('ac-confirm');
+    btn.className = isApprove ? 'cb-approve' : 'cb-reject';
+    btn.textContent = isApprove ? 'Yes, Approve' : 'Yes, Reject';
+
+    document.getElementById('approvalConfirm').classList.add('show');
+}
+
+function closeApprovalConfirm() {
+    document.getElementById('approvalConfirm').classList.remove('show');
+}
+
+function executeApprovalDecision() {
+    closeApprovalConfirm();
+    if (pendingApprovalId && pendingApprovalDecision) {
+        approvalDecision(pendingApprovalId, pendingApprovalDecision);
+    }
+    pendingApprovalId = null;
+    pendingApprovalDecision = null;
+}
+
+// Approve/reject straight from the dashboard. Persists to the users table
+// (same fields as User Approvals), shows an Approved/Rejected indicator on the
+// row, then removes it and refreshes the "N NEW" badge.
+async function approvalDecision(id, decision) {
+    const patch = decision === 'approved'
+        ? { status: 'approved', is_verified: true }
+        : { status: 'rejected', is_verified: false };
+
+    const { data, error } = await supabaseClient
+        .from('users')
+        .update(patch)
+        .eq('id', id)
+        .select();
+
+    const row = document.getElementById('approval-' + id);
+    const actions = row ? row.querySelector('.approval-actions') : null;
+
+    if (error || !data || data.length === 0) {
+        console.error('APPROVAL DECISION ERROR:', error);
+        if (actions) {
+            actions.innerHTML = `<span style="font-size:0.68rem;color:var(--danger);font-weight:700;">Failed (check permissions)</span>`;
+        }
+        return;
+    }
+
+    // Inline indication of the result before the row clears.
+    if (actions) {
+        actions.innerHTML = decision === 'approved'
+            ? `<span style="font-size:0.68rem;font-weight:700;color:var(--mint-dim);background:rgba(126,255,197,0.12);border:1px solid rgba(126,255,197,0.25);border-radius:20px;padding:3px 10px;">✓ Approved</span>`
+            : `<span style="font-size:0.68rem;font-weight:700;color:var(--danger);background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.25);border-radius:20px;padding:3px 10px;">✕ Rejected</span>`;
+    }
+
+    // Fade the row out, then reload so the badge/count stay accurate.
+    setTimeout(() => {
+        if (row) {
+            row.style.transition = 'opacity 0.4s ease';
+            row.style.opacity = '0';
+        }
+        setTimeout(loadPendingApprovals, 420);
+    }, 1000);
+}
+
+// ── SELLERS BY PLAN ────────────────────────────────────────────────────────
+// One card per plan (Animart Basic / Essential / Pro / Elite) plus sellers
+// with no active plan, using the shared helper in tier-stats.js (same numbers
+// the Premium Requests page shows).
+function renderTierCards(t) {
+    const total = t.totalSellers || 0;
+    document.getElementById('tier-cards').innerHTML = TIER_META.map(meta => {
+        const count = t[meta.key] || 0;
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        return `
+            <div class="stat-card" style="--accent-bg: rgba(${meta.rgb},0.06);">
+                <div class="stat-icon" style="background:rgba(${meta.rgb},0.12); color:${meta.color};">
+                    <i data-lucide="${meta.icon}"></i>
+                </div>
+                <div class="stat-label">${meta.label}</div>
+                <div class="stat-value" id="tier-${meta.id}">${count.toLocaleString()}</div>
+                <div class="stat-trend" id="tier-${meta.id}-pct" style="color:${meta.color};"><i data-lucide="users"></i> ${total > 0 ? pct + '%' : '—'} of sellers</div>
+            </div>`;
+    }).join('');
+    lucide.createIcons();
+}
+
+async function loadTierStats() {
+    renderTierCards(emptyTierCounts());   // zeros while loading
+    renderTierCards(await computeSellerTierCounts(supabaseClient));
+}
+
+// ── SUBSCRIPTION REVENUE ───────────────────────────────────────────────────
+// Total revenue collected from mobile-app subscription payments (approved +
+// expired plans), via the shared helper in tier-stats.js — same numbers the
+// Premium Requests page shows.
+async function loadSubscriptionRevenue() {
+    const r = await computeSubscriptionRevenue(supabaseClient);
+    document.getElementById('stat-sub-revenue').textContent = '₱' + r.total.toLocaleString();
+    const note = document.getElementById('stat-sub-revenue-note');
+    // r.active sums each plan's full-cycle price; r.mrr is the per-month
+    // equivalent (weekly × 52/12, yearly ÷ 12) so cycles don't read as monthly rates.
+    if (note) note.innerHTML = `<i data-lucide="coins"></i> ₱${r.active.toLocaleString()} active · ₱${r.mrr.toLocaleString()}/mo recurring`;
+    lucide.createIcons();   // re-render the icon injected into the trend line
+}
+
+// Charts are created empty in DOMContentLoaded and filled by the loaders below,
+// so we keep module-level handles to update their data once queries return.
+let userPieChart = null;
+let revenueChart = null;
+
+// ── USER COUNTS (sellers / buyers cards + doughnut) ────────────────────────
+async function loadUserCounts() {
+    const c = await computeUserCounts(supabaseClient);
+
+    const sellersEl = document.getElementById('stat-sellers');
+    const buyersEl  = document.getElementById('stat-buyers');
+    if (sellersEl) sellersEl.textContent = c.sellers.toLocaleString();
+    if (buyersEl)  buyersEl.textContent  = c.buyers.toLocaleString();
+
+    const sNote = document.getElementById('stat-sellers-note');
+    const bNote = document.getElementById('stat-buyers-note');
+    if (sNote) sNote.innerHTML = `<i data-lucide="users"></i> ${c.total.toLocaleString()} total accounts`;
+    if (bNote) {
+        const pct = c.total > 0 ? Math.round((c.buyers / c.total) * 100) : 0;
+        bNote.innerHTML = `<i data-lucide="users"></i> ${pct}% of accounts`;
+    }
+
+    // Feed the same numbers into the User Distribution doughnut.
+    if (userPieChart) {
+        userPieChart.data.datasets[0].data = [c.sellers, c.buyers];
+        userPieChart.$total = c.sellers + c.buyers;
+        userPieChart.update();
+    }
+
+    lucide.createIcons();
+}
+
+// ── LISTING STATS (active livestock card + category grid) ───────────────────
+async function loadListingStats() {
+    const grid    = document.getElementById('categoryGrid');
+    const countEl = document.getElementById('stat-livestock');
+    const noteEl  = document.getElementById('stat-livestock-note');
+
+    const { data, error } = await supabaseClient
+        .from('listings')
+        .select('category, status');
+
+    if (error) {
+        console.error('LISTING STATS ERROR:', error);
+        if (countEl) countEl.textContent = '—';
+        if (noteEl)  noteEl.innerHTML = `<i data-lucide="alert-triangle"></i> Failed to load`;
+        if (grid)    grid.innerHTML = `<div class="livestock-card" style="cursor:default;"><div class="livestock-info"><div class="livestock-name" style="color:var(--danger);">Could not load listings</div></div></div>`;
+        lucide.createIcons();
+        return;
+    }
+
+    const rows   = data || [];
+    const active = rows.filter(r => r.status === 'active');
+
+    if (countEl) countEl.textContent = active.length.toLocaleString();
+    if (noteEl)  noteEl.innerHTML = `<i data-lucide="activity"></i> ${rows.length.toLocaleString()} total listings`;
+
+    // Active listings grouped by category, most first.
+    const byCat = {};
+    active.forEach(r => {
+        const cat = (r.category && r.category.trim()) || 'Uncategorized';
+        byCat[cat] = (byCat[cat] || 0) + 1;
+    });
+    const cats = Object.keys(byCat).sort((a, b) => byCat[b] - byCat[a]);
+
+    if (grid) {
+        if (cats.length === 0) {
+            grid.innerHTML = `<div class="livestock-card" style="cursor:default;"><div class="livestock-info"><div class="livestock-name" style="color:var(--muted);">No active listings</div></div></div>`;
+        } else {
+            grid.innerHTML = cats.map(cat => `
+                <a href="sellers.html" class="livestock-card">
+                    <div class="livestock-info">
+                        <div class="livestock-name">${escapeHtml(cat)}</div>
+                        <div class="livestock-count">${byCat[cat]} active listing${byCat[cat] === 1 ? '' : 's'}</div>
+                    </div>
+                    <div class="livestock-dot"></div>
+                </a>`).join('');
+        }
+    }
+    lucide.createIcons();
+}
+
+// ── RECENT TRANSACTIONS ─────────────────────────────────────────────────────
+// transactions.seller_id/buyer_id FK to auth.users (not public.users), and
+// listing_id FK to listings, so PostgREST can't embed the seller name directly.
+// We fetch the rows, then resolve seller names and listing titles by id.
+async function loadRecentTransactions() {
+    const body = document.getElementById('txnBody');
+    if (!body) return;
+
+    const { data: txns, error } = await supabaseClient
+        .from('transactions')
+        .select('id, seller_id, listing_id, quantity, agreed_price, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+    if (error) {
+        console.error('RECENT TRANSACTIONS ERROR:', error);
+        body.innerHTML = `<tr><td colspan="4" style="color:var(--danger);text-align:center;padding:18px;">Failed to load: ${escapeHtml(error.message)}</td></tr>`;
+        return;
+    }
+    if (!txns || txns.length === 0) {
+        body.innerHTML = `<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:18px;">No transactions yet.</td></tr>`;
+        return;
+    }
+
+    // Resolve seller names + listing titles in two batched lookups.
+    const sellerIds  = [...new Set(txns.map(t => t.seller_id).filter(Boolean))];
+    const listingIds = [...new Set(txns.map(t => t.listing_id).filter(Boolean))];
+
+    const [sellerRes, listingRes] = await Promise.all([
+        sellerIds.length  ? supabaseClient.from('users').select('id, name').in('id', sellerIds)     : Promise.resolve({ data: [] }),
+        listingIds.length ? supabaseClient.from('listings').select('id, title').in('id', listingIds) : Promise.resolve({ data: [] })
+    ]);
+
+    const nameById  = {};
+    (sellerRes.data  || []).forEach(u => { nameById[u.id]  = u.name; });
+    const titleById = {};
+    (listingRes.data || []).forEach(l => { titleById[l.id] = l.title; });
+
+    body.innerHTML = txns.map(t => {
+        const name    = nameById[t.seller_id] || '(unknown seller)';
+        const initials = name.split(' ').map(n => n[0] || '').join('').slice(0, 2).toUpperCase() || '?';
+        const title   = titleById[t.listing_id] || '(listing removed)';
+        const qty     = t.quantity && t.quantity > 1 ? ` (×${t.quantity})` : '';
+        const amount  = '₱' + (Number(t.agreed_price) || 0).toLocaleString();
+        return `
+            <tr>
+                <td><span class="avatar">${escapeHtml(initials)}</span>${escapeHtml(name)}</td>
+                <td>${escapeHtml(title)}${qty}</td>
+                <td style="font-family:'DM Mono',monospace;">${amount}</td>
+                <td>${txnStatusBadge(t.status)}</td>
+            </tr>`;
+    }).join('');
+}
+
+function txnStatusBadge(status) {
+    const s = String(status || '').toLowerCase();
+    const map = {
+        completed: ['badge-green',  'Completed'],
+        reserved:  ['badge-yellow', 'Reserved'],
+        pending:   ['badge-yellow', 'Pending'],
+        cancelled: ['badge-red',    'Cancelled'],
+        canceled:  ['badge-red',    'Cancelled']
+    };
+    const [cls, label] = map[s] || ['badge-yellow', status || 'Unknown'];
+    return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+}
+
+// ── NEEDS-ATTENTION QUEUES ──────────────────────────────────────────────────
+// Three independent head-only counts feeding the action row. Each is isolated
+// so one failing query (e.g. an RLS gap) doesn't blank the others.
+async function loadQueues() {
+    // Pending premium requests.
+    try {
+        const { count, error } = await supabaseClient
+            .from('subscriptions')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'pending');
+        setQueue('queue-premium', error ? null : count);
+    } catch (e) { console.error('QUEUE premium:', e); setQueue('queue-premium', null); }
+
+    // Open reports.
+    try {
+        const { count, error } = await supabaseClient
+            .from('reports')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'open');
+        setQueue('queue-reports', error ? null : count);
+    } catch (e) { console.error('QUEUE reports:', e); setQueue('queue-reports', null); }
+
+    // Unread support messages FROM users (admin replies don't count as unread).
+    // Mirrors customer-service.html: a row is admin-side when admin_id is set or
+    // sender = 'admin'; unread = a non-admin row with read = false.
+    try {
+        const { data, error } = await supabaseClient
+            .from('support_messages')
+            .select('sender, admin_id, read')
+            .eq('read', false);
+        if (error) throw error;
+        const unread = (data || []).filter(r =>
+            !r.admin_id && String(r.sender || '').toLowerCase().trim() !== 'admin'
+        ).length;
+        setQueue('queue-support', unread);
+    } catch (e) { console.error('QUEUE support:', e); setQueue('queue-support', null); }
+}
+
+function setQueue(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value == null ? '—' : Number(value).toLocaleString();
+}
+
+// ── MONTHLY REVENUE TREND (replaces the fake sales/commission chart) ────────
+async function loadRevenueTrend() {
+    const r = await computeMonthlyRevenue(supabaseClient, 6);
+    const badge = document.getElementById('trend-range');
+    if (badge && r.labels.length) {
+        badge.textContent = `${r.labels[0]} – ${r.labels[r.labels.length - 1]} ${new Date().getFullYear()}`.toUpperCase();
+    }
+    if (revenueChart) {
+        revenueChart.data.labels = r.labels;
+        revenueChart.data.datasets[0].data = r.data;
+        revenueChart.update();
+    }
+}
+
+// escapeHtml is provided globally by escape.js.
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -689,54 +1110,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dateBadge').textContent =
         now.toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
 
-    // Count-up animation
-    document.querySelectorAll('[data-count]').forEach(el => {
-        const target = parseInt(el.dataset.count);
-        const duration = 1200;
-        const step = 16;
-        const increment = target / (duration / step);
-        let current = 0;
-        const timer = setInterval(() => {
-            current = Math.min(current + increment, target);
-            el.textContent = Math.round(current).toLocaleString();
-            if (current >= target) clearInterval(timer);
-        }, step);
-    });
-
-    // Approvals list
-    const list = document.getElementById('approvals-list');
-    approvals.forEach(a => {
-        const initials = a.name.split(' ').map(n => n[0]).join('').slice(0,2);
-        const div = document.createElement('div');
-        div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);';
-        div.innerHTML = `
-            <span class="avatar" style="flex-shrink:0;">${initials}</span>
-            <div style="flex:1;min-width:0;">
-                <div style="font-size:0.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.name}</div>
-                <div style="font-size:0.7rem;color:var(--muted);">${a.role} · ${a.location}</div>
-            </div>
-            <div style="display:flex;gap:6px;flex-shrink:0;">
-                <button onclick="this.closest('div[style]').remove()" style="background:rgba(126,255,197,0.12);color:var(--mint-dim);border:1px solid rgba(126,255,197,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✓</button>
-                <button onclick="this.closest('div[style]').remove()" style="background:rgba(255,107,107,0.1);color:var(--danger);border:1px solid rgba(255,107,107,0.2);border-radius:7px;padding:4px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;">✕</button>
-            </div>
-        `;
-        list.appendChild(div);
-    });
+    // Live data loaders (each is self-contained and logs its own errors).
+    loadPendingApprovals();     // pending account approvals (users table)
+    loadTierStats();            // sellers per plan (Basic / Essential / Pro / Elite / none)
+    loadSubscriptionRevenue();  // subscription revenue stat card
+    loadUserCounts();           // seller/buyer cards + doughnut
+    loadListingStats();         // active livestock card + category grid
+    loadRecentTransactions();   // recent transactions table
+    loadQueues();               // needs-attention action row
+    loadRevenueTrend();         // monthly subscription revenue line chart
 
     // Charts
     Chart.defaults.color = '#7D8590';
     Chart.defaults.font.family = "'Sora', sans-serif";
     Chart.defaults.font.size = 11;
 
-    // Line Chart
-    new Chart(document.getElementById('lineChart'), {
+    // Line Chart — created empty, filled by loadRevenueTrend().
+    revenueChart = new Chart(document.getElementById('lineChart'), {
         type: 'line',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            labels: [],
             datasets: [
                 {
-                    label: 'Sales (₱)',
-                    data: [12000, 19000, 15000, 25000, 22000, 30000],
+                    label: 'Revenue (₱)',
+                    data: [],
                     borderColor: '#7EFFC5',
                     backgroundColor: 'rgba(126, 255, 197, 0.07)',
                     tension: 0.45,
@@ -746,17 +1143,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     pointBorderColor: '#161B22',
                     pointBorderWidth: 2,
                     borderWidth: 2
-                },
-                {
-                    label: 'Commission (₱)',
-                    data: [1200, 1900, 1500, 2500, 2200, 3000],
-                    borderColor: '#7D8590',
-                    backgroundColor: 'transparent',
-                    borderDash: [5, 4],
-                    tension: 0.45,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#7D8590',
-                    borderWidth: 1.5
                 }
             ]
         },
@@ -787,13 +1173,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Doughnut Chart
-    new Chart(document.getElementById('pieChart'), {
+    // Doughnut Chart — created empty, filled by loadUserCounts().
+    userPieChart = new Chart(document.getElementById('pieChart'), {
         type: 'doughnut',
         data: {
             labels: ['Sellers', 'Buyers'],
             datasets: [{
-                data: [1284, 8432],
+                data: [0, 0],
                 backgroundColor: ['#7EFFC5', '#1C2333'],
                 borderColor: ['#161B22', '#161B22'],
                 borderWidth: 3,
@@ -814,7 +1200,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     bodyColor: '#7D8590',
                     padding: 12,
                     callbacks: {
-                        label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${Math.round(ctx.parsed / (1284+8432) * 100)}%)`
+                        label: ctx => {
+                            const total = ctx.chart.$total || ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const pct = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                            return ` ${ctx.label}: ${ctx.parsed.toLocaleString()} (${pct}%)`;
+                        }
                     }
                 }
             }
@@ -822,11 +1212,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-function confirmLogout() {
-    if (confirm("Are you sure you want to sign out?")) {
-        window.location.href = "../index.html";
-    }
-}
+// Logout is handled by the shared styled modal in logout-modal.js.
+
+// Dismiss the approval confirmation on backdrop click or Esc.
+document.addEventListener('click', e => {
+    if (e.target && e.target.id === 'approvalConfirm') closeApprovalConfirm();
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeApprovalConfirm();
+});
 </script>
+
+<!-- Approval Confirmation Modal -->
+<div class="confirm-overlay" id="approvalConfirm">
+    <div class="confirm-box">
+        <h3 id="ac-title">Approve this account?</h3>
+        <p id="ac-text"></p>
+        <div class="confirm-actions">
+            <button class="cb-cancel" onclick="closeApprovalConfirm()">Cancel</button>
+            <button id="ac-confirm" class="cb-approve" onclick="executeApprovalDecision()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Highlight the current page's link in the sidebar -->
+<script>
+(function () {
+    var here = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+    document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {
+        var href = (link.getAttribute('href') || '').split('/').pop().toLowerCase();
+        link.classList.toggle('active', !!href && href === here);
+    });
+})();
+</script>
+<script src="sidebar.js"></script>
+<script src="reports-badge.js"></script>
+<script src="role.js"></script>
 </body>
 </html>

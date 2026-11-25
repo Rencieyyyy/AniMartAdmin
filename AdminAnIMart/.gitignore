@@ -12,6 +12,9 @@
 .swiftpm/
 migrate_working_dir/
 
+# Keys
+.env
+
 # IntelliJ related
 *.iml
 *.ipr
@@ -43,3 +46,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Supabase CLI scratch (session-local connection metadata)
+supabase/.temp/

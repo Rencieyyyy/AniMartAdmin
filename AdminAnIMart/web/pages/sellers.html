@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Users | AniMart Admin</title>
+    <link rel="icon" type="image/png" href="../assets/animart_logoV2.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
@@ -153,17 +154,29 @@
         .search-wrap {
             position: relative; flex: 1; min-width: 220px; max-width: 380px;
         }
-        .search-wrap svg {
+        .search-wrap > svg {
             position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
             width: 15px; height: 15px; color: var(--muted); pointer-events: none;
         }
         .search-input {
             width: 100%; background: var(--surface);
             border: 1px solid var(--border); border-radius: 10px;
-            padding: 9px 12px 9px 36px;
+            padding: 9px 36px 9px 36px;
             font-family: 'Sora', sans-serif; font-size: 0.82rem;
             color: var(--text); outline: none; transition: border-color 0.18s;
         }
+        /* In-field clear button — only shown when the search box has text. */
+        .search-clear {
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            display: none; align-items: center; justify-content: center;
+            width: 20px; height: 20px; padding: 0;
+            background: transparent; border: none; border-radius: 6px;
+            color: var(--muted); cursor: pointer;
+            transition: color 0.15s, background 0.15s;
+        }
+        .search-clear:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+        .search-clear svg { width: 14px; height: 14px; }
+        .search-wrap.has-text .search-clear { display: flex; }
         .search-input::placeholder { color: var(--muted); }
         .search-input:focus { border-color: rgba(126,255,197,0.35); }
 
@@ -249,6 +262,13 @@
             font-size: 0.68rem; font-weight: 700;
             background: var(--surface-2); border: 1.5px solid var(--border);
             color: var(--mint); flex-shrink: 0;
+            position: relative; overflow: hidden;
+        }
+        /* Mobile-app profile picture, layered over the initials (which stay
+           visible as the fallback while loading / when the URL is dead). */
+        .avatar .av-img, .profile-avatar .av-img {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            border-radius: 50%; object-fit: cover;
         }
         .user-name { font-weight: 600; font-size: 0.84rem; }
         .user-email { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
@@ -387,7 +407,9 @@
             font-size: 1.1rem; font-weight: 800;
             background: var(--mint-glow); border: 2px solid rgba(126,255,197,0.2);
             color: var(--mint); flex-shrink: 0;
+            position: relative; overflow: hidden;
         }
+        .profile-avatar .av-img { border-radius: 12px; }
         .profile-name { font-size: 1.05rem; font-weight: 700; }
         .profile-meta { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
         .profile-badges { display: flex; gap: 6px; margin-top: 6px; }
@@ -402,6 +424,42 @@
         }
         .detail-item-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
         .detail-item-value { font-size: 0.85rem; font-weight: 600; }
+        /* ── LIVENESS CHECK (4 sign-up selfies) ── */
+        .liveness-head { display: flex; align-items: center; gap: 12px; }
+        .liveness-status {
+            margin-left: auto; flex-shrink: 0;
+            font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            padding: 3px 8px; border-radius: 999px;
+            background: rgba(251,184,36,0.12); border: 1px solid rgba(251,184,36,0.25); color: var(--warning);
+        }
+        .liveness-status.ok  { background: rgba(126,255,197,0.1); border-color: rgba(126,255,197,0.25); color: var(--mint-dim); }
+        .liveness-status.bad { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.25); color: var(--danger); }
+        .liveness-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+        .pose-card {
+            padding: 0; border: 1px solid var(--border); border-radius: 9px;
+            background: var(--surface); overflow: hidden; cursor: pointer;
+            font-family: inherit; text-align: center; transition: all 0.15s; display: block; width: 100%;
+        }
+        .pose-card:hover { border-color: var(--border-hover); transform: translateY(-1px); }
+        .pose-card img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; background: #000; }
+        .pose-card .pose-label {
+            font-size: 0.6rem; font-weight: 600; color: var(--muted);
+            padding: 5px 2px; letter-spacing: 0.04em; text-transform: uppercase;
+        }
+        .pose-card.missing { cursor: default; border-style: dashed; background: transparent; }
+        .pose-card.missing:hover { border-color: var(--border); transform: none; }
+        .pose-card.missing .pose-empty { aspect-ratio: 3 / 4; display: flex; align-items: center; justify-content: center; }
+        .pose-card.missing .pose-empty svg { width: 15px; height: 15px; color: var(--muted); opacity: 0.5; }
+        .liveness-remarks { font-size: 0.68rem; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+
+        .messenger-box { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .messenger-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--mint); text-decoration: none; font-weight: 600;
+        }
+        .messenger-link:hover { text-decoration: underline; }
+        .messenger-link i { width: 15px; height: 15px; }
+        .messenger-icon { flex-shrink: 0; }
 
         .modal-actions { display: flex; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border); flex-wrap: wrap; }
         .modal-btn {
@@ -446,8 +504,8 @@
 
         /* ─── TOAST ─── */
         .toast-container {
-            position: fixed; bottom: 24px; right: 24px;
-            z-index: 999; display: flex; flex-direction: column; gap: 8px;
+            position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+            z-index: 999; display: flex; flex-direction: column; gap: 8px; align-items: center;
         }
         .toast {
             background: var(--surface-2); border: 1px solid var(--border);
@@ -467,8 +525,8 @@
         .toast-danger svg { color: var(--danger); }
 
         @keyframes slideIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
+            from { opacity: 0; transform: translateY(-16px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(14px); }
@@ -482,9 +540,6 @@
 
         /* ─── RESPONSIVE ─── */
         @media (max-width: 900px) {
-            :root { --sidebar-w: 64px; }
-            .sidebar-brand, .nav-link span, .nav-label { display: none; }
-            .nav-link { justify-content: center; padding: 10px; }
             .main { padding: 24px 16px; }
         }
         @media (max-width: 600px) {
@@ -492,6 +547,7 @@
             .mini-stats { flex-direction: column; }
         }
     </style>
+    <link rel="stylesheet" href="admin-shell.css">
 </head>
 <body>
 <div class="wrapper">
@@ -508,12 +564,16 @@
     <div class="nav-label">Main</div>
     <a href="dashboard.html" class="nav-link" data-icon="layout-dashboard"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
     <a href="sellers.html" class="nav-link" data-icon="store"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+    <a href="listings.html" class="nav-link"><i data-lucide="package"></i><span>Listings</span></a>
+    <a href="transactions.html" class="nav-link"><i data-lucide="receipt"></i><span>Transactions</span></a>
     <a href="premium.html" class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
     
     <div class="nav-label">Admin</div>
     <a href="announcements.html" class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
     <a href="user.html" class="nav-link"><i data-lucide="user-check"></i><span>User Approvals</span></a>
      <a href="customer-service.html" class="nav-link "><i data-lucide="message-circle"></i><span>Customer Service</span></a>
+    <a href="reviews.html" class="nav-link"><i data-lucide="star"></i><span>Reviews</span></a>
+    <a href="reports.html" class="nav-link"><i data-lucide="flag"></i><span>Reports</span><span class="reports-badge" data-reports-badge hidden>0</span></a>
     <div class="nav-bottom">
         <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
         <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
@@ -528,7 +588,7 @@
                 <h1>User Management</h1>
                 <p>Manage all sellers and buyers on the platform.</p>
             </div>
-            <button class="btn btn-primary" onclick="showToast('Export feature coming soon.','warn')">
+            <button class="btn btn-primary" onclick="exportCSV()">
                 <i data-lucide="download"></i> Export CSV
             </button>
         </div>
@@ -599,24 +659,24 @@
         <div class="toolbar">
             <div class="search-wrap">
                 <i data-lucide="search"></i>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search name, email, location…" oninput="applyFilters()">
-            </div>
-            <select class="filter-select" id="filterStatus" onchange="applyFilters()">
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="restricted">Restricted</option>
-                <option value="blocked">Blocked</option>
-            </select>
-            <select class="filter-select" id="filterSort" onchange="applyFilters()">
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="name-az">Name A→Z</option>
-                <option value="name-za">Name Z→A</option>
-            </select>
-            <div class="toolbar-right">
-                <button class="btn btn-ghost" onclick="clearFilters()">
-                    <i data-lucide="x"></i> Clear
+                <input type="text" class="search-input" id="searchInput" placeholder="Search name, email, address…" oninput="applyFilters()">
+                <button type="button" class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Clear search" title="Clear search">
+                    <i data-lucide="x"></i>
                 </button>
+            </div>
+            <div class="toolbar-right">
+                <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="restricted">Restricted</option>
+                    <option value="blocked">Blocked</option>
+                </select>
+                <select class="filter-select" id="filterSort" onchange="applyFilters()">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="name-az">Name A→Z</option>
+                    <option value="name-za">Name Z→A</option>
+                </select>
             </div>
         </div>
 
@@ -628,7 +688,7 @@
                         <tr>
                             <th onclick="sortBy('name')">User <span class="sort-icon">↕</span></th>
                             <th onclick="sortBy('type')">Type <span class="sort-icon">↕</span></th>
-                            <th onclick="sortBy('location')">Location <span class="sort-icon">↕</span></th>
+                            <th onclick="sortBy('location')">Address <span class="sort-icon">↕</span></th>
                             <th onclick="sortBy('joined')">Joined <span class="sort-icon">↕</span></th>
                             <th onclick="sortBy('status')">Status <span class="sort-icon">↕</span></th>
                             <th>Actions</th>
@@ -646,6 +706,7 @@
                 <div class="page-btns" id="pageButtons"></div>
             </div>
         </div>
+
     </main>
 </div>
 
@@ -678,31 +739,17 @@
 <!-- TOAST CONTAINER -->
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="escape.js"></script>
+<script src="image-lightbox.js"></script>
+<script src="tier-stats.js"></script>
+<script src="logout-modal.js"></script>
 <script>
 // ─── DATA ───
-const rawUsers = [
-    { id:1, name:"Cardo Dalisay", email:"cardo.d@gmail.com", type:"seller", location:"Batangas City", joined:"2024-01-15", status:"active", listings:12, phone:"09171234567" },
-    { id:2, name:"Nena Reyes", email:"nena.r@yahoo.com", type:"seller", location:"Santa Rosa, Laguna", joined:"2024-02-03", status:"active", listings:7, phone:"09281234567" },
-    { id:3, name:"Ferdie Santos", email:"ferdie.s@gmail.com", type:"buyer", location:"Lucena, Quezon", joined:"2024-02-18", status:"restricted", listings:0, phone:"09091234567" },
-    { id:4, name:"Liza Manalo", email:"liza.m@gmail.com", type:"seller", location:"Bacoor, Cavite", joined:"2024-03-05", status:"active", listings:19, phone:"09151234567" },
-    { id:5, name:"Andres Cruz", email:"andres.c@outlook.com", type:"buyer", location:"Antipolo, Rizal", joined:"2024-03-22", status:"active", listings:0, phone:"09261234567" },
-    { id:6, name:"Maria Dela Cruz", email:"maria.d@gmail.com", type:"seller", location:"Tarlac City", joined:"2024-04-10", status:"blocked", listings:3, phone:"09181234567" },
-    { id:7, name:"Jose Rizal Jr.", email:"jose.r@gmail.com", type:"buyer", location:"Calamba, Laguna", joined:"2024-04-25", status:"active", listings:0, phone:"09271234567" },
-    { id:8, name:"Ana Gonzales", email:"ana.g@gmail.com", type:"seller", location:"Imus, Cavite", joined:"2024-05-08", status:"active", listings:8, phone:"09111234567" },
-    { id:9, name:"Ben Magtanggol", email:"ben.m@gmail.com", type:"buyer", location:"Malolos, Bulacan", joined:"2024-05-20", status:"active", listings:0, phone:"09221234567" },
-    { id:10, name:"Clarissa Umali", email:"clarissa.u@gmail.com", type:"seller", location:"Lipa City, Batangas", joined:"2024-06-01", status:"restricted", listings:5, phone:"09331234567" },
-    { id:11, name:"Dante Abad", email:"dante.a@gmail.com", type:"buyer", location:"Tagaytay, Cavite", joined:"2024-06-15", status:"active", listings:0, phone:"09441234567" },
-    { id:12, name:"Elena Panganiban", email:"elena.p@gmail.com", type:"seller", location:"San Pablo, Laguna", joined:"2024-07-02", status:"active", listings:14, phone:"09551234567" },
-    { id:13, name:"Rolando Torres", email:"rolando.t@gmail.com", type:"buyer", location:"Cabanatuan, Nueva Ecija", joined:"2024-07-19", status:"blocked", listings:0, phone:"09661234567" },
-    { id:14, name:"Susana Villanueva", email:"susana.v@gmail.com", type:"seller", location:"Dasmariñas, Cavite", joined:"2024-08-05", status:"active", listings:22, phone:"09771234567" },
-    { id:15, name:"Timoteo Bautista", email:"timoteo.b@gmail.com", type:"buyer", location:"Sta. Rosa, Nueva Ecija", joined:"2024-08-22", status:"active", listings:0, phone:"09881234567" },
-    { id:16, name:"Violeta Espino", email:"violeta.e@gmail.com", type:"seller", location:"General Trias, Cavite", joined:"2024-09-10", status:"active", listings:9, phone:"09991234567" },
-    { id:17, name:"Wilson Ocampo", email:"wilson.o@gmail.com", type:"buyer", location:"Biñan, Laguna", joined:"2024-09-28", status:"active", listings:0, phone:"09121234567" },
-    { id:18, name:"Xyza Medrano", email:"xyza.m@gmail.com", type:"seller", location:"Lemery, Batangas", joined:"2024-10-15", status:"restricted", listings:2, phone:"09231234567" },
-];
-
-let users = JSON.parse(JSON.stringify(rawUsers));
-let filteredUsers = [...users];
+// Live from the Supabase `users` table (loaded by loadUsers below).
+let users = [];
+let filteredUsers = [];
 let currentTab = 'all';
 let currentPage = 1;
 const perPage = 8;
@@ -711,13 +758,124 @@ let sortDir = 'desc';
 let pendingAction = null;
 let pendingUserId = null;
 
-// ─── INIT ───
-document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
+// The marketplace-management page only deals with these account states. The DB
+// stores an approved account as 'approved'; the UI shows it as 'active'.
+//   approved  <-> active   |   restricted <-> restricted   |   blocked <-> blocked
+function dbStatusToUi(s) { return s === 'approved' ? 'active' : s; }
+function uiStatusToDb(s) { return s === 'active' ? 'approved' : s; }
+
+// ─── LIVENESS CHECK (sign-up selfies) ───
+// The mobile sign-up runs a 4-pose liveness check (center / right / left /
+// down); each pose is uploaded to Cloudinary and a database trigger records the
+// URLs in public.user_liveness_verification, one row per user. Same block as
+// the User Approvals page, shown here so an admin can re-check the faces of an
+// account that was already approved.
+let livenessByUser = new Map();
+
+const LIVENESS_POSES = [
+    { key: 'center_image_url', label: 'Center', hint: 'Looking straight at the camera' },
+    { key: 'right_image_url',  label: 'Right',  hint: 'Head turned to their right' },
+    { key: 'left_image_url',   label: 'Left',   hint: 'Head turned to their left' },
+    { key: 'down_image_url',   label: 'Down',   hint: 'Head tilted down' }
+];
+
+// Supplementary evidence only: a failure here (table not migrated yet, RLS
+// policy missing) is logged and the profile simply reports no liveness record,
+// never blocking the user list.
+async function loadLiveness() {
+    livenessByUser = new Map();
+
+    const { data, error } = await supabaseClient
+        .from('user_liveness_verification')
+        .select('user_id, center_image_url, right_image_url, left_image_url, down_image_url, verification_status, remarks, created_at');
+
+    if (error) {
+        console.error('LOAD LIVENESS ERROR:', error);
+        return;
+    }
+
+    (data || []).forEach(row => livenessByUser.set(String(row.user_id), row));
+}
+
+async function loadUsers() {
+    // Plans come from the subscriptions table (what the mobile app uses), not
+    // the stale users.plan column: a user's plan = their approved subscription
+    // (Animart Basic / Essential / Pro / Elite), or "No Plan" if they have
+    // none. Same derivation as tier-stats.js.
+    const [usersRes, subsRes] = await Promise.all([
+        supabaseClient
+            .from('users')
+            .select('id, name, email, phone, address, is_seller, status, created_at, messenger, valid_id_type, valid_id_url, avatar_url')
+            .in('status', ['approved', 'restricted', 'blocked'])
+            .order('created_at', { ascending: false }),
+        // selectSubscriptions (tier-stats.js) retries without billing_cycle when
+        // the column's migration hasn't been applied yet.
+        selectSubscriptions(
+            supabaseClient,
+            'user_id, plan, billing_cycle',
+            'user_id, plan',
+            q => q.eq('status', 'approved')
+        ),
+        loadLiveness()
+    ]);
+
+    const planByUser = {};
+    if (subsRes.error) {
+        console.error('LOAD SUBSCRIPTIONS ERROR:', subsRes.error);
+        showToast('Failed to load plans: ' + subsRes.error.message, 'danger');
+    } else {
+        (subsRes.data || []).forEach(s => {
+            const tier = normalizePlan(s.plan);          // tier-stats.js
+            if (!PLAN_TIERS.includes(tier) || s.user_id == null) return;
+            const cycle = normalizeBillingCycle(s.billing_cycle);   // null → monthly
+            // If a member somehow holds two approved plans (e.g. while a plan
+            // change is in flight), show the higher plan rather than whichever
+            // row happened to arrive last.
+            const prev = planByUser[s.user_id];
+            if (prev && planRank(prev.tier) > planRank(tier)) return;
+            planByUser[s.user_id] = { tier, cycle };
+        });
+    }
+
+    const { data, error } = usersRes;
+    if (error) {
+        console.error('LOAD USERS ERROR:', error);
+        showToast('Failed to load users: ' + error.message, 'danger');
+        users = [];
+    } else {
+        users = (data || []).map(row => ({
+            id:       String(row.id),                 // uuid -> string (used in onclick handlers)
+            name:     row.name || '(no name)',
+            email:    row.email || '—',
+            phone:    row.phone || '—',
+            location: row.address || '—',             // "Address" column
+            type:     row.is_seller ? 'seller' : 'buyer',
+            joined:   row.created_at || null,
+            status:   dbStatusToUi(row.status),       // approved -> active
+            plan:     planByUser[row.id]?.tier || NO_PLAN,
+            // 'Weekly' / 'Monthly' / 'Yearly' for users on a plan; '—' otherwise.
+            billing:  planByUser[row.id] ? billingCycleLabel(planByUser[row.id].cycle) : '—',
+            messenger: row.messenger || '',
+            idType:      row.valid_id_type || null,
+            validIdUrl:  row.valid_id_url || null,
+            avatar:      row.avatar_url || null       // mobile-app profile picture
+        }));
+    }
+
     updateStats();
     updateTabCounts();
     applyFilters();
+}
+
+// ─── INIT ───
+// (The old Recent Transactions section moved to its own page:
+//  transactions.html — the full browser with filters and CSV export.)
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    loadUsers();
 });
+
+// escapeHtml is provided globally by escape.js.
 
 function updateStats() {
     const vis = currentTab === 'all' ? users : users.filter(u => u.type === currentTab);
@@ -744,9 +902,13 @@ function switchTab(tab, btn) {
 }
 
 function applyFilters() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
+    const searchEl = document.getElementById('searchInput');
+    const q = searchEl.value.toLowerCase();
     const status = document.getElementById('filterStatus').value;
     const sort = document.getElementById('filterSort').value;
+
+    // Show the in-field clear (×) only when something is typed.
+    searchEl.closest('.search-wrap').classList.toggle('has-text', searchEl.value.length > 0);
 
     let data = users.filter(u => {
         if (currentTab !== 'all' && u.type !== currentTab) return false;
@@ -786,6 +948,14 @@ function clearFilters() {
     applyFilters();
 }
 
+// Clears just the search box (the in-field × button) and re-applies filters.
+function clearSearch() {
+    const el = document.getElementById('searchInput');
+    el.value = '';
+    el.focus();
+    applyFilters();
+}
+
 function renderTable() {
     const tbody = document.getElementById('userTableBody');
     const empty = document.getElementById('emptyState');
@@ -821,24 +991,24 @@ function rowHTML(u) {
     return `<tr>
         <td>
             <div class="user-cell">
-                <div class="avatar">${initials(u.name)}</div>
+                <div class="avatar">${escapeHtml(initials(u.name))}${u.avatar ? `<img class="av-img" src="${escapeHtml(u.avatar)}" alt="" onerror="this.remove()">` : ''}</div>
                 <div>
-                    <div class="user-name">${u.name}</div>
-                    <div class="user-email">${u.email}</div>
+                    <div class="user-name">${escapeHtml(u.name)}</div>
+                    <div class="user-email">${escapeHtml(u.email)}</div>
                 </div>
             </div>
         </td>
         <td><span class="type-badge ${typeClass}">${u.type.charAt(0).toUpperCase()+u.type.slice(1)}</span></td>
-        <td class="location-cell">${u.location}</td>
+        <td class="location-cell">${escapeHtml(u.location)}</td>
         <td class="date-cell">${joinedDate}</td>
         <td><span class="status-badge ${u.status === 'active' ? 'status-active' : u.status === 'restricted' ? 'status-restricted' : 'status-blocked'}">${statusLabel[u.status]}</span></td>
         <td>
             <div class="actions-cell">
-                <button class="icon-btn view-btn" title="View Profile" onclick="viewUser(${u.id})">
+                <button class="icon-btn view-btn" title="View Profile" onclick="viewUser('${u.id}')">
                     <i data-lucide="eye"></i>
                 </button>
-                ${u.status !== 'restricted' ? `<button class="icon-btn restrict-btn" title="Restrict Account" onclick="triggerAction(${u.id},'restrict')"><i data-lucide="shield-alert"></i></button>` : `<button class="icon-btn success-btn" title="Lift Restriction" onclick="triggerAction(${u.id},'activate')" style="color:var(--mint-dim)"><i data-lucide="shield-check"></i></button>`}
-                ${u.status !== 'blocked' ? `<button class="icon-btn block-btn" title="Block Account" onclick="triggerAction(${u.id},'block')"><i data-lucide="ban"></i></button>` : `<button class="icon-btn unblock-btn" title="Unblock Account" onclick="triggerAction(${u.id},'activate')"><i data-lucide="shield-check"></i></button>`}
+                ${u.status !== 'restricted' ? `<button class="icon-btn restrict-btn" title="Restrict Account" onclick="triggerAction('${u.id}','restrict')"><i data-lucide="shield-alert"></i></button>` : `<button class="icon-btn restrict-btn" title="Lift Restriction" onclick="triggerAction('${u.id}','activate')" style="color:var(--warning)"><i data-lucide="shield-alert"></i></button>`}
+                ${u.status !== 'blocked' ? `<button class="icon-btn block-btn" title="Block Account" onclick="triggerAction('${u.id}','block')"><i data-lucide="ban"></i></button>` : `<button class="icon-btn unblock-btn" title="Unblock Account" onclick="triggerAction('${u.id}','activate')" style="color:var(--danger)"><i data-lucide="ban"></i></button>`}
             </div>
         </td>
     </tr>`;
@@ -877,20 +1047,30 @@ function viewUser(id) {
 
     document.getElementById('viewModalBody').innerHTML = `
         <div class="profile-hero">
-            <div class="profile-avatar">${initials(u.name)}</div>
+            <div class="profile-avatar">${escapeHtml(initials(u.name))}${u.avatar ? `<img class="av-img" src="${escapeHtml(u.avatar)}" alt="" onerror="this.remove()">` : ''}</div>
             <div>
-                <div class="profile-name">${u.name}</div>
-                <div class="profile-meta">${u.email} · ${u.phone}</div>
+                <div class="profile-name">${escapeHtml(u.name)}</div>
+                <div class="profile-meta">${escapeHtml(u.email)} · ${escapeHtml(u.phone)}</div>
                 <div class="profile-badges">
                     <span class="type-badge ${typeClass}">${u.type.charAt(0).toUpperCase()+u.type.slice(1)}</span>
                     <span class="status-badge ${statusClass[u.status]}">${statusLabel[u.status]}</span>
                 </div>
             </div>
         </div>
+        ${u.messenger ? `
+        <div class="detail-item messenger-box" style="margin-bottom:18px;">
+            <div>
+                <div class="detail-item-label">Messenger Link</div>
+                <div class="detail-item-value">
+                    <a href="${escapeHtml(u.messenger.startsWith('http') ? u.messenger : 'https://' + u.messenger)}" target="_blank" rel="noopener" class="messenger-link">${escapeHtml(u.messenger)}</a>
+                </div>
+            </div>
+            <a href="${escapeHtml(u.messenger.startsWith('http') ? u.messenger : 'https://' + u.messenger)}" target="_blank" rel="noopener" class="messenger-link messenger-icon"><i data-lucide="link"></i></a>
+        </div>` : ''}
         <div class="detail-grid">
             <div class="detail-item">
-                <div class="detail-item-label">Location</div>
-                <div class="detail-item-value">${u.location}</div>
+                <div class="detail-item-label">Address</div>
+                <div class="detail-item-value">${escapeHtml(u.location)}</div>
             </div>
             <div class="detail-item">
                 <div class="detail-item-label">Member Since</div>
@@ -901,26 +1081,125 @@ function viewUser(id) {
                 <div class="detail-item-value">${u.type.charAt(0).toUpperCase()+u.type.slice(1)}</div>
             </div>
             <div class="detail-item">
-                <div class="detail-item-label">${u.type === 'seller' ? 'Active Listings' : 'Purchases'}</div>
-                <div class="detail-item-value">${u.type === 'seller' ? u.listings + ' listings' : 'N/A'}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-item-label">User ID</div>
-                <div class="detail-item-value" style="font-family:'DM Mono',monospace;font-size:0.75rem;">USR-${String(u.id).padStart(5,'0')}</div>
+                <div class="detail-item-label">Plan</div>
+                <div class="detail-item-value">${escapeHtml(u.plan)}${u.billing !== '—' ? ' · ' + escapeHtml(u.billing) : ''}</div>
             </div>
             <div class="detail-item">
                 <div class="detail-item-label">Phone</div>
-                <div class="detail-item-value" style="font-family:'DM Mono',monospace;font-size:0.78rem;">${u.phone}</div>
+                <div class="detail-item-value" style="font-family:'DM Mono',monospace;font-size:0.78rem;">${escapeHtml(u.phone)}</div>
             </div>
         </div>
+        <div class="detail-item" style="display:flex;align-items:center;gap:12px;margin-top:14px;">
+            <div style="width:34px;height:34px;border-radius:8px;background:rgba(56,189,248,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i data-lucide="id-card" style="width:16px;height:16px;color:#38BDF8;"></i>
+            </div>
+            <div>
+                <div class="detail-item-label">Submitted ID</div>
+                <div class="detail-item-value">${u.idType ? escapeHtml(u.idType) : 'Valid ID'} · ${u.validIdUrl ? 'Uploaded at signup' : 'Not uploaded'}</div>
+            </div>
+            ${u.validIdUrl
+                ? `<button class="modal-btn modal-btn-ghost" style="margin-left:auto;" onclick="viewUserId('${u.id}')"><i data-lucide="eye"></i> View</button>`
+                : ''}
+        </div>
+        ${livenessBlockHtml(u.id)}
         <div class="modal-actions">
             <button class="modal-btn modal-btn-ghost" onclick="closeModal('viewModal')"><i data-lucide="x"></i> Close</button>
-            ${u.status !== 'restricted' ? `<button class="modal-btn modal-btn-warn" onclick="closeModal('viewModal');triggerAction(${u.id},'restrict')"><i data-lucide="shield-alert"></i> Restrict</button>` : `<button class="modal-btn modal-btn-success" onclick="closeModal('viewModal');triggerAction(${u.id},'activate')"><i data-lucide="shield-check"></i> Lift Restriction</button>`}
-            ${u.status !== 'blocked' ? `<button class="modal-btn modal-btn-danger" onclick="closeModal('viewModal');triggerAction(${u.id},'block')"><i data-lucide="ban"></i> Block Account</button>` : `<button class="modal-btn modal-btn-success" onclick="closeModal('viewModal');triggerAction(${u.id},'activate')"><i data-lucide="shield-check"></i> Unblock Account</button>`}
+            ${u.status !== 'restricted' ? `<button class="modal-btn modal-btn-warn" onclick="closeModal('viewModal');triggerAction('${u.id}','restrict')"><i data-lucide="shield-alert"></i> Restrict</button>` : `<button class="modal-btn modal-btn-success" onclick="closeModal('viewModal');triggerAction('${u.id}','activate')"><i data-lucide="shield-check"></i> Lift Restriction</button>`}
+            ${u.status !== 'blocked' ? `<button class="modal-btn modal-btn-danger" onclick="closeModal('viewModal');triggerAction('${u.id}','block')"><i data-lucide="ban"></i> Block Account</button>` : `<button class="modal-btn modal-btn-success" onclick="closeModal('viewModal');triggerAction('${u.id}','activate')"><i data-lucide="shield-check"></i> Unblock Account</button>`}
         </div>
     `;
     openModal('viewModal');
     lucide.createIcons({ nodes: [document.getElementById('viewModalBody')] });
+}
+
+// Opens the ID the user submitted at signup in the shared image popup. The URL
+// is read from the in-memory user record (never built into markup) so nothing
+// user-controlled is injected. valid_id_url is a public image URL (Cloudinary).
+function viewUserId(id) {
+    const u = users.find(x => x.id === id);
+    if (!u || !u.validIdUrl) return;
+    openImageLightbox({
+        url: u.validIdUrl,
+        title: u.idType || 'Valid ID',
+        subtitle: `Government-issued ID submitted by ${u.name}.`
+    });
+}
+
+// Only render remote images we can vouch for the shape of. The URLs come from
+// the database (written by the mobile app's Cloudinary upload), so anything
+// that is not a plain http(s) link is treated as "missing" rather than
+// interpolated into an <img src>.
+function safeImageUrl(url) {
+    return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : null;
+}
+
+function livenessBlockHtml(userId) {
+    const row = livenessByUser.get(String(userId));
+
+    if (!row) {
+        return `
+        <div class="detail-item" style="display:flex;align-items:center;gap:12px;margin-top:12px;">
+            <div style="width:34px;height:34px;border-radius:8px;background:rgba(192,132,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i data-lucide="scan-face" style="width:16px;height:16px;color:#C084FC;"></i>
+            </div>
+            <div>
+                <div class="detail-item-label">Liveness Check</div>
+                <div class="detail-item-value">4 sign-up selfies · Not submitted</div>
+            </div>
+        </div>`;
+    }
+
+    const poses = LIVENESS_POSES.map(pose => ({ ...pose, url: safeImageUrl(row[pose.key]) }));
+    const captured = poses.filter(p => p.url).length;
+
+    const status = String(row.verification_status || 'pending').toLowerCase();
+    const statusClass = status === 'approved' || status === 'verified' ? 'ok'
+                      : status === 'rejected' || status === 'failed'   ? 'bad'
+                      : '';
+
+    const cards = poses.map(pose => pose.url
+        ? `<button type="button" class="pose-card" onclick="viewUserPose('${escapeAttr(userId)}','${pose.key}')"
+                   title="View ${escapeAttr(pose.label)} pose">
+               <img src="${escapeHtml(pose.url)}" alt="${escapeAttr(pose.label)} pose selfie" loading="lazy">
+               <div class="pose-label">${escapeHtml(pose.label)}</div>
+           </button>`
+        : `<div class="pose-card missing" title="${escapeAttr(pose.label)} pose was not captured">
+               <div class="pose-empty"><i data-lucide="image-off"></i></div>
+               <div class="pose-label">${escapeHtml(pose.label)}</div>
+           </div>`
+    ).join('');
+
+    return `
+        <div class="detail-item" style="margin-top:12px;">
+            <div class="liveness-head">
+                <div style="width:34px;height:34px;border-radius:8px;background:rgba(192,132,252,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i data-lucide="scan-face" style="width:16px;height:16px;color:#C084FC;"></i>
+                </div>
+                <div>
+                    <div class="detail-item-label">Liveness Check</div>
+                    <div class="detail-item-value">${captured} of ${LIVENESS_POSES.length} selfies captured at signup</div>
+                </div>
+                <span class="liveness-status ${statusClass}">${escapeHtml(status)}</span>
+            </div>
+            <div class="liveness-grid">${cards}</div>
+            ${row.remarks ? `<div class="liveness-remarks">${escapeHtml(row.remarks)}</div>` : ''}
+        </div>`;
+}
+
+// Opens one pose in the shared lightbox. The URL is looked up here instead of
+// being baked into the onclick attribute.
+function viewUserPose(userId, poseKey) {
+    const row  = livenessByUser.get(String(userId));
+    const pose = LIVENESS_POSES.find(p => p.key === poseKey);
+    const url  = row && pose ? safeImageUrl(row[poseKey]) : null;
+    if (!url) return;
+
+    const u = users.find(x => x.id === String(userId));
+    openImageLightbox({
+        url,
+        title: `Liveness Check · ${pose.label}`,
+        subtitle: `${pose.hint} — captured at signup${u ? ' by ' + u.name : ''}.`
+    });
 }
 
 // ─── ACTIONS ───
@@ -929,7 +1208,7 @@ const actionConfig = {
         icon: `<i data-lucide="shield-alert" style="color:var(--warning)"></i>`,
         iconBg: 'rgba(251,184,36,0.12)', iconBorder: 'rgba(251,184,36,0.25)',
         title: 'Restrict Account',
-        desc: user => `You're about to restrict <strong>${user.name}</strong>. They will have limited access to the platform.`,
+        desc: user => `You're about to restrict <strong>${escapeHtml(user.name)}</strong>. They will have limited access to the platform.`,
         btnClass: 'modal-btn-warn', btnLabel: 'Restrict',
         newStatus: 'restricted', toastMsg: user => `${user.name} has been restricted.`, toastType: 'warn'
     },
@@ -937,7 +1216,7 @@ const actionConfig = {
         icon: `<i data-lucide="ban" style="color:var(--danger)"></i>`,
         iconBg: 'rgba(255,107,107,0.12)', iconBorder: 'rgba(255,107,107,0.25)',
         title: 'Block Account',
-        desc: user => `You're about to block <strong>${user.name}</strong>. They will no longer be able to access the platform.`,
+        desc: user => `You're about to block <strong>${escapeHtml(user.name)}</strong>. They will no longer be able to access the platform.`,
         btnClass: 'modal-btn-danger', btnLabel: 'Block',
         newStatus: 'blocked', toastMsg: user => `${user.name} has been blocked.`, toastType: 'danger'
     },
@@ -945,7 +1224,7 @@ const actionConfig = {
         icon: `<i data-lucide="shield-check" style="color:var(--mint-dim)"></i>`,
         iconBg: 'rgba(126,255,197,0.12)', iconBorder: 'rgba(126,255,197,0.25)',
         title: 'Restore Account',
-        desc: user => `You're about to restore full access for <strong>${user.name}</strong>.`,
+        desc: user => `You're about to restore full access for <strong>${escapeHtml(user.name)}</strong>.`,
         btnClass: 'modal-btn-success', btnLabel: 'Restore',
         newStatus: 'active', toastMsg: user => `${user.name}'s account has been restored.`, toastType: 'success'
     }
@@ -971,17 +1250,33 @@ function triggerAction(id, action) {
     lucide.createIcons({ nodes: [iconEl] });
 }
 
-function executeAction() {
+async function executeAction() {
     if (!pendingAction || !pendingUserId) return;
     const user = users.find(u=>u.id===pendingUserId);
     const cfg = actionConfig[pendingAction];
-    user.status = cfg.newStatus;
+
+    // Persist the new status to the DB (active -> approved, restricted, blocked).
+    const { data, error } = await supabaseClient
+        .from('users')
+        .update({ status: uiStatusToDb(cfg.newStatus) })
+        .eq('id', pendingUserId)
+        .select();
+
     closeModal('confirmModal');
-    updateStats();
-    updateTabCounts();
-    applyFilters();
+
+    if (error) {
+        console.error('STATUS UPDATE ERROR:', error);
+        showToast('Failed: ' + error.message, 'danger');
+        return;
+    }
+    if (!data || data.length === 0) {
+        showToast('Action blocked — no permission (check RLS).', 'danger');
+        return;
+    }
+
     showToast(cfg.toastMsg(user), cfg.toastType);
     pendingAction = null; pendingUserId = null;
+    await loadUsers();   // re-pull so the table + stats reflect the change
 }
 
 // ─── MODAL HELPERS ───
@@ -1000,21 +1295,78 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
 });
 
+// ─── EXPORT CSV ───
+// Exports the users currently shown (after tab / search / status filters).
+function exportCSV() {
+    if (!filteredUsers.length) {
+        showToast('Nothing to export.', 'warn');
+        return;
+    }
+
+    const statusLabel = { active:'Active', restricted:'Restricted', blocked:'Blocked' };
+    const headers = ['Name','Email','Phone','Address','Type','Status','Plan','Billing','Messenger','Joined'];
+
+    // Quote a value if it contains a comma, quote, or newline.
+    const esc = v => {
+        const s = (v === null || v === undefined) ? '' : String(v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+
+    const rows = filteredUsers.map(u => [
+        u.name,
+        u.email,
+        u.phone,
+        u.location,
+        u.type.charAt(0).toUpperCase() + u.type.slice(1),
+        statusLabel[u.status] || u.status,
+        u.plan,
+        u.billing,
+        u.messenger || '',
+        u.joined ? new Date(u.joined).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' }) : ''
+    ].map(esc).join(','));
+
+    const csv = [headers.join(','), ...rows].join('\r\n');
+
+    // BOM so Excel opens UTF-8 correctly.
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `animart-users-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(`Exported ${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''} to CSV.`, 'success');
+}
+
 // ─── TOAST ───
 function showToast(msg, type='success') {
     const icons = { success:'check-circle', warn:'alert-triangle', danger:'x-circle' };
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    toast.innerHTML = `<i data-lucide="${icons[type] || 'info'}"></i><span>${msg}</span>`;
+    toast.innerHTML = `<i data-lucide="${icons[type] || 'info'}"></i><span>${escapeHtml(msg)}</span>`;
     container.appendChild(toast);
     lucide.createIcons({ nodes: [toast] });
-    setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateX(20px)'; toast.style.transition='all 0.3s'; setTimeout(()=>toast.remove(), 300); }, 3000);
+    setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateY(-16px)'; toast.style.transition='all 0.3s'; setTimeout(()=>toast.remove(), 300); }, 3000);
 }
 
-function confirmLogout() {
-    if (confirm("Are you sure you want to sign out?")) window.location.href = "../index.html";
-}
+// Logout is handled by the shared styled modal in logout-modal.js.
 </script>
+<!-- Highlight the current page's link in the sidebar -->
+<script>
+(function () {
+    var here = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+    document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {
+        var href = (link.getAttribute('href') || '').split('/').pop().toLowerCase();
+        link.classList.toggle('active', !!href && href === here);
+    });
+})();
+</script>
+<script src="sidebar.js"></script>
+<script src="reports-badge.js"></script>
+<script src="role.js"></script>
 </body>
 </html>

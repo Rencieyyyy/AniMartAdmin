@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Approvals | AniMart</title>
+    <link rel="icon" type="image/png" href="../assets/animart_logoV2.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.321.0/dist/umd/lucide.min.js"></script>
@@ -258,6 +259,49 @@
         .panel { display: none; }
         .panel.active { display: block; animation: fadeUp 0.35s ease both; }
 
+        /* ── SHARED ROW GRID (header + cards align column-for-column) ── */
+        .list-header, .user-card {
+            display: grid;
+            grid-template-columns: minmax(0, 1.6fr) 90px minmax(0, 1fr) minmax(0, 1.3fr) 130px 340px;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .list-header {
+            padding: 11px 20px; margin-bottom: 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.64rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.09em;
+            color: var(--muted); font-family: 'DM Mono', monospace;
+        }
+        .list-header .lh-time    { white-space: nowrap; }
+        .list-header .lh-actions { text-align: center; }
+
+        /* card column cells */
+        .cell-name { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .cell-name .user-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+        .cell-sub { font-size: 0.65rem; color: var(--muted); font-family: 'DM Mono', monospace; display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+        .cell-sub svg { width: 11px; height: 11px; flex-shrink: 0; }
+        .cell-loc, .cell-email {
+            display: flex; align-items: center; gap: 5px; min-width: 0;
+            font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace;
+        }
+        .cell-loc span, .cell-email span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cell-loc svg, .cell-email svg { width: 12px; height: 12px; flex-shrink: 0; }
+        .cell-time { font-size: 0.7rem; color: var(--muted); font-family: 'DM Mono', monospace; white-space: nowrap; }
+        .cell-actions { display: flex; gap: 8px; align-items: center; justify-content: center; }
+
+        @media (max-width: 1100px) {
+            .list-header, .user-card { grid-template-columns: minmax(0, 1.6fr) 88px 130px 340px; }
+            .lh-loc, .lh-email, .cell-loc, .cell-email { display: none; }
+        }
+        @media (max-width: 760px) {
+            .list-header, .user-card { grid-template-columns: minmax(0, 1fr) auto; }
+            .lh-role, .lh-time, .cell-role, .cell-time { display: none; }
+        }
+
         /* ── USER CARDS ── */
         .user-list { display: flex; flex-direction: column; gap: 10px; }
 
@@ -265,8 +309,8 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 14px;
-            padding: 16px 20px;
-            display: flex; align-items: center; gap: 16px;
+            padding: 14px 20px;
+            /* display/columns come from the shared `.list-header, .user-card` grid rule */
             transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
             animation: fadeUp 0.4s ease both;
         }
@@ -363,6 +407,7 @@
             border: 1px solid var(--border); border-radius: 9px;
             padding: 7px 14px; font-size: 0.78rem; font-weight: 600;
             font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.15s;
+            text-decoration: none;
         }
 
         .btn-view-detail:hover { color: var(--text); border-color: var(--border-hover); }
@@ -491,6 +536,45 @@
         .doc-check { margin-left: auto; width: 20px; height: 20px; border-radius: 50%; background: rgba(126,255,197,0.1); border: 1px solid rgba(126,255,197,0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .doc-check svg { width: 11px; height: 11px; color: var(--mint-dim); }
 
+        /* ── LIVENESS CHECK (4 sign-up selfies) ── */
+        .liveness-block {
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 9px; padding: 10px 12px 12px; margin-bottom: 7px;
+        }
+        .liveness-head { display: flex; align-items: center; gap: 10px; }
+        .liveness-status {
+            margin-left: auto; flex-shrink: 0;
+            font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            padding: 3px 8px; border-radius: 999px;
+            background: rgba(251,184,36,0.12); border: 1px solid rgba(251,184,36,0.25); color: var(--warn);
+        }
+        .liveness-status.ok       { background: rgba(126,255,197,0.1); border-color: rgba(126,255,197,0.25); color: var(--mint-dim); }
+        .liveness-status.bad      { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.25); color: var(--danger); }
+        .liveness-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 11px; }
+        .pose-card {
+            padding: 0; border: 1px solid var(--border); border-radius: 8px;
+            background: var(--surface); overflow: hidden; cursor: pointer;
+            font-family: inherit; text-align: center; transition: all 0.15s; display: block; width: 100%;
+        }
+        .pose-card:hover { border-color: var(--border-hover); transform: translateY(-1px); }
+        .pose-card img {
+            width: 100%; aspect-ratio: 3 / 4; object-fit: cover;
+            display: block; background: #000;
+        }
+        .pose-card .pose-label {
+            font-size: 0.6rem; font-weight: 600; color: var(--muted);
+            padding: 5px 2px; letter-spacing: 0.04em; text-transform: uppercase;
+        }
+        .pose-card.missing {
+            cursor: default; border-style: dashed; background: transparent;
+        }
+        .pose-card.missing:hover { border-color: var(--border); transform: none; }
+        .pose-card.missing .pose-empty {
+            aspect-ratio: 3 / 4; display: flex; align-items: center; justify-content: center;
+        }
+        .pose-card.missing .pose-empty svg { width: 14px; height: 14px; color: var(--muted); opacity: 0.5; }
+        .liveness-remarks { font-size: 0.65rem; color: var(--muted); margin-top: 9px; line-height: 1.5; }
+
         .modal-footer {
             padding: 14px 24px; border-top: 1px solid var(--border);
             display: flex; align-items: center; justify-content: flex-end; gap: 9px;
@@ -508,6 +592,14 @@
 
         /* ── CONFIRM MODAL ── */
         .confirm-modal { max-width: 400px; }
+
+        /* Base shape for the confirm action button. The JS sets only the
+           background/color/border per action, so these stay applied. */
+        #confirmActionBtn {
+            border-radius: 9px; padding: 8px 20px;
+            font-size: 0.8rem; font-weight: 700;
+            font-family: 'Sora', sans-serif; cursor: pointer;
+        }
 
         .confirm-icon {
             width: 52px; height: 52px; border-radius: 14px;
@@ -575,9 +667,6 @@
         }
 
         @media (max-width: 900px) {
-            :root { --sidebar-w: 64px; }
-            .sidebar-brand, .nav-link span, .nav-label { display: none; }
-            .nav-link { justify-content: center; padding: 10px; }
             .main { padding: 24px 18px; }
         }
 
@@ -595,6 +684,7 @@
             .detail-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <link rel="stylesheet" href="admin-shell.css">
 </head>
 <body>
 
@@ -613,12 +703,16 @@
             <div class="nav-label">Main</div>
             <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
             <a href="sellers.html"   class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
+            <a href="listings.html" class="nav-link"><i data-lucide="package"></i><span>Listings</span></a>
+            <a href="transactions.html" class="nav-link"><i data-lucide="receipt"></i><span>Transactions</span></a>
             <a href="premium.html" class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
 
             <div class="nav-label">Admin</div>
             <a href="announcements.html" class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
             <a href="user.html" class="nav-link active"><i data-lucide="user-check"></i><span>User Approvals</span></a>
  <a href="customer-service.html" class="nav-link "><i data-lucide="message-circle"></i><span>Customer Service</span></a>
+            <a href="reviews.html" class="nav-link"><i data-lucide="star"></i><span>Reviews</span></a>
+            <a href="reports.html" class="nav-link"><i data-lucide="flag"></i><span>Reports</span><span class="reports-badge" data-reports-badge hidden>0</span></a>
             <div class="nav-bottom">
                 <a href="profile.html" class="nav-link"><i data-lucide="user-circle"></i><span>My Profile</span></a>
                 <button class="nav-link logout" onclick="confirmLogout()"><i data-lucide="log-out"></i><span>Logout</span></button>
@@ -636,6 +730,7 @@
             </div>
             <div class="header-right">
                 <div class="date-badge" id="dateBadge">—</div>
+                <button class="icon-btn" title="Export CSV" onclick="exportUsers()"><i data-lucide="download"></i></button>
             </div>
         </div>
 
@@ -695,7 +790,7 @@
                 </select>
                 <div class="search-wrap">
                     <i data-lucide="search" class="search-icon"></i>
-                    <input type="text" id="searchInput" placeholder="Search name or location…" oninput="renderAll()">
+                    <input type="text" id="searchInput" placeholder="Search name or address…" oninput="renderAll()">
                 </div>
             </div>
         </div>
@@ -705,10 +800,10 @@
             <span class="bulk-count" id="bulkCount">0</span>
             <span class="bulk-muted">users selected</span>
             <div class="bulk-bar-actions">
-                <button class="btn-approve" onclick="bulkAction('approve')">
+                <button class="btn-approve" onclick="openBulk('approve')">
                     <i data-lucide="check"></i> Approve All
                 </button>
-                <button class="btn-reject" onclick="bulkAction('reject')">
+                <button class="btn-reject" onclick="openBulk('reject')">
                     <i data-lucide="x"></i> Reject All
                 </button>
             </div>
@@ -716,14 +811,38 @@
 
         <!-- PANELS -->
         <div class="panel active" id="panel-pending">
+            <div class="list-header">
+                <span class="lh-name">Name</span>
+                <span class="lh-role">Role</span>
+                <span class="lh-loc">Address</span>
+                <span class="lh-email">Email</span>
+                <span class="lh-time">Submitted</span>
+                <span class="lh-actions">Actions</span>
+            </div>
             <div class="user-list" id="list-pending"></div>
         </div>
 
         <div class="panel" id="panel-approved">
+            <div class="list-header">
+                <span class="lh-name">Name</span>
+                <span class="lh-role">Role</span>
+                <span class="lh-loc">Address</span>
+                <span class="lh-email">Email</span>
+                <span class="lh-time">Submitted</span>
+                <span class="lh-actions">Actions</span>
+            </div>
             <div class="user-list" id="list-approved"></div>
         </div>
 
         <div class="panel" id="panel-rejected">
+            <div class="list-header">
+                <span class="lh-name">Name</span>
+                <span class="lh-role">Role</span>
+                <span class="lh-loc">Address</span>
+                <span class="lh-email">Email</span>
+                <span class="lh-time">Submitted</span>
+                <span class="lh-actions">Actions</span>
+            </div>
             <div class="user-list" id="list-rejected"></div>
         </div>
 
@@ -766,6 +885,12 @@
     <span id="toast-msg">Done.</span>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="escape.js"></script>
+<script src="csv-export.js"></script>
+<script src="image-lightbox.js"></script>
+<script src="logout-modal.js"></script>
 <script>
 // ─────────────────────────────────────────────────
 // DATA
@@ -782,23 +907,123 @@ function initials(name) {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
-let pending = [
-    { id: 1,  name: 'Cardo Dalisay',    role: 'Seller', location: 'Batangas City',  email: 'cardo.d@mail.com',   phone: '09171234567', submitted: '8:14 AM',  livestock: 'Cattle, Swine',   id_type: 'PhilSys ID',    business: 'Dalisay Farm'       },
-    { id: 2,  name: 'Nena Reyes',       role: 'Seller', location: 'Laguna',         email: 'nena.r@mail.com',    phone: '09281234567', submitted: '8:42 AM',  livestock: 'Poultry',         id_type: 'Driver\'s License', business: 'Reyes Poultry'   },
-    { id: 3,  name: 'Ferdie Santos',    role: 'Buyer',  location: 'Quezon City',    email: 'ferdie.s@mail.com',  phone: '09391234567', submitted: '9:05 AM',  livestock: '—',               id_type: 'Passport',          business: '—'               },
-    { id: 4,  name: 'Liza Manalo',      role: 'Seller', location: 'Cavite',         email: 'liza.m@mail.com',    phone: '09451234567', submitted: '9:30 AM',  livestock: 'Goat, Cattle',    id_type: 'PhilSys ID',        business: 'Manalo Livestock'},
-    { id: 5,  name: 'Andres Cruz',      role: 'Buyer',  location: 'Rizal',          email: 'andres.c@mail.com',  phone: '09561234567', submitted: '10:01 AM', livestock: '—',               id_type: 'Voter\'s ID',       business: '—'               },
-    { id: 6,  name: 'Belinda Ocampo',   role: 'Seller', location: 'Batangas',       email: 'bel.o@mail.com',     phone: '09671234567', submitted: '10:22 AM', livestock: 'Swine',           id_type: 'PhilSys ID',        business: 'Ocampo Piggery'  },
-    { id: 7,  name: 'Rodrigo Tan',      role: 'Buyer',  location: 'Manila',         email: 'rod.t@mail.com',     phone: '09181234567', submitted: '10:45 AM', livestock: '—',               id_type: 'Driver\'s License', business: '—'               },
-    { id: 8,  name: 'Gina Flores',      role: 'Seller', location: 'Nueva Ecija',    email: 'gina.f@mail.com',    phone: '09291234567', submitted: '11:03 AM', livestock: 'Cattle',          id_type: 'Passport',          business: 'Flores Ranch'    },
-];
-
+// Loaded from the Supabase `users` table by loadUsers(); split by status.
+let pending  = [];
 let approved = [];
-let rejected  = [];
+let rejected = [];
 
 let currentTab = 'pending';
 let selectedIds = new Set();
 let detailUserId = null;
+let currentDocUrl = null;
+let currentDocTitle = '';
+
+// Liveness (sign-up selfie) records, keyed by user id — see loadLiveness().
+let livenessByUser = new Map();
+
+// The 4 poses the mobile app captures during the sign-up liveness check, in
+// capture order. Keys match the columns of public.user_liveness_verification.
+const LIVENESS_POSES = [
+    { key: 'center_image_url', label: 'Center', hint: 'Looking straight at the camera' },
+    { key: 'right_image_url',  label: 'Right',  hint: 'Head turned to their right' },
+    { key: 'left_image_url',   label: 'Left',   hint: 'Head turned to their left' },
+    { key: 'down_image_url',   label: 'Down',   hint: 'Head tilted down' }
+];
+
+// ─────────────────────────────────────────────────
+// SUPABASE LOAD
+// ─────────────────────────────────────────────────
+// The mobile sign-up runs a 4-pose liveness check (center / right / left /
+// down); each pose is uploaded to Cloudinary and a database trigger writes the
+// resulting URLs into public.user_liveness_verification, one row per user, so
+// an admin can review the faces BEFORE approving the account.
+//
+// This is supplementary evidence for the reviewer: a failure here (table not
+// migrated yet, RLS policy missing) must never block the approvals list, so it
+// is logged and the modal simply reports that no liveness check was found.
+async function loadLiveness() {
+    livenessByUser = new Map();
+
+    const { data, error } = await supabaseClient
+        .from('user_liveness_verification')
+        .select('user_id, center_image_url, right_image_url, left_image_url, down_image_url, verification_status, remarks, created_at');
+
+    if (error) {
+        console.error('LOAD LIVENESS ERROR:', error);
+        return;
+    }
+
+    (data || []).forEach(row => livenessByUser.set(String(row.user_id), row));
+}
+
+async function loadUsers() {
+    // Accounts created on the Manage Admins page also get a `users` row (same
+    // auth id), but they never went through mobile-app signup and must not show
+    // up for approval. Pull the admin ids and exclude those users below.
+    const [{ data, error }, adminsRes] = await Promise.all([
+        supabaseClient
+            .from('users')
+            .select('id, name, email, phone, address, status, is_verified, valid_id_type, valid_id_url, business_name, created_at, seller_profiles(shop_name)')
+            .order('created_at', { ascending: true }),
+        supabaseClient.from('admins').select('id, email'),
+        loadLiveness()
+    ]);
+
+    if (error) {
+        console.error('LOAD USERS ERROR:', error);
+        showToast('Failed to load users: ' + error.message, 'error');
+        return;
+    }
+
+    if (adminsRes.error) console.error('LOAD ADMIN IDS ERROR:', adminsRes.error);
+    // A Manage-Admins account auto-creates a users row sharing BOTH the auth id
+    // and the email. Key on id+email so a genuine mobile signup that only shares
+    // an id with an admin (seed-data uuid collisions) is still shown.
+    const adminKeys = new Set(
+        (adminsRes.data || []).map(a => String(a.id) + '|' + String(a.email || '').toLowerCase())
+    );
+    const isAdminAccount = row =>
+        adminKeys.has(String(row.id) + '|' + String(row.email || '').toLowerCase());
+
+    const mapped = (data || [])
+        .filter(row => !isAdminAccount(row))    // hide accounts created on Manage Admins
+        .map(row => {
+        const isSeller = Array.isArray(row.seller_profiles) && row.seller_profiles.length > 0;
+        return {
+            id:        String(row.id),               // uuid -> string (used in onclick handlers)
+            name:      row.name || '(no name)',
+            email:     row.email || '—',
+            phone:     row.phone || '—',
+            location:  row.address || '—',
+            role:      isSeller ? 'Seller' : 'Buyer',
+            business:  row.business_name
+                        || (isSeller && row.seller_profiles[0] ? row.seller_profiles[0].shop_name : null)
+                        || '—',
+            id_type:   row.valid_id_type || '—',
+            valid_id_url: row.valid_id_url || null,
+            verified:  row.is_verified === true,
+            registered: row.created_at
+                ? new Date(row.created_at).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' })
+                : '—',
+            submitted: row.created_at
+                ? new Date(row.created_at).toLocaleString('en-PH', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })
+                : '—',
+            status:    row.status
+        };
+    });
+
+    // Approval status and account state share one `status` column. A user must
+    // be approved before they can be restricted/blocked on the Sellers & Buyers
+    // page, so those count as "approved" here — they stay visible in the Approved
+    // tab and aren't affected by restrict/block. Pending = a brand-new account
+    // awaiting review only (status 'pending', null, or '').
+    const APPROVED_STATES = ['approved', 'restricted', 'blocked'];
+    approved = mapped.filter(u => APPROVED_STATES.includes(u.status));
+    rejected = mapped.filter(u => u.status === 'rejected');
+    pending  = mapped.filter(u => u.status !== 'rejected' && !APPROVED_STATES.includes(u.status));
+
+    renderAll();
+}
 
 // ─────────────────────────────────────────────────
 // RENDER
@@ -852,74 +1077,69 @@ function renderList(type, data) {
 
         const isPending  = type === 'pending';
         const isApproved = type === 'approved';
-        const isRejected = type === 'rejected';
 
         const roleDotColor = u.role === 'Seller' ? 'var(--mint)' : '#38BDF8';
 
-        let actionsHTML = '';
+        // ACTIONS column content
+        let actionsCell = '';
         if (isPending) {
-            actionsHTML = `
-                <div class="user-time">
-                    <div class="time-label">Submitted</div>
-                    ${u.submitted}
-                </div>
-                <div class="user-actions">
-                    <button class="btn-view-detail" onclick="openDetail(${u.id})">
-                        <i data-lucide="eye"></i> View
-                    </button>
-                    <button class="btn-approve" onclick="doApprove(${u.id})">
-                        <i data-lucide="check"></i> Approve
-                    </button>
-                    <button class="btn-reject" onclick="openReject(${u.id})">
-                        <i data-lucide="x"></i> Reject
-                    </button>
-                </div>`;
-        } else if (isApproved) {
-            actionsHTML = `
-                <span class="status-tag st-approved"><span class="dot"></span> Approved</span>
-                <div class="user-time">${u.submitted}</div>
-                <div class="user-actions">
-                    <button class="btn-undo" onclick="undoAction(${u.id}, 'approved')">
-                        <i data-lucide="rotate-ccw"></i> Undo
-                    </button>
-                </div>`;
+            actionsCell = `
+                <button class="btn-view-detail" onclick="openDetail('${u.id}')"><i data-lucide="eye"></i> View</button>
+                <button class="btn-approve" onclick="openApprove('${u.id}')"><i data-lucide="check"></i> Approve</button>
+                <button class="btn-reject" onclick="openReject('${u.id}')"><i data-lucide="x"></i> Reject</button>`;
         } else {
-            actionsHTML = `
-                <span class="status-tag st-rejected"><span class="dot"></span> Rejected</span>
-                <div class="user-time">${u.submitted}</div>
-                <div class="user-actions">
-                    <button class="btn-undo" onclick="undoAction(${u.id}, 'rejected')">
-                        <i data-lucide="rotate-ccw"></i> Undo
-                    </button>
-                </div>`;
+            const fromTab = isApproved ? 'approved' : 'rejected';
+            const tag = isApproved
+                ? `<span class="status-tag st-approved"><span class="dot"></span> Approved</span>`
+                : `<span class="status-tag st-rejected"><span class="dot"></span> Rejected</span>`;
+            actionsCell = `
+                ${tag}
+                <button class="btn-undo" onclick="openUndo('${u.id}', '${fromTab}')"><i data-lucide="rotate-ccw"></i> Undo</button>`;
         }
 
-        const checkboxHTML = isPending ? `<input type="checkbox" class="user-checkbox" id="chk-${u.id}" onchange="toggleSelect(${u.id}, this)">` : '';
+        const checkboxHTML = isPending ? `<input type="checkbox" class="user-checkbox" id="chk-${u.id}" onchange="toggleSelect('${u.id}', this)">` : '';
 
         card.innerHTML = `
-            ${checkboxHTML}
-            <div class="user-avatar" style="background:${color}22; color:${color}; border: 1.5px solid ${color}44;">
-                ${initials(u.name)}
-                <span class="role-dot" style="background:${roleDotColor};"></span>
-            </div>
-            <div class="user-info">
-                <div class="user-name">${u.name}</div>
-                <div class="user-meta">
-                    <span class="role-badge ${u.role === 'Seller' ? 'role-seller' : 'role-buyer'}">
-                        <i data-lucide="${u.role === 'Seller' ? 'store' : 'shopping-bag'}" style="width:10px;height:10px;"></i>
-                        ${u.role}
-                    </span>
-                    <span class="meta-chip"><i data-lucide="map-pin"></i> ${u.location}</span>
-                    <span class="meta-chip"><i data-lucide="mail"></i> ${u.email}</span>
-                    ${u.role === 'Seller' ? `<span class="meta-chip"><i data-lucide="beef"></i> ${u.livestock}</span>` : ''}
+            <div class="cell-name">
+                ${checkboxHTML}
+                <div class="user-avatar" style="background:${color}22; color:${color}; border: 1.5px solid ${color}44;">
+                    ${escapeHtml(initials(u.name))}
+                    <span class="role-dot" style="background:${roleDotColor};"></span>
+                </div>
+                <div style="min-width:0;">
+                    <div class="user-name">${escapeHtml(u.name)}</div>
+                    ${u.role === 'Seller' && u.business !== '—' ? `<div class="cell-sub"><i data-lucide="store"></i> ${escapeHtml(u.business)}</div>` : ''}
                 </div>
             </div>
-            ${actionsHTML}
+            <div class="cell-role">
+                <span class="role-badge ${u.role === 'Seller' ? 'role-seller' : 'role-buyer'}">
+                    <i data-lucide="${u.role === 'Seller' ? 'store' : 'shopping-bag'}" style="width:10px;height:10px;"></i>
+                    ${u.role}
+                </span>
+            </div>
+            <div class="cell-loc"><i data-lucide="map-pin"></i> <span>${escapeHtml(u.location)}</span></div>
+            <div class="cell-email"><i data-lucide="mail"></i> <span>${escapeHtml(u.email)}</span></div>
+            <div class="cell-time">${escapeHtml(u.submitted)}</div>
+            <div class="cell-actions">${actionsCell}</div>
         `;
         list.appendChild(card);
     });
 
     lucide.createIcons();
+}
+
+// ─────────────────────────────────────────────────
+// EXPORT — every loaded registration (all three tabs) to CSV.
+// downloadCSV is provided globally by csv-export.js.
+// ─────────────────────────────────────────────────
+function exportUsers() {
+    const rows = [...pending, ...approved, ...rejected].map(u => [
+        u.name, u.email, u.phone, u.location, u.role, u.business,
+        u.id_type, u.verified ? 'yes' : 'no', u.status, u.registered
+    ]);
+    downloadCSV('user-approvals',
+        ['Name','Email','Phone','Address','Role','Business','ID type','Verified','Status','Registered'],
+        rows);
 }
 
 // ─────────────────────────────────────────────────
@@ -969,15 +1189,44 @@ function setCount(id, target) {
 // ─────────────────────────────────────────────────
 // ACTIONS
 // ─────────────────────────────────────────────────
-function doApprove(id) {
-    const idx = pending.findIndex(u => u.id === id);
-    if (idx === -1) return;
-    const user = pending.splice(idx, 1)[0];
-    approved.unshift(user);
+function openApprove(id) {
+    const user = pending.find(u => u.id === id);
+    if (!user) return;
+
+    document.getElementById('confirmIcon').innerHTML = `
+        <div style="width:52px;height:52px;border-radius:14px;background:rgba(126,255,197,0.12);border:1px solid rgba(126,255,197,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+            <i data-lucide="user-check" style="width:22px;height:22px;color:var(--mint-dim);"></i>
+        </div>`;
+    document.getElementById('confirmTitle').textContent = `Approve ${user.name}?`;
+    document.getElementById('confirmDesc').textContent  = `This will approve ${user.name}'s registration and mark the account as verified. You can undo this afterward.`;
+
+    const btn = document.getElementById('confirmActionBtn');
+    btn.textContent = 'Yes, Approve';
+    btn.style.cssText = 'background:rgba(126,255,197,0.15);color:var(--mint-dim);border:1px solid rgba(126,255,197,0.5);';
+    btn.onclick = () => { doApprove(id); closeModal('confirmModal'); };
+
+    document.getElementById('confirmModal').classList.add('open');
+    lucide.createIcons();
+}
+
+async function doApprove(id) {
+    const user = pending.find(u => u.id === id);
+
+    const { error } = await supabaseClient
+        .from('users')
+        .update({ status: 'approved', is_verified: true })
+        .eq('id', id);
+
+    if (error) {
+        console.error('APPROVE ERROR:', error);
+        showToast('Error approving user: ' + error.message, 'error');
+        return;
+    }
+
     selectedIds.delete(id);
-    renderAll();
-    showToast(`✓ ${user.name} approved successfully.`, 'success');
     closeModal('detailModal');
+    showToast(`✓ ${user ? user.name : 'User'} approved successfully.`, 'success');
+    await loadUsers();
 }
 
 function openReject(id) {
@@ -993,32 +1242,71 @@ function openReject(id) {
 
     const btn = document.getElementById('confirmActionBtn');
     btn.textContent = 'Yes, Reject';
-    btn.style.cssText = 'background:rgba(255,107,107,0.15);color:var(--danger);border:1px solid rgba(255,107,107,0.25);';
+    btn.style.cssText = 'background:rgba(255,107,107,0.15);color:var(--danger);border:1px solid rgba(255,107,107,0.5);';
     btn.onclick = () => { doReject(id); closeModal('confirmModal'); };
 
     document.getElementById('confirmModal').classList.add('open');
     lucide.createIcons();
 }
 
-function doReject(id) {
-    const idx = pending.findIndex(u => u.id === id);
-    if (idx === -1) return;
-    const user = pending.splice(idx, 1)[0];
-    rejected.unshift(user);
+async function doReject(id) {
+    const user = pending.find(u => u.id === id);
+
+    const { error } = await supabaseClient
+        .from('users')
+        .update({ status: 'rejected', is_verified: false })
+        .eq('id', id);
+
+    if (error) {
+        console.error('REJECT ERROR:', error);
+        showToast('Error rejecting user: ' + error.message, 'error');
+        return;
+    }
+
     selectedIds.delete(id);
-    renderAll();
-    showToast(`${user.name} was rejected.`, 'error');
     closeModal('detailModal');
+    showToast(`${user ? user.name : 'User'} was rejected.`, 'error');
+    await loadUsers();
 }
 
-function undoAction(id, from) {
+function openUndo(id, from) {
     const arr = from === 'approved' ? approved : rejected;
-    const idx = arr.findIndex(u => u.id === id);
-    if (idx === -1) return;
-    const user = arr.splice(idx, 1)[0];
-    pending.unshift(user);
-    renderAll();
-    showToast(`Moved ${user.name} back to pending.`, 'info');
+    const user = arr.find(u => u.id === id);
+    if (!user) return;
+
+    document.getElementById('confirmIcon').innerHTML = `
+        <div style="width:52px;height:52px;border-radius:14px;background:rgba(251,184,36,0.12);border:1px solid rgba(251,184,36,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+            <i data-lucide="rotate-ccw" style="width:22px;height:22px;color:var(--warn);"></i>
+        </div>`;
+    document.getElementById('confirmTitle').textContent = `Move ${user.name} back to pending?`;
+    document.getElementById('confirmDesc').textContent  = `This will undo the ${from} status and return ${user.name} to the pending list for review.`;
+
+    const btn = document.getElementById('confirmActionBtn');
+    btn.textContent = 'Yes, Undo';
+    btn.style.cssText = 'background:rgba(251,184,36,0.15);color:var(--warn);border:1px solid rgba(251,184,36,0.25);';
+    btn.onclick = () => { undoAction(id, from); closeModal('confirmModal'); };
+
+    document.getElementById('confirmModal').classList.add('open');
+    lucide.createIcons();
+}
+
+async function undoAction(id, from) {
+    const arr = from === 'approved' ? approved : rejected;
+    const user = arr.find(u => u.id === id);
+
+    const { error } = await supabaseClient
+        .from('users')
+        .update({ status: 'pending', is_verified: false })
+        .eq('id', id);
+
+    if (error) {
+        console.error('UNDO ERROR:', error);
+        showToast('Error moving user back to pending: ' + error.message, 'error');
+        return;
+    }
+
+    showToast(`Moved ${user ? user.name : 'user'} back to pending.`, 'info');
+    await loadUsers();
 }
 
 // ─────────────────────────────────────────────────
@@ -1040,16 +1328,61 @@ function updateBulkBar() {
     }
 }
 
-function bulkAction(action) {
+function openBulk(action) {
+    const count = selectedIds.size;
+    if (!count) return;
+
+    const isApprove = action === 'approve';
+    const noun = count === 1 ? 'account' : 'accounts';
+
+    document.getElementById('confirmIcon').innerHTML = isApprove
+        ? `<div style="width:52px;height:52px;border-radius:14px;background:rgba(126,255,197,0.12);border:1px solid rgba(126,255,197,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+               <i data-lucide="user-check" style="width:22px;height:22px;color:var(--mint-dim);"></i>
+           </div>`
+        : `<div style="width:52px;height:52px;border-radius:14px;background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+               <i data-lucide="user-x" style="width:22px;height:22px;color:var(--danger);"></i>
+           </div>`;
+
+    document.getElementById('confirmTitle').textContent =
+        `${isApprove ? 'Approve' : 'Reject'} ${count} ${noun}?`;
+    document.getElementById('confirmDesc').textContent = isApprove
+        ? `This will approve and verify all ${count} selected ${noun}. You can undo each one afterward.`
+        : `This will reject all ${count} selected ${noun}. You can undo each one afterward.`;
+
+    const btn = document.getElementById('confirmActionBtn');
+    btn.textContent = isApprove ? `Yes, Approve All` : `Yes, Reject All`;
+    btn.style.cssText = isApprove
+        ? 'background:rgba(126,255,197,0.15);color:var(--mint-dim);border:1px solid rgba(126,255,197,0.5);'
+        : 'background:rgba(255,107,107,0.15);color:var(--danger);border:1px solid rgba(255,107,107,0.5);';
+    btn.onclick = () => { bulkAction(action); closeModal('confirmModal'); };
+
+    document.getElementById('confirmModal').classList.add('open');
+    lucide.createIcons();
+}
+
+async function bulkAction(action) {
     const ids = [...selectedIds];
     if (!ids.length) return;
-    ids.forEach(id => {
-        if (action === 'approve') doApprove(id);
-        else doReject(id);
-    });
+
+    const patch = action === 'approve'
+        ? { status: 'approved', is_verified: true }
+        : { status: 'rejected', is_verified: false };
+
+    const { error } = await supabaseClient
+        .from('users')
+        .update(patch)
+        .in('id', ids);
+
+    if (error) {
+        console.error('BULK ACTION ERROR:', error);
+        showToast('Bulk action failed: ' + error.message, 'error');
+        return;
+    }
+
     selectedIds.clear();
     updateBulkBar();
     showToast(`${ids.length} users ${action === 'approve' ? 'approved' : 'rejected'}.`, action === 'approve' ? 'success' : 'error');
+    await loadUsers();
 }
 
 // ─────────────────────────────────────────────────
@@ -1059,15 +1392,17 @@ function openDetail(id) {
     const user = pending.find(u => u.id === id);
     if (!user) return;
     detailUserId = id;
+    currentDocUrl = user.valid_id_url || null;
+    currentDocTitle = user.id_type !== '—' ? user.id_type : 'Valid ID';
     const color = rndColor(user.name);
 
     document.getElementById('detailBody').innerHTML = `
         <div class="profile-block">
             <div class="profile-avatar" style="background:${color}22; color:${color}; border:2px solid ${color}44; width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;flex-shrink:0;">
-                ${initials(user.name)}
+                ${escapeHtml(initials(user.name))}
             </div>
             <div>
-                <div class="profile-name">${user.name}</div>
+                <div class="profile-name">${escapeHtml(user.name)}</div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                     <span class="role-badge ${user.role === 'Seller' ? 'role-seller' : 'role-buyer'}">
                         ${user.role}
@@ -1080,29 +1415,28 @@ function openDetail(id) {
         <div class="detail-grid">
             <div class="detail-item">
                 <div class="d-label">Email</div>
-                <div class="d-val">${user.email}</div>
+                <div class="d-val">${escapeHtml(user.email)}</div>
             </div>
             <div class="detail-item">
                 <div class="d-label">Phone</div>
-                <div class="d-val">${user.phone}</div>
+                <div class="d-val">${escapeHtml(user.phone)}</div>
             </div>
             <div class="detail-item">
-                <div class="d-label">Location</div>
-                <div class="d-val">${user.location}</div>
+                <div class="d-label">Address</div>
+                <div class="d-val">${escapeHtml(user.location)}</div>
+            </div>
+            <div class="detail-item">
+                <div class="d-label">Registered</div>
+                <div class="d-val">${escapeHtml(user.registered)}</div>
             </div>
             <div class="detail-item">
                 <div class="d-label">ID Type</div>
-                <div class="d-val">${user.id_type}</div>
+                <div class="d-val">${escapeHtml(user.id_type)}</div>
             </div>
-            ${user.role === 'Seller' ? `
             <div class="detail-item">
                 <div class="d-label">Business Name</div>
-                <div class="d-val">${user.business}</div>
+                <div class="d-val">${escapeHtml(user.business)}</div>
             </div>
-            <div class="detail-item">
-                <div class="d-label">Livestock Type</div>
-                <div class="d-val">${user.livestock}</div>
-            </div>` : ''}
         </div>
 
         <div class="docs-section">
@@ -1110,37 +1444,27 @@ function openDetail(id) {
             <div class="doc-row">
                 <div class="doc-icon"><i data-lucide="id-card"></i></div>
                 <div>
-                    <div class="doc-name">${user.id_type}</div>
-                    <div class="doc-sub">Government-issued ID · Uploaded</div>
+                    <div class="doc-name">${user.id_type !== '—' ? escapeHtml(user.id_type) : 'Valid ID'}</div>
+                    <div class="doc-sub">Government-issued ID · ${user.valid_id_url ? 'Uploaded' : 'Not uploaded'}</div>
                 </div>
-                <div class="doc-check"><i data-lucide="check"></i></div>
+                ${user.valid_id_url
+                    ? `<button type="button" onclick="openImageModal()" class="btn-view-detail" style="margin-left:auto;">
+                           <i data-lucide="eye"></i> View
+                       </button>`
+                    : `<div class="doc-check" style="margin-left:auto; background:rgba(255,107,107,0.1); border-color:rgba(255,107,107,0.25);">
+                           <i data-lucide="x" style="color:var(--danger);"></i>
+                       </div>`}
             </div>
-            ${user.role === 'Seller' ? `
-            <div class="doc-row">
-                <div class="doc-icon"><i data-lucide="file-text"></i></div>
-                <div>
-                    <div class="doc-name">Business Permit / Farm Certificate</div>
-                    <div class="doc-sub">Supporting document · Uploaded</div>
-                </div>
-                <div class="doc-check"><i data-lucide="check"></i></div>
-            </div>` : ''}
-            <div class="doc-row">
-                <div class="doc-icon"><i data-lucide="camera"></i></div>
-                <div>
-                    <div class="doc-name">Selfie with ID</div>
-                    <div class="doc-sub">Identity verification photo · Uploaded</div>
-                </div>
-                <div class="doc-check"><i data-lucide="check"></i></div>
-            </div>
+            ${livenessBlockHtml(user.id)}
         </div>
     `;
 
     document.getElementById('detailFooter').innerHTML = `
         <button class="btn-secondary" onclick="closeModal('detailModal')">Close</button>
-        <button class="btn-reject" onclick="closeModal('detailModal'); openReject(${user.id})">
+        <button class="btn-reject" onclick="closeModal('detailModal'); openReject('${user.id}')">
             <i data-lucide="x"></i> Reject
         </button>
-        <button class="btn-approve" onclick="doApprove(${user.id}); closeModal('detailModal');">
+        <button class="btn-approve" onclick="closeModal('detailModal'); openApprove('${user.id}')">
             <i data-lucide="check"></i> Approve
         </button>
     `;
@@ -1150,10 +1474,103 @@ function openDetail(id) {
 }
 
 // ─────────────────────────────────────────────────
+// LIVENESS CHECK BLOCK
+// ─────────────────────────────────────────────────
+// Only render remote images we can vouch for the shape of. The URLs come from
+// the database (written by the mobile app's Cloudinary upload), so anything
+// that is not a plain http(s) link is treated as "missing" rather than
+// interpolated into an <img src>.
+function safeImageUrl(url) {
+    return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : null;
+}
+
+function livenessBlockHtml(userId) {
+    const row = livenessByUser.get(String(userId));
+
+    const poses = LIVENESS_POSES.map(pose => ({
+        ...pose,
+        url: row ? safeImageUrl(row[pose.key]) : null
+    }));
+    const captured = poses.filter(p => p.url).length;
+
+    if (!row) {
+        return `
+            <div class="doc-row">
+                <div class="doc-icon" style="background:rgba(192,132,252,0.1);"><i data-lucide="scan-face" style="color:#C084FC;"></i></div>
+                <div>
+                    <div class="doc-name">Liveness Check</div>
+                    <div class="doc-sub">4 sign-up selfies · Not submitted</div>
+                </div>
+                <div class="doc-check" style="margin-left:auto; background:rgba(255,107,107,0.1); border-color:rgba(255,107,107,0.25);">
+                    <i data-lucide="x" style="color:var(--danger);"></i>
+                </div>
+            </div>`;
+    }
+
+    const status = String(row.verification_status || 'pending').toLowerCase();
+    const statusClass = status === 'approved' || status === 'verified' ? 'ok'
+                      : status === 'rejected' || status === 'failed'   ? 'bad'
+                      : '';
+
+    const cards = poses.map(pose => pose.url
+        ? `<button type="button" class="pose-card" onclick="openPose('${escapeAttr(userId)}','${pose.key}')"
+                   title="View ${escapeAttr(pose.label)} pose">
+               <img src="${escapeHtml(pose.url)}" alt="${escapeAttr(pose.label)} pose selfie" loading="lazy">
+               <div class="pose-label">${escapeHtml(pose.label)}</div>
+           </button>`
+        : `<div class="pose-card missing" title="${escapeAttr(pose.label)} pose was not captured">
+               <div class="pose-empty"><i data-lucide="image-off"></i></div>
+               <div class="pose-label">${escapeHtml(pose.label)}</div>
+           </div>`
+    ).join('');
+
+    return `
+        <div class="liveness-block">
+            <div class="liveness-head">
+                <div class="doc-icon" style="background:rgba(192,132,252,0.1);"><i data-lucide="scan-face" style="color:#C084FC;"></i></div>
+                <div>
+                    <div class="doc-name">Liveness Check</div>
+                    <div class="doc-sub">${captured} of ${LIVENESS_POSES.length} selfies captured at sign-up</div>
+                </div>
+                <span class="liveness-status ${statusClass}">${escapeHtml(status)}</span>
+            </div>
+            <div class="liveness-grid">${cards}</div>
+            ${row.remarks ? `<div class="liveness-remarks">${escapeHtml(row.remarks)}</div>` : ''}
+        </div>`;
+}
+
+// Opens one pose in the shared lightbox. The URL is looked up here instead of
+// being baked into the onclick attribute.
+function openPose(userId, poseKey) {
+    const row  = livenessByUser.get(String(userId));
+    const pose = LIVENESS_POSES.find(p => p.key === poseKey);
+    const url  = row && pose ? safeImageUrl(row[poseKey]) : null;
+    if (!url) return;
+
+    openImageLightbox({
+        url,
+        title: `Liveness Check · ${pose.label}`,
+        subtitle: `${pose.hint} — captured during sign-up.`
+    });
+}
+
+// ─────────────────────────────────────────────────
 // MODAL HELPERS
 // ─────────────────────────────────────────────────
 function closeModal(id) {
     document.getElementById(id).classList.remove('open');
+}
+
+// ─────────────────────────────────────────────────
+// IMAGE LIGHTBOX (shared component — image-lightbox.js)
+// ─────────────────────────────────────────────────
+function openImageModal() {
+    if (!currentDocUrl) return;
+    openImageLightbox({
+        url: currentDocUrl,
+        title: currentDocTitle || 'Submitted Document',
+        subtitle: 'Government-issued ID uploaded by the user.'
+    });
 }
 
 // ─────────────────────────────────────────────────
@@ -1178,16 +1595,27 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dateBadge').textContent =
         new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
 
-    renderAll();
+    loadUsers();
 
     document.querySelectorAll('.modal-overlay').forEach(o => {
         o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
     });
 });
 
-function confirmLogout() {
-    if (confirm('Are you sure you want to sign out?')) window.location.href = '../index.html';
-}
+// Logout is handled by the shared styled modal in logout-modal.js.
 </script>
+<!-- Highlight the current page's link in the sidebar -->
+<script>
+(function () {
+    var here = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase();
+    document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {
+        var href = (link.getAttribute('href') || '').split('/').pop().toLowerCase();
+        link.classList.toggle('active', !!href && href === here);
+    });
+})();
+</script>
+<script src="sidebar.js"></script>
+<script src="reports-badge.js"></script>
+<script src="role.js"></script>
 </body>
 </html>
