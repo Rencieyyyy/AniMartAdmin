@@ -592,6 +592,7 @@
             border-radius: 10px; padding: 6px 10px; margin-bottom: 8px;
             font-size: 0.72rem; color: var(--text); max-width: 320px;
         }
+        .attach-chip[hidden] { display: none; }   /* display:flex above would override [hidden] */
         .attach-chip svg { width: 13px; height: 13px; color: var(--mint-dim); flex-shrink: 0; }
         .attach-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .attach-chip button {
@@ -652,18 +653,27 @@
 
         /* RESPONSIVE */
         @media (max-width: 900px) {
-            :root { --sidebar-w: 64px; }
-            .sidebar-brand, .nav-link span, .nav-label { display: none; }
-            .nav-link { justify-content: center; padding: 10px; }
             .cs-layout { grid-template-columns: 240px 1fr; }
         }
 
+        /* Phones: one pane at a time — the conversation list, or (after
+           picking one) the chat with a back button to return to the list. */
+        .cs-back { display: none !important; }
         @media (max-width: 700px) {
             .cs-layout { grid-template-columns: 1fr; }
-            .conv-list { display: none; }
+            .conv-list { border-right: 0; }
+            .cs-layout.has-chat .conv-list { display: none; }
+            .cs-layout:not(.has-chat) .chat-panel { display: none; }
+            .cs-back { display: flex !important; }
+            .topbar { padding: 16px; }
             .topbar-stats { display: none; }
+            .chat-header { padding: 12px 14px; gap: 10px; }
+            .chat-header-info { min-width: 0; }
+            .chat-header-name { flex-wrap: wrap; }
+            .chat-header-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         }
     </style>
+    <link rel="stylesheet" href="admin-shell.css">
 </head>
 <body>
 
@@ -701,7 +711,7 @@
     </aside>
 
     <!-- MAIN -->
-    <main class="main">
+    <main class="main main-app">
 
         <!-- TOP BAR -->
         <div class="topbar">
@@ -751,6 +761,7 @@
 
                 <!-- Header -->
                 <div class="chat-header" id="chatHeader" style="display:none;">
+                    <button class="icon-btn cs-back" title="Back to conversations" aria-label="Back to conversations" onclick="showConversationList()"><i data-lucide="arrow-left"></i></button>
                     <div class="conv-avatar" id="headerAvatar" style="width:38px;height:38px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:var(--mint);flex-shrink:0;"></div>
                     <div class="chat-header-info">
                         <div class="chat-header-name">
@@ -999,8 +1010,15 @@ function avatarMarkup(url, initials) {
     return `${text}<img class="av-img" src="${escapeHtml(url)}" alt="" onerror="this.remove()">`;
 }
 
+// Phones show one pane at a time (see .has-chat in the CSS); this returns
+// from an open chat to the conversation list.
+function showConversationList() {
+    document.querySelector('.cs-layout').classList.remove('has-chat');
+}
+
 function resetChatPanel() {
     activeId = null;
+    showConversationList();
     document.getElementById('emptyChat').style.display    = 'flex';
     document.getElementById('chatHeader').style.display   = 'none';
     document.getElementById('messagesArea').style.display = 'none';
@@ -1089,6 +1107,7 @@ async function openConversation(id) {
     document.getElementById('chatHeader').style.display = 'flex';
     document.getElementById('messagesArea').style.display = 'flex';
     document.getElementById('chatInputWrap').style.display = 'block';
+    document.querySelector('.cs-layout').classList.add('has-chat');
 
     // Render messages
     renderMessages(conv);
@@ -1312,6 +1331,7 @@ async function markResolved() {
     });
 })();
 </script>
+<script src="sidebar.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
 </body>

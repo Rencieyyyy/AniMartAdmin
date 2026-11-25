@@ -305,11 +305,15 @@
             padding: 3px 10px; border-radius: 20px;
         }
 
-        .plan-free { background: rgba(56,189,248,0.12); color: #38BDF8; border: 1px solid rgba(56,189,248,0.2); }
-        .plan-premium { background: var(--gold-glow); color: var(--gold); border: 1px solid rgba(255,209,102,0.25); }
-        .plan-super { background: rgba(168,85,247,0.12); color: #C084FC; border: 1px solid rgba(168,85,247,0.2); }
+        /* Plan chip — colour comes from TIER_META (tier-stats.js) via --plan-rgb. */
+        .plan-chip {
+            --plan-rgb: 125,133,144;
+            background: rgba(var(--plan-rgb),0.12); color: rgb(var(--plan-rgb));
+            border: 1px solid rgba(var(--plan-rgb),0.25); white-space: nowrap;
+        }
 
         /* Billing-cycle chips (subscriptions.billing_cycle) */
+        .cycle-weekly { background: rgba(52,211,153,0.12); color: #34D399; border: 1px solid rgba(52,211,153,0.25); }
         .cycle-monthly { background: rgba(125,133,144,0.12); color: var(--muted); border: 1px solid rgba(125,133,144,0.3); }
         .cycle-yearly { background: rgba(56,189,248,0.12); color: #38BDF8; border: 1px solid rgba(56,189,248,0.25); }
 
@@ -439,7 +443,7 @@
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 14px;
             margin-bottom: 28px;
         }
@@ -467,7 +471,7 @@
         }
 
         .plan-header {
-            display: flex; align-items: flex-start;
+            display: flex; align-items: flex-start; flex-wrap: wrap; gap: 10px;
             justify-content: space-between; margin-bottom: 16px;
         }
 
@@ -539,7 +543,8 @@
         .badge-promo   { background: var(--danger); color: #fff; }
         .promo-ends    { margin-top: 6px; font-size: 0.6rem; font-weight: 600; color: var(--danger); font-family: 'DM Mono', monospace; letter-spacing: 0.02em; }
         /* SELLERS-BY-TIER legend under the doughnut */
-        .tier-legend { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+        .tier-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(58px, 1fr)); gap: 6px; margin-top: 14px; }
+        .tier-legend .tl-top { white-space: nowrap; }
         .tier-legend .tl-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; }
         .tier-legend .tl-top { display: flex; align-items: center; gap: 5px; font-size: 0.66rem; color: var(--muted); font-weight: 600; }
         .tier-legend .tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -553,6 +558,22 @@
             font-family: 'Sora', sans-serif; font-size: 0.68rem; font-weight: 600; white-space: nowrap;
         }
         .price-edit-btn:hover { color: var(--gold); border-color: rgba(255,209,102,0.35); }
+        .plan-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+        .plan-actions:empty { display: none; }
+        .feature-card .plan-name { overflow-wrap: anywhere; }
+
+        /* Plan cards: name block on top, then "₱99 / week" on one line. */
+        .feature-card { display: flex; flex-direction: column; }
+        .feature-card .plan-header { flex-direction: column; align-items: stretch; margin-bottom: 12px; }
+        .feature-card .plan-price {
+            flex-direction: row; flex-wrap: wrap; align-items: baseline;
+            gap: 2px 8px; text-align: left;
+        }
+        .feature-card .plan-price .period { display: inline; font-size: 0.72rem; }
+        .feature-card .plan-price .promo-ends { flex-basis: 100%; margin-top: 2px; }
+        .feature-card .card-badges { left: auto; right: 14px; transform: none; top: 14px; }
+        .feature-card .plan-active-count { margin-top: auto; }
+        .feature-card .feature-list { margin-bottom: 14px; }
         .price-edit-btn svg { width: 13px; height: 13px; }
 
         .plan-price .amount-old {
@@ -676,24 +697,38 @@
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
         /* RESPONSIVE */
+        @media (max-width: 1400px) {
+            .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .features-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
         @media (max-width: 1200px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .charts-row { grid-template-columns: 1fr; }
-            .features-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
         @media (max-width: 900px) {
-            :root { --sidebar-w: 64px; }
-            .sidebar-brand, .nav-link span, .nav-label { display: none; }
-            .nav-link { justify-content: center; padding: 10px; }
             .main { padding: 24px 20px; }
+            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
         @media (max-width: 700px) {
             .features-grid { grid-template-columns: 1fr; }
-            .req-amount, .req-actions { flex-direction: column; }
+            /* Request card: who/what on top, amount + actions on a second row. */
+            .request-card { flex-wrap: wrap; align-items: flex-start; }
+            .req-info { flex: 1 1 calc(100% - 60px); }
+            .req-amount { text-align: left; min-width: 0; margin-left: 56px; }
+            .req-actions { margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+            .tabs-row { width: 100%; }
+            .chart-wrap { height: 220px; }
+        }
+
+        @media (max-width: 420px) {
+            .req-amount { margin-left: 0; }
+            .req-actions { width: 100%; }
+            .req-actions > button { flex: 1; justify-content: center; }
         }
     </style>
+    <link rel="stylesheet" href="admin-shell.css">
 </head>
 <body>
 
@@ -757,9 +792,9 @@
                 <div class="stat-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);">
                     <i data-lucide="crown"></i>
                 </div>
-                <div class="stat-label">Active Premium</div>
+                <div class="stat-label">Active Plans</div>
                 <div class="stat-value" id="stat-active">0</div>
-                <div class="stat-trend mint"><i data-lucide="trending-up"></i> +3 this week</div>
+                <div class="stat-trend mint" id="stat-active-note"><i data-lucide="trending-up"></i> 0 this week</div>
             </div>
             <div class="stat-card" style="animation-delay:0.15s">
                 <div class="stat-icon" style="background:rgba(125,133,144,0.12); color:var(--muted);">
@@ -791,14 +826,14 @@
         <div class="charts-row">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Premium Revenue Trend</div>
-                    <span class="card-badge">JAN – JUN 2025</span>
+                    <div class="card-title">Subscription Revenue Trend</div>
+                    <span class="card-badge" id="revenue-range">LAST 6 MONTHS</span>
                 </div>
                 <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
             </div>
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Sellers by Tier</div>
+                    <div class="card-title">Sellers by Plan</div>
                     <span class="card-badge">ALL SELLERS</span>
                 </div>
                 <div class="chart-wrap"><canvas id="planChart"></canvas></div>
@@ -810,15 +845,15 @@
         <div class="tabs-row">
             <button class="tab-btn active" onclick="switchTab('pending', this)">
                 <i data-lucide="clock" style="width:14px;height:14px;"></i>
-                Pending <span class="tab-count" id="tc-pending">5</span>
+                Pending <span class="tab-count" id="tc-pending">0</span>
             </button>
             <button class="tab-btn" onclick="switchTab('active', this)">
                 <i data-lucide="crown" style="width:14px;height:14px;"></i>
-                Active Premium <span class="tab-count" id="tc-active">18</span>
+                Active <span class="tab-count" id="tc-active">0</span>
             </button>
             <button class="tab-btn" onclick="switchTab('expired', this)">
                 <i data-lucide="calendar-x" style="width:14px;height:14px;"></i>
-                Expired <span class="tab-count" id="tc-expired">7</span>
+                Expired <span class="tab-count" id="tc-expired">0</span>
             </button>
             <button class="tab-btn" onclick="switchTab('rejected', this)">
                 <i data-lucide="x-circle" style="width:14px;height:14px;"></i>
@@ -830,7 +865,7 @@
         <div class="panel" id="panel-pending">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Pending Premium Requests</div>
+                    <div class="card-title">Pending Plan Requests</div>
                     <span class="card-badge">NEEDS REVIEW</span>
                 </div>
                 <div class="request-list" id="pending-list"></div>
@@ -841,7 +876,7 @@
         <div class="panel hidden" id="panel-active">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Active Premium Subscriptions</div>
+                    <div class="card-title">Active Subscriptions</div>
                     <span class="card-badge" style="background:rgba(126,255,197,0.12);color:var(--mint-dim);border-color:rgba(126,255,197,0.25);">LIVE</span>
                 </div>
                 <div class="table-wrap">
@@ -868,7 +903,7 @@
         <div class="panel hidden" id="panel-expired">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Expired Premium Subscriptions</div>
+                    <div class="card-title">Expired Subscriptions</div>
                     <span class="card-badge" style="background:rgba(125,133,144,0.1);color:var(--muted);border-color:var(--border);">EXPIRED</span>
                 </div>
                 <div class="table-wrap">
@@ -894,7 +929,7 @@
         <div class="panel hidden" id="panel-rejected">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">Rejected Premium Requests</div>
+                    <div class="card-title">Rejected Plan Requests</div>
                     <span class="card-badge" style="background:rgba(255,107,107,0.1);color:var(--danger);border-color:rgba(255,107,107,0.2);">REJECTED</span>
                 </div>
                 <div class="table-wrap">
@@ -915,98 +950,14 @@
             </div>
         </div>
 
-        <!-- PREMIUM FEATURES -->
+        <!-- SUBSCRIPTION PLANS — cards are rendered by renderPlanCards() from
+             PLAN_FEATURES below (same entitlements the mobile app enforces). -->
         <div class="section-title" style="margin-top: 32px;">
             <i data-lucide="sparkles"></i>
-            Available Premium Plans & Features
+            Subscription Plans &amp; Features
         </div>
 
-        <div class="features-grid">
-            <!-- FREE -->
-            <div class="feature-card" data-plan="free" style="--fc-glow: rgba(56,189,248,0.08);">
-                <div class="plan-header">
-                    <div>
-                        <div class="plan-icon" style="background:rgba(56,189,248,0.12); color:#38BDF8; margin-bottom:10px;">
-                            <i data-lucide="zap"></i>
-                        </div>
-                        <div class="plan-name" style="color:#38BDF8;">Free</div>
-                        <div class="plan-tagline">For new sellers starting out</div>
-                    </div>
-                    <div class="plan-price">
-                        <div class="amount" style="color:#38BDF8;">₱0</div>
-                        <button class="price-edit-btn" title="Edit listing capacity" onclick="openCapacityEditor()" style="margin-top:8px;"><i data-lucide="pencil"></i> Edit capacity</button>
-                    </div>
-                </div>
-                <div class="plan-divider"></div>
-                <div class="feature-list">
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> <span>Up to <span id="free-listing-cap">10</span> active listings</span></div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#38BDF8;"></i> Email support</div>
-                    <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Verified seller badge</div>
-                    <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Standard analytics dashboard</div>
-                    <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Priority listing placement</div>
-                    <div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> Featured on homepage</div>
-                </div>
-                <div class="plan-active-count">
-                    <span class="label">Free-tier sellers</span>
-                    <span class="count" id="count-free" style="color:#38BDF8;">0</span>
-                </div>
-            </div>
-
-            <!-- PREMIUM -->
-            <div class="feature-card" data-plan="Premium" style="--fc-glow: rgba(255,209,102,0.09); border-color:rgba(255,209,102,0.2);">
-                <div id="badge-premium" class="card-badges"></div>
-                <div class="plan-header">
-                    <div>
-                        <div class="plan-icon" style="background:var(--gold-glow); color:var(--gold); margin-bottom:10px;">
-                            <i data-lucide="crown"></i>
-                        </div>
-                        <div class="plan-name" style="color:var(--gold);">Premium</div>
-                        <div class="plan-tagline">For serious livestock traders</div>
-                    </div>
-                    <div class="plan-price" id="price-premium"></div>
-                </div>
-                <div class="plan-divider"></div>
-                <div class="feature-list">
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Unlimited active listings</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Verified seller badge</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Basic analytics report</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Priority listing placement</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:var(--gold);"></i> Chat support</div>
-                </div>
-                <div class="plan-active-count">
-                    <span class="label">Active subscribers</span>
-                    <span class="count" id="count-premium" style="color:var(--gold);">0</span>
-                </div>
-            </div>
-
-            <!-- SUPER PREMIUM -->
-            <div class="feature-card" data-plan="Super Premium" style="--fc-glow: rgba(168,85,247,0.08); border-color:rgba(168,85,247,0.2);">
-                <div id="badge-super" class="card-badges"></div>
-                <div class="plan-header">
-                    <div>
-                        <div class="plan-icon" style="background:rgba(168,85,247,0.12); color:#C084FC; margin-bottom:10px;">
-                            <i data-lucide="star"></i>
-                        </div>
-                        <div class="plan-name" style="color:#C084FC;">Super Premium</div>
-                        <div class="plan-tagline">Maximum visibility & control</div>
-                    </div>
-                    <div class="plan-price" id="price-super"></div>
-                </div>
-                <div class="plan-divider"></div>
-                <div class="feature-list">
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Unlimited active listings</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Verified + Super Premium badge</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Full analytics suite</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Top listing placement</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Featured on homepage banner</div>
-                    <div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:#C084FC;"></i> Chat support</div>
-                </div>
-                <div class="plan-active-count">
-                    <span class="label">Active subscribers</span>
-                    <span class="count" id="count-super" style="color:#C084FC;">0</span>
-                </div>
-            </div>
-        </div>
+        <div class="features-grid" id="plan-cards"></div>
 
     </main>
 </div>
@@ -1061,15 +1012,15 @@
     </div>
 </div>
 
-<!-- MODAL: Edit Free Tier Listing Capacity -->
+<!-- MODAL: Edit a plan's listing capacity (Animart Basic / Essential) -->
 <div class="modal-overlay" id="capacityModal">
     <div class="modal">
-        <h2>Edit Listing Capacity</h2>
-        <p>Set how many active listings Free-tier sellers can have.</p>
+        <h2 id="cap-modal-title">Edit Listing Capacity</h2>
+        <p id="cap-modal-text">Set how many active listings sellers on this plan can have.</p>
         <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;">
             <label class="pf">Listing Capacity
                 <input type="number" id="cf-capacity" min="1" step="1" placeholder="10">
-                <span class="pf-hint">The Free card will show "Up to N active listings". The mobile app reads the same value to cap new listings.</span>
+                <span class="pf-hint">The plan card will show "Up to N active listings". The mobile app reads the same value for this plan.</span>
             </label>
         </div>
         <div class="modal-actions">
@@ -1107,19 +1058,13 @@
 <script>
 // ──────────────────────────────────────────────
 // DATA — live from the `subscriptions` table (joined to users)
-// There are three tiers, stored verbatim in subscriptions.plan: 'Free',
-// 'Premium', 'Super Premium'. There is NO key-mapping layer — the stored
-// string IS the label. The Free tier is the default for sellers with no
-// active subscription; only the two PAID tiers ('Premium', 'Super Premium')
-// appear as requests/cards here.
+// Four plans, stored verbatim in subscriptions.plan by the mobile app:
+// 'Animart Basic' (free 1-month trial), 'Animart Essential' (weekly),
+// 'Animart Pro' and 'Animart Elite'. Every plan — the free trial included —
+// arrives as a pending request that an admin approves here. Plan labels,
+// colours and the legacy-name mapping live in tier-stats.js (PLAN_TIERS,
+// TIER_META, normalizePlan).
 // ──────────────────────────────────────────────
-
-// Badge styling per tier label (cosmetic only — colors/icon).
-const PLAN_STYLE = {
-    'Free':          { cls: 'plan-free',    icon: 'zap'   },
-    'Premium':       { cls: 'plan-premium', icon: 'crown' },
-    'Super Premium': { cls: 'plan-super',   icon: 'star'  }
-};
 
 const MS_DAY = 86400000;
 
@@ -1128,12 +1073,12 @@ let pendingData  = [];
 let activeData   = [];
 let expiredData  = [];
 let rejectedData = [];
-let tierCounts   = { 'Free': 0, 'Premium': 0, 'Super Premium': 0, totalSellers: 0 };
+let tierCounts   = emptyTierCounts();
 
 function mapSub(row) {
     const u    = row.users || {};
-    // Normalize legacy/lowercase DB values ('superpremium', 'premium', …) to the
-    // canonical tier label so badges, charts, and counts all agree.
+    // Normalize legacy DB values ('Premium', 'Super Premium', 'free', …) to the
+    // canonical plan label so badges, charts, and counts all agree.
     const plan = normalizePlan(row.plan);
     return {
         id:           row.id,
@@ -1201,7 +1146,7 @@ async function loadSubscriptions() {
     expiredData  = allSubs.filter(s => s.status === 'expired');
     rejectedData = allSubs.filter(s => s.status === 'rejected');
 
-    // Seller tier breakdown (Free / Premium / Super Premium) — shared with the dashboard.
+    // Sellers per plan (+ no plan) — shared with the dashboard.
     tierCounts = await computeSellerTierCounts(supabaseClient);
 
     renderPending();
@@ -1226,13 +1171,13 @@ function exportSubs() {
         rows);
 }
 
-// Renders the Free/Premium/Super Premium count chips under the doughnut.
+// Renders the per-plan seller count chips under the doughnut.
 function renderTierLegend() {
     const el = document.getElementById('tier-legend');
     if (!el) return;
     el.innerHTML = TIER_META.map(t => `
-        <div class="tl-item">
-            <div class="tl-top"><span class="tl-dot" style="background:${t.color};"></span>${t.label}</div>
+        <div class="tl-item" title="${t.label}">
+            <div class="tl-top"><span class="tl-dot" style="background:${t.color};"></span>${t.short}</div>
             <div class="tl-count">${tierCounts[t.key] ?? 0}</div>
         </div>
     `).join('');
@@ -1246,29 +1191,40 @@ function initials(name) {
 }
 
 function planBadge(plan, label) {
-    const s = PLAN_STYLE[plan] || { cls: 'plan-premium', icon: 'crown' };
-    return `<span class="req-plan ${s.cls}"><i data-lucide="${s.icon}" style="width:10px;height:10px;"></i>${escapeHtml(label || plan)}</span>`;
+    const t = tierMeta(plan);
+    return `<span class="req-plan plan-chip" style="--plan-rgb:${t.rgb};"><i data-lucide="${t.icon}" style="width:10px;height:10px;"></i>${escapeHtml(label || plan)}</span>`;
 }
 
-// Billing cycles only apply to the PAID tiers — Free has no recurring fee, so
-// Free rows get no chip and no "/ month" unit.
+// Every plan has a billing cycle (the free Basic trial runs monthly); only
+// rows whose plan isn't one of the four known plans skip the cycle details.
 function hasBillingCycle(sub) {
-    return sub.plan !== 'Free';
+    return PLAN_TIERS.includes(sub.plan);
 }
 
-// "Monthly" / "Yearly" chip so a ₱6,990 yearly Premium is distinguishable from
-// a custom-priced monthly one at a glance. Empty for Free (no billing).
+// "Weekly" / "Monthly" / "Yearly" chip, so a request's period is visible at a
+// glance next to its amount.
 function cycleBadge(sub) {
     if (!hasBillingCycle(sub)) return '';
-    const yearly = sub.billingCycle === 'yearly';
-    return `<span class="req-plan ${yearly ? 'cycle-yearly' : 'cycle-monthly'}"><i data-lucide="calendar" style="width:10px;height:10px;"></i>${yearly ? 'Yearly' : 'Monthly'}</span>`;
+    const c = sub.billingCycle;
+    return `<span class="req-plan cycle-${c}"><i data-lucide="calendar" style="width:10px;height:10px;"></i>${billingCycleLabel(c)}</span>`;
 }
 
-// Amount suffix: "/ year" | "/ month" (or "/ yr" | "/ mo"); empty for Free.
+// Amount suffix: "/ week" | "/ month" | "/ year" (or "/ wk" | "/ mo" | "/ yr").
 function cycleUnit(sub, long = false) {
     if (!hasBillingCycle(sub)) return '';
-    if (sub.billingCycle === 'yearly') return long ? '/ year' : '/ yr';
-    return long ? '/ month' : '/ mo';
+    const units = { weekly: ['/ wk', '/ week'], monthly: ['/ mo', '/ month'], yearly: ['/ yr', '/ year'] };
+    return (units[sub.billingCycle] || units.monthly)[long ? 1 : 0];
+}
+
+// How long one billing period lasts (Expired tab "Duration" column).
+function cycleDuration(sub) {
+    if (!hasBillingCycle(sub)) return '—';
+    return { weekly: '1 week', monthly: '1 month', yearly: '1 year' }[sub.billingCycle] || '1 month';
+}
+
+// "₱99" — or "Free" for the ₱0 Animart Basic trial.
+function fmtAmount(amount) {
+    return amount > 0 ? '₱' + amount.toLocaleString() : 'Free';
 }
 
 // ──────────────────────────────────────────────
@@ -1287,10 +1243,17 @@ function renderPending() {
     }
 
     pendingData.forEach((r, idx) => {
-        // A yearly request from a member with a live approved sub on the same
-        // plan is a billing-cycle upgrade (monthly → yearly), not a duplicate.
-        const isCycleUpgrade = r.billingCycle === 'yearly' &&
-            activeData.some(a => a.userId === r.userId && a.plan === r.plan);
+        // If the seller already holds an active plan, say how this request
+        // relates to it (renewal, a billing-cycle switch, or a plan change).
+        const current = activeData.find(a => a.userId === r.userId);
+        let relation = '';
+        if (current && current.plan === r.plan) {
+            relation = current.billingCycle === r.billingCycle
+                ? 'Renewal'
+                : `Switching from ${billingCycleLabel(current.billingCycle).toLowerCase()}`;
+        } else if (current) {
+            relation = `Currently on ${current.plan}`;
+        }
 
         const div = document.createElement('div');
         div.className = 'request-card';
@@ -1304,7 +1267,7 @@ function renderPending() {
                     <span class="dot"></span>
                     ${planBadge(r.plan, r.planLabel)}
                     ${cycleBadge(r)}
-                    ${isCycleUpgrade ? '<span class="dot"></span> Upgrading from monthly' : ''}
+                    ${relation ? `<span class="dot"></span> ${escapeHtml(relation)}` : ''}
                     <span class="dot"></span>
                     ${r.receiptPath
                         ? '<span style="color:var(--mint-dim);display:inline-flex;align-items:center;gap:3px;"><i data-lucide="receipt" style="width:11px;height:11px;"></i>Receipt attached</span>'
@@ -1314,8 +1277,8 @@ function renderPending() {
                 </div>
             </div>
             <div class="req-amount">
-                ₱${r.amount.toLocaleString()}
-                <span>${cycleUnit(r, true)}</span>
+                ${fmtAmount(r.amount)}
+                <span>${r.amount > 0 ? cycleUnit(r, true) : '1-month trial'}</span>
             </div>
             <div class="req-actions">
                 <button class="btn-view" onclick="openViewModal('${r.id}')">View</button>
@@ -1337,7 +1300,7 @@ function renderActive() {
     tbody.innerHTML = '';
 
     if (activeData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:30px;font-size:0.82rem;">No active premium subscriptions.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:30px;font-size:0.82rem;">No active subscriptions.</td></tr>`;
         return;
     }
 
@@ -1351,7 +1314,8 @@ function renderActive() {
             pct = Math.max(0, Math.min(100, Math.round(((end - now) / (end - start)) * 100)));
             daysLeft = Math.max(0, Math.ceil((end - now) / MS_DAY));
         }
-        const nearExpiry = daysLeft <= 5;
+        // Weekly plans only last 7 days, so warn later for them.
+        const nearExpiry = daysLeft <= (s.billingCycle === 'weekly' ? 2 : 5);
         const barColor = nearExpiry ? '#FB923C' : 'var(--gold)';
 
         const tr = document.createElement('tr');
@@ -1372,7 +1336,7 @@ function renderActive() {
                     <div class="progress-bar" style="width:${pct}%;background:${barColor};"></div>
                 </div>
             </td>
-            <td style="font-family:'DM Mono',monospace;">₱${s.amount.toLocaleString()} <span style="color:var(--muted);font-size:0.7rem;">${cycleUnit(s)}</span></td>
+            <td style="font-family:'DM Mono',monospace;white-space:nowrap;">${fmtAmount(s.amount)} <span style="color:var(--muted);font-size:0.7rem;">${s.amount > 0 ? cycleUnit(s) : ''}</span></td>
             <td><span class="status-badge badge-active"><span class="dot-pulse"></span> Active</span></td>
             <td>${nearExpiry
                 ? `<button class="btn-view" id="remind-btn-${s.id}" style="font-size:0.72rem;padding:5px 11px;" onclick="remindUser('${s.id}')">Remind</button>`
@@ -1403,9 +1367,9 @@ function renderExpired() {
                 ${escapeHtml(s.name)}
             </td>
             <td>${planBadge(s.plan, s.planLabel)} ${cycleBadge(s)}</td>
-            <td style="color:var(--muted);font-size:0.78rem;">${!hasBillingCycle(s) ? '—' : s.billingCycle === 'yearly' ? '1 year' : '1 month'}</td>
+            <td style="color:var(--muted);font-size:0.78rem;">${cycleDuration(s)}</td>
             <td style="color:var(--muted);font-size:0.78rem;">${fmtDate(s.expiresAt)}</td>
-            <td style="font-family:'DM Mono',monospace;">₱${s.amount.toLocaleString()}</td>
+            <td style="font-family:'DM Mono',monospace;">${fmtAmount(s.amount)}</td>
             <td><span class="status-badge badge-expired"><span class="dot-pulse"></span> Expired</span></td>
             <td>
                 <button class="btn-view" id="remind-btn-${s.id}" style="font-size:0.72rem;padding:5px 11px;" onclick="remindUser('${s.id}')">
@@ -1436,7 +1400,7 @@ function renderRejected() {
             </td>
             <td>${planBadge(s.plan, s.planLabel)} ${cycleBadge(s)}</td>
             <td style="color:var(--muted);font-size:0.78rem;">${fmtDate(s.requestedAt)}</td>
-            <td style="font-family:'DM Mono',monospace;">₱${s.amount.toLocaleString()} <span style="color:var(--muted);font-size:0.7rem;">${cycleUnit(s)}</span></td>
+            <td style="font-family:'DM Mono',monospace;white-space:nowrap;">${fmtAmount(s.amount)} <span style="color:var(--muted);font-size:0.7rem;">${s.amount > 0 ? cycleUnit(s) : ''}</span></td>
             <td><span class="status-badge badge-rejected"><span class="dot-pulse"></span> Rejected</span></td>
             <td>
                 <button class="btn-view" style="font-size:0.72rem;padding:5px 11px;display:inline-flex;align-items:center;gap:5px;" onclick="undoSubscription('${s.id}')">
@@ -1482,19 +1446,29 @@ function updateCounts() {
     countUp('stat-pending', pendingData.length);
     countUp('stat-active', activeData.length);
     countUp('stat-expired', expiredData.length);
+
+    // Plans approved (started) in the last 7 days.
+    const weekAgo = Date.now() - 7 * MS_DAY;
+    const newThisWeek = activeData.filter(s => s.startedAt && new Date(s.startedAt).getTime() >= weekAgo).length;
+    document.getElementById('stat-active-note').innerHTML =
+        `<i data-lucide="trending-up"></i> ${newThisWeek} new this week`;
 }
 
-// Active-plan subscriber counts (feature cards) + revenue stats.
+// Active subscriber counts per plan (shown on the plan cards).
+let planSubscriberCounts = {};
+
+// Active-plan subscriber counts (plan cards) + revenue stats.
 function updatePlanInsights() {
-    const counts = { 'Premium': 0, 'Super Premium': 0 };
-    // A row's price is the full amount for its cycle — a yearly row's ₱6,990 is
-    // the whole year. `revenue` sums what was actually collected; `mrr` is the
-    // per-month equivalent (yearly ÷ 12) so cycles aren't conflated.
+    const counts = {};
+    PLAN_TIERS.forEach(p => { counts[p] = 0; });
+    // A row's price is the full amount for its cycle — a weekly row's ₱99 is
+    // one week. `revenue` sums what was actually collected; `mrr` is the
+    // per-month equivalent (weekly × 52/12, yearly ÷ 12) so cycles aren't conflated.
     let revenue = 0, mrr = 0;
     activeData.forEach(s => {
         if (counts[s.plan] !== undefined) counts[s.plan]++;
         revenue += s.amount;
-        mrr += s.billingCycle === 'yearly' ? s.amount / 12 : s.amount;
+        mrr += monthlyEquivalent(s.amount, s.billingCycle);
     });
     // Total revenue = every paid subscription (active + expired). Pending and
     // rejected requests were never paid, so they don't count.
@@ -1502,10 +1476,8 @@ function updatePlanInsights() {
     allSubs.forEach(s => {
         if (s.status === 'approved' || s.status === 'expired') totalRevenue += s.amount;
     });
-    // The Free card shows the count of Free-tier sellers (no active subscription).
-    document.getElementById('count-free').textContent    = tierCounts['Free'] || 0;
-    document.getElementById('count-premium').textContent = counts['Premium'];
-    document.getElementById('count-super').textContent   = counts['Super Premium'];
+    planSubscriberCounts = counts;
+    renderPlanCounts();
     document.getElementById('stat-revenue').textContent  = '₱' + revenue.toLocaleString();
     document.getElementById('stat-revenue-note').innerHTML =
         `<i data-lucide="trending-up"></i> ₱${Math.round(mrr).toLocaleString()}/mo recurring`;
@@ -1535,13 +1507,13 @@ function openViewModal(id) {
     if (!r) return;
     activeRequestId = id;
 
-    document.getElementById('modal-title').textContent = r.name + ' — Premium Request';
+    document.getElementById('modal-title').textContent = r.name + ' — Plan Request';
     document.getElementById('modal-subtitle').textContent = `Submitted on ${fmtDate(r.requestedAt)}. Review details before approving.`;
 
     document.getElementById('modal-details').innerHTML = `
         <div class="modal-detail-row"><span class="key">Plan Requested</span><span class="val">${planBadge(r.plan, r.planLabel)}</span></div>
         ${hasBillingCycle(r) ? `<div class="modal-detail-row"><span class="key">Billing Cycle</span><span class="val">${cycleBadge(r)}</span></div>` : ''}
-        <div class="modal-detail-row"><span class="key">${!hasBillingCycle(r) ? 'Fee' : r.billingCycle === 'yearly' ? 'Yearly Fee' : 'Monthly Fee'}</span><span class="val" style="font-family:'DM Mono',monospace;">₱${r.amount.toLocaleString()}</span></div>
+        <div class="modal-detail-row"><span class="key">${!hasBillingCycle(r) ? 'Fee' : billingCycleLabel(r.billingCycle) + ' Fee'}</span><span class="val" style="font-family:'DM Mono',monospace;">${r.amount > 0 ? fmtAmount(r.amount) : 'Free (1-month trial)'}</span></div>
         <div class="modal-detail-row"><span class="key">Address</span><span class="val">${escapeHtml(r.address)}</span></div>
         <div class="modal-detail-row"><span class="key">Member Since</span><span class="val">${fmtDate(r.memberSince)}</span></div>
         <div class="modal-detail-row"><span class="key">Current Listings</span><span class="val">0 listings</span></div>
@@ -1604,14 +1576,18 @@ function closeModal(id) {
 // ACTIONS
 // ──────────────────────────────────────────────
 // Approving stamps started_at = now and expires_at based on the billing cycle:
-// +1 year for yearly, +30 days for monthly (the pre-billing_cycle behavior).
+// +7 days for weekly (Animart Essential), +1 year for yearly, +30 days for
+// monthly (Basic trial / Pro / Elite, and every pre-billing_cycle row).
 // billing_cycle itself is never touched — the row keeps what the app wrote.
 async function approveRequest(id) {
     const r = pendingData.find(x => x.id === id);
     const started = new Date();
     const expires = new Date(started);
-    if (r && r.billingCycle === 'yearly') {
+    const cycle = r ? r.billingCycle : 'monthly';
+    if (cycle === 'yearly') {
         expires.setFullYear(expires.getFullYear() + 1);
+    } else if (cycle === 'weekly') {
+        expires.setTime(expires.getTime() + 7 * MS_DAY);
     } else {
         expires.setTime(expires.getTime() + 30 * MS_DAY);
     }
@@ -1655,14 +1631,21 @@ async function rejectRequest(id) {
 //      If the function isn't deployed / configured yet, falls back to opening
 //      a pre-filled mail draft so the email can still go out manually.
 
+// Plan labels already start with "Animart" ('Animart Pro'); only prefix the
+// brand for anything that doesn't (legacy/unknown values).
+function planDisplayName(plan) {
+    return /^animart\b/i.test(plan) ? plan : `AniMart ${plan}`;
+}
+
 function reminderText(s) {
-    const cycleTxt = hasBillingCycle(s) ? ` (billed ${s.billingCycle})` : '';
+    const cycleTxt = hasBillingCycle(s) && s.amount > 0 ? ` (billed ${s.billingCycle})` : '';
+    const plan = planDisplayName(s.plan);
     const renewAsk = 'Would you like to renew? Open the Premium section in the AniMart app to resubscribe, or reply here if you need any help.';
     if (s.status === 'expired') {
-        return `Hi ${s.name}, your AniMart ${s.plan} plan${cycleTxt} expired on ${fmtDate(s.expiresAt)}, so your ${s.plan} benefits are paused. ${renewAsk}`;
+        return `Hi ${s.name}, your ${plan} plan${cycleTxt} expired on ${fmtDate(s.expiresAt)}, so your ${s.plan} benefits are paused. ${renewAsk}`;
     }
     const daysLeft = Math.max(0, Math.ceil((new Date(s.expiresAt).getTime() - Date.now()) / MS_DAY));
-    return `Hi ${s.name}, your AniMart ${s.plan} plan${cycleTxt} expires on ${fmtDate(s.expiresAt)} — ${daysLeft} day${daysLeft === 1 ? '' : 's'} left. ${renewAsk}`;
+    return `Hi ${s.name}, your ${plan} plan${cycleTxt} expires on ${fmtDate(s.expiresAt)} — ${daysLeft} day${daysLeft === 1 ? '' : 's'} left. ${renewAsk}`;
 }
 
 async function remindUser(id) {
@@ -1708,7 +1691,7 @@ async function remindUser(id) {
         });
         if (fnError) {
             console.warn('REMINDER EMAIL ERROR (falling back to mail draft):', fnError);
-            const subject = `Your AniMart ${s.plan} plan ${s.status === 'expired' ? 'has expired' : 'is about to expire'}`;
+            const subject = `Your ${planDisplayName(s.plan)} plan ${s.status === 'expired' ? 'has expired' : 'is about to expire'}`;
             window.open(`mailto:${encodeURIComponent(s.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
             emailNote = '. Email service not set up — opened a mail draft instead';
             emailFellBack = true;
@@ -1745,12 +1728,20 @@ function buildCharts() {
     Chart.defaults.font.family = "'Sora', sans-serif";
     Chart.defaults.font.size = 11;
 
-    // ---- Revenue trend: last 6 months, stacked by plan (paid plans only) ----
+    // ---- Revenue trend: last 6 months, stacked by plan (paid plans only —
+    //      the Animart Basic trial is free, so it never adds revenue) ----
     const now = new Date();
     const months = [];
     for (let i = 5; i >= 0; i--) months.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
     const labels = months.map(d => d.toLocaleDateString('en-PH', { month: 'short' }));
-    const buckets = { 'Premium': Array(6).fill(0), 'Super Premium': Array(6).fill(0) };
+    const rangeEl = document.getElementById('revenue-range');
+    if (rangeEl) {
+        const fmt = d => d.toLocaleDateString('en-PH', { month: 'short', year: 'numeric' }).toUpperCase();
+        rangeEl.textContent = `${fmt(months[0])} – ${fmt(months[5])}`;
+    }
+    const PAID_PLANS = PLAN_TIERS.filter(p => p !== 'Animart Basic');
+    const buckets = {};
+    PAID_PLANS.forEach(p => { buckets[p] = Array(6).fill(0); });
 
     allSubs.forEach(s => {
         if (s.status !== 'approved' && s.status !== 'expired') return;   // paid plans only
@@ -1770,10 +1761,10 @@ function buildCharts() {
         type: 'bar',
         data: {
             labels,
-            datasets: [
-                { label: 'Premium (₱)',       data: buckets['Premium'],       backgroundColor: 'rgba(255,209,102,0.75)', borderRadius: 6, borderSkipped: false },
-                { label: 'Super Premium (₱)', data: buckets['Super Premium'], backgroundColor: 'rgba(192,132,252,0.7)',  borderRadius: 6, borderSkipped: false }
-            ]
+            datasets: PAID_PLANS.map(p => {
+                const t = tierMeta(p);
+                return { label: `${t.short} (₱)`, data: buckets[p], backgroundColor: `rgba(${t.rgb},0.75)`, borderRadius: 6, borderSkipped: false };
+            })
         },
         options: {
             responsive: true,
@@ -1795,12 +1786,12 @@ function buildCharts() {
         }
     });
 
-    // ---- Sellers-by-tier doughnut: Free + active subscriptions by plan ----
+    // ---- Sellers-by-plan doughnut: each plan's active sellers + no plan ----
     if (planChartInstance) planChartInstance.destroy();
     planChartInstance = new Chart(document.getElementById('planChart'), {
         type: 'doughnut',
         data: {
-            labels: TIER_META.map(t => t.label),
+            labels: TIER_META.map(t => t.short),
             datasets: [{
                 data: TIER_META.map(t => tierCounts[t.key] || 0),
                 backgroundColor: TIER_META.map(t => `rgba(${t.rgb},0.8)`),
@@ -1814,7 +1805,8 @@ function buildCharts() {
             maintainAspectRatio: false,
             cutout: '70%',
             plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, padding: 16 } },
+                // The count chips under the chart (renderTierLegend) double as its legend.
+                legend: { display: false },
                 tooltip: {
                     backgroundColor: '#1C2333', borderColor: 'rgba(255,255,255,0.08)',
                     borderWidth: 1, titleColor: '#E6EDF3', bodyColor: '#7D8590', padding: 12,
@@ -1826,25 +1818,82 @@ function buildCharts() {
 }
 
 // ──────────────────────────────────────────────
-// PLAN PRICING (prices table — editable, discounts, promos)
+// SUBSCRIPTION PLANS (cards) + PRICING (prices table — editable, discounts,
+// promos, listing capacity)
 // ──────────────────────────────────────────────
-// Keyed by the canonical plan label. `id` is the DOM-safe suffix used for the
-// card element ids (price-/badge-); `color` is the card accent.
-const PLAN_UI = {
-    'Premium':       { id: 'premium', color: 'var(--gold)' },
-    'Super Premium': { id: 'super',   color: '#C084FC'     }
+// What each plan includes — mirrors the entitlements the mobile app enforces
+// (AppPlan in the app's subscription_service.dart). `capped` plans show an
+// "Up to N active listings" line whose N is prices.listing_capacity (editable
+// here); uncapped plans get unlimited listings. `editablePrice: false` keeps
+// the free trial at ₱0.
+const PLAN_FEATURES = {
+    'Animart Basic': {
+        tagline: '1-month free trial for new sellers',
+        capped: true, defaultCap: 3, editablePrice: false,
+        features: [
+            ['1-month free trial', true],
+            ['Verified seller badge', false],
+            ['Analytics report', false],
+            ['Priority listing placement', false],
+            ['Chat support', false],
+            ['Featured on homepage banner', false]
+        ]
+    },
+    'Animart Essential': {
+        tagline: 'Starter plan for growing sellers',
+        capped: true, defaultCap: 10, editablePrice: true,
+        features: [
+            ['Verified seller badge', true],
+            ['Basic analytics report', true],
+            ['Priority listing placement', true],
+            ['Chat support', true],
+            ['Featured on homepage banner', false]
+        ]
+    },
+    'Animart Pro': {
+        tagline: 'For serious livestock traders',
+        capped: false, editablePrice: true,
+        features: [
+            ['Verified seller badge', true],
+            ['Full analytics suite', true],
+            ['Priority listing placement', true],
+            ['Chat support', true],
+            ['Featured on homepage banner', false]
+        ]
+    },
+    'Animart Elite': {
+        tagline: 'Maximum visibility and premium benefits',
+        capped: false, editablePrice: true,
+        features: [
+            ['Verified + Elite seller badge', true],
+            ['Full analytics suite', true],
+            ['Top listing placement', true],
+            ['Chat support', true],
+            ['Featured on homepage banner', true]
+        ]
+    }
 };
 
-let pricesData = {};       // keyed by plan label: { 'Free', 'Premium', 'Super Premium' }
-let editingPlan = null;
-
-// Defaults so the cards always render (e.g. before prices_table.sql is run).
-// The Free row only carries listing_capacity (see add_listing_capacity_column.sql).
+// Defaults so the cards always render (e.g. before the plan migration has
+// seeded the prices table). Pro/Elite have no listing cap (null).
 const DEFAULT_PRICES = {
-    'Free':          { plan:'Free',          name:'Free',          price:0,    discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'forever', listing_capacity:10 },
-    'Premium':       { plan:'Premium',       name:'Premium',       price:699,  discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:true,  billing_period:'month' },
-    'Super Premium': { plan:'Super Premium', name:'Super Premium', price:1299, discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'month' }
+    'Animart Basic':     { plan:'Animart Basic',     name:'Animart Basic',     price:0,   discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'month', listing_capacity:3 },
+    'Animart Essential': { plan:'Animart Essential', name:'Animart Essential', price:99,  discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'week',  listing_capacity:10 },
+    'Animart Pro':       { plan:'Animart Pro',       name:'Animart Pro',       price:99,  discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:true,  billing_period:'month', listing_capacity:null },
+    'Animart Elite':     { plan:'Animart Elite',     name:'Animart Elite',     price:299, discount_percent:0, promo_label:null, promo_active:false, promo_deadline:null, is_popular:false, billing_period:'month', listing_capacity:null }
 };
+
+// The period each plan is sold for (fallback when a row's billing_period is
+// missing or still the old Free tier's 'forever').
+const PLAN_PERIOD = { 'Animart Basic': 'month', 'Animart Essential': 'week', 'Animart Pro': 'month', 'Animart Elite': 'month' };
+
+// pricesData is keyed by canonical plan label. Each entry keeps `_dbPlan`:
+// the plan value of the prices row it came from, so edits still hit the right
+// row while the table holds legacy names ('Premium' → Animart Pro, …) before
+// the plan migration runs. `_inDb` is false for default-only entries.
+let pricesData = {};
+let editingPlan = null;
+let capacityPlan = null;
 
 async function loadPrices() {
     const { data, error } = await supabaseClient
@@ -1852,11 +1901,22 @@ async function loadPrices() {
         .select('plan, name, price, discount_percent, promo_label, promo_active, promo_deadline, is_popular, billing_period, listing_capacity');
 
     // Start from defaults, then overlay whatever the DB returns.
-    pricesData = JSON.parse(JSON.stringify(DEFAULT_PRICES));
+    pricesData = {};
+    PLAN_TIERS.forEach(p => { pricesData[p] = { ...DEFAULT_PRICES[p], _dbPlan: p, _inDb: false }; });
     if (error) {
         console.error('LOAD PRICES ERROR:', error);
     } else {
-        (data || []).forEach(r => { pricesData[r.plan] = r; });
+        // Exact (new-name) rows win over legacy rows mapped onto the same plan.
+        const rows = (data || []).slice().sort((a, b) =>
+            (PLAN_TIERS.includes(b.plan) ? 1 : 0) - (PLAN_TIERS.includes(a.plan) ? 1 : 0));
+        const seen = new Set();
+        rows.forEach(r => {
+            const plan = normalizePlan(r.plan);
+            if (!PLAN_TIERS.includes(plan) || seen.has(plan)) return;
+            seen.add(plan);
+            const period = r.billing_period && r.billing_period !== 'forever' ? r.billing_period : PLAN_PERIOD[plan];
+            pricesData[plan] = { ...r, name: plan, billing_period: period, _dbPlan: r.plan, _inDb: true };
+        });
     }
 
     // Safety net: restore any promo whose deadline has already passed. A pg_cron
@@ -1864,8 +1924,7 @@ async function loadPrices() {
     // catches anything due while the panel is open / before the cron next fires.
     await restoreExpiredPromos();
 
-    renderPrices();
-    renderFreeCapacity();
+    renderPlanCards();
 }
 
 // Clears the discount/promo on any plan whose promo_deadline is in the past,
@@ -1873,6 +1932,7 @@ async function loadPrices() {
 async function restoreExpiredPromos() {
     const now = Date.now();
     const expired = Object.values(pricesData).filter(p =>
+        p._inDb &&
         p.promo_deadline &&
         new Date(p.promo_deadline).getTime() <= now &&
         (Number(p.discount_percent) > 0 || p.promo_active || p.promo_label)
@@ -1881,26 +1941,34 @@ async function restoreExpiredPromos() {
 
     for (const p of expired) {
         const restored = { discount_percent: 0, promo_label: null, promo_active: false, promo_deadline: null, updated_at: new Date().toISOString() };
-        const { error } = await supabaseClient.from('prices').update(restored).eq('plan', p.plan);
+        const { error } = await supabaseClient.from('prices').update(restored).eq('plan', p._dbPlan);
         if (error) { console.error('RESTORE PROMO ERROR:', error); continue; }
-        Object.assign(pricesData[p.plan], restored);
+        Object.assign(p, restored);
     }
 }
 
-function renderPrices() {
-    Object.keys(PLAN_UI).forEach(plan => {
-        const p  = pricesData[plan];
-        const ui = PLAN_UI[plan];
-        const priceEl = document.getElementById('price-' + ui.id);
-        const badgeEl = document.getElementById('badge-' + ui.id);
-        if (!priceEl || !p) return;
+function planCapacity(plan) {
+    const f = PLAN_FEATURES[plan];
+    if (!f || !f.capped) return null;
+    return Number(pricesData[plan]?.listing_capacity) || f.defaultCap;
+}
 
-        const color = ui.color;
+// Builds the four plan cards (price, promo badges, features, subscriber count).
+function renderPlanCards() {
+    const grid = document.getElementById('plan-cards');
+    if (!grid) return;
+
+    grid.innerHTML = PLAN_TIERS.map(plan => {
+        const t = tierMeta(plan);
+        const f = PLAN_FEATURES[plan];
+        const p = pricesData[plan] || DEFAULT_PRICES[plan];
+        const color = t.color;
+
         const base  = Number(p.price) || 0;
         const disc  = Math.max(0, Math.min(100, Number(p.discount_percent) || 0));
-        const hasDisc = disc > 0;
+        const hasDisc = disc > 0 && base > 0;
         const final = hasDisc ? Math.round(base * (1 - disc / 100)) : base;
-        const period = p.billing_period || 'month';
+        const period = p.billing_period || PLAN_PERIOD[plan];
 
         // Show when an active promo will auto-restore to the base price.
         let deadlineNote = '';
@@ -1911,58 +1979,95 @@ function renderPrices() {
             }
         }
 
-        priceEl.innerHTML = `
-            ${hasDisc ? `<div class="amount-old">₱${base.toLocaleString()}</div>` : ''}
-            <div class="amount" style="color:${color};">₱${final.toLocaleString()}</div>
-            <span class="period">/ ${period}</span>
-            ${deadlineNote}
-            <button class="price-edit-btn" title="Edit pricing" onclick="openPriceEditor('${plan}')" style="margin-top:8px;"><i data-lucide="pencil"></i> Edit price</button>
-        `;
-
-        if (badgeEl) {
-            let html = '';
-            if (p.is_popular) html += `<span class="badge-popular">POPULAR</span>`;
-            if (p.promo_active && p.promo_label) {
-                html += `<span class="badge-promo">${p.promo_label}${hasDisc ? ' · -' + disc + '%' : ''}</span>`;
-            } else if (hasDisc) {
-                html += `<span class="badge-promo">-${disc}% OFF</span>`;
-            }
-            badgeEl.innerHTML = html;
+        let badges = '';
+        if (p.is_popular) badges += `<span class="badge-popular">POPULAR</span>`;
+        if (p.promo_active && p.promo_label) {
+            badges += `<span class="badge-promo">${escapeHtml(p.promo_label)}${hasDisc ? ' · -' + disc + '%' : ''}</span>`;
+        } else if (hasDisc) {
+            badges += `<span class="badge-promo">-${disc}% OFF</span>`;
         }
+
+        const buttons = [];
+        if (f.editablePrice) buttons.push(`<button class="price-edit-btn" title="Edit pricing" onclick="openPriceEditor('${plan}')"><i data-lucide="pencil"></i> Edit price</button>`);
+        if (f.capped)        buttons.push(`<button class="price-edit-btn" title="Edit listing capacity" onclick="openCapacityEditor('${plan}')"><i data-lucide="list-ordered"></i> Edit capacity</button>`);
+
+        const cap = planCapacity(plan);
+        const listingLine = cap === null
+            ? `<div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:${color};"></i> Unlimited active listings</div>`
+            : `<div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:${color};"></i> Up to ${cap} active listings</div>`;
+        const featureLines = f.features.map(([text, ok]) => ok
+            ? `<div class="feature-item included"><i data-lucide="check-circle" class="fi-icon" style="color:${color};"></i> ${text}</div>`
+            : `<div class="feature-item excluded"><i data-lucide="x-circle" class="fi-icon"></i> ${text}</div>`
+        ).join('');
+
+        return `
+            <div class="feature-card" data-plan="${plan}" style="--fc-glow: rgba(${t.rgb},0.09); border-color: rgba(${t.rgb},0.22);">
+                <div class="card-badges">${badges}</div>
+                <div class="plan-header">
+                    <div>
+                        <div class="plan-icon" style="background:rgba(${t.rgb},0.12); color:${color}; margin-bottom:10px;">
+                            <i data-lucide="${t.icon}"></i>
+                        </div>
+                        <div class="plan-name" style="color:${color};">${plan}</div>
+                        <div class="plan-tagline">${f.tagline}</div>
+                    </div>
+                    <div class="plan-price">
+                        ${hasDisc ? `<div class="amount-old">₱${base.toLocaleString()}</div>` : ''}
+                        <div class="amount" style="color:${color};">₱${final.toLocaleString()}</div>
+                        <span class="period">/ ${escapeHtml(period)}</span>
+                        ${deadlineNote}
+                    </div>
+                </div>
+                <div class="plan-actions">${buttons.join('')}</div>
+                <div class="plan-divider"></div>
+                <div class="feature-list">${listingLine}${featureLines}</div>
+                <div class="plan-active-count">
+                    <span class="label">Active subscribers</span>
+                    <span class="count" id="count-${t.id}" style="color:${color};">${planSubscriberCounts[plan] || 0}</span>
+                </div>
+            </div>`;
+    }).join('');
+
+    lucide.createIcons();   // render the newly-injected icons
+}
+
+// Refreshes just the subscriber counts (the cards may not be built yet).
+function renderPlanCounts() {
+    PLAN_TIERS.forEach(plan => {
+        const el = document.getElementById('count-' + tierMeta(plan).id);
+        if (el) el.textContent = planSubscriberCounts[plan] || 0;
     });
-
-    lucide.createIcons();   // render the newly-injected pencil icons
 }
 
 // ──────────────────────────────────────────────
-// FREE TIER LISTING CAPACITY (prices.listing_capacity, plan = 'Free')
+// LISTING CAPACITY (prices.listing_capacity — Animart Basic / Essential)
 // ──────────────────────────────────────────────
-function renderFreeCapacity() {
-    const el = document.getElementById('free-listing-cap');
-    if (!el) return;
-    el.textContent = Number(pricesData['Free']?.listing_capacity) || 10;
-}
-
-function openCapacityEditor() {
-    document.getElementById('cf-capacity').value = Number(pricesData['Free']?.listing_capacity) || 10;
+function openCapacityEditor(plan) {
+    const p = pricesData[plan];
+    if (!p || !p._inDb) { showToast(`No ${plan} pricing row yet — run the plan migration first.`, 'error'); return; }
+    capacityPlan = plan;
+    document.getElementById('cap-modal-title').textContent = `Edit ${plan} Capacity`;
+    document.getElementById('cap-modal-text').textContent = `Set how many active listings ${plan} sellers can have.`;
+    document.getElementById('cf-capacity').value = planCapacity(plan);
     document.getElementById('capacityModal').classList.add('open');
 }
 
 async function saveCapacity() {
+    if (!capacityPlan) return;
     const cap = Math.round(parseFloat(document.getElementById('cf-capacity').value));
     if (!cap || cap < 1) { showToast('Enter a capacity of at least 1.', 'error'); return; }
 
     const { data, error } = await supabaseClient
         .from('prices')
         .update({ listing_capacity: cap, updated_at: new Date().toISOString() })
-        .eq('plan', 'Free')
+        .eq('plan', pricesData[capacityPlan]._dbPlan)
         .select();
 
     if (error) { showToast('Error saving capacity: ' + error.message, 'error'); return; }
-    if (!data || data.length === 0) { showToast('Update blocked — run add_listing_capacity_column.sql or check RLS.', 'error'); return; }
+    if (!data || data.length === 0) { showToast('Update blocked — no permission (check RLS).', 'error'); return; }
 
     closeModal('capacityModal');
-    showToast('Listing capacity updated!', 'success');
+    showToast(`${capacityPlan} listing capacity updated!`, 'success');
     await loadPrices();
 }
 
@@ -1984,10 +2089,10 @@ function localInputToIso(val) {
 
 function openPriceEditor(plan) {
     const p = pricesData[plan];
-    if (!p) { showToast('Pricing not loaded yet. Run prices_table.sql.', 'error'); return; }
+    if (!p || !p._inDb) { showToast(`No ${plan} pricing row yet — run the plan migration first.`, 'error'); return; }
     editingPlan = plan;
 
-    document.getElementById('price-modal-title').textContent = `Edit ${p.name || plan} Pricing`;
+    document.getElementById('price-modal-title').textContent = `Edit ${plan} Pricing`;
     document.getElementById('pf-price').value        = p.price ?? 0;
     document.getElementById('pf-discount').value     = p.discount_percent ?? 0;
     document.getElementById('pf-promo').value        = p.promo_label ?? '';
@@ -2033,7 +2138,7 @@ async function savePrice() {
     const { data, error } = await supabaseClient
         .from('prices')
         .update({ price, discount_percent: discount, promo_label, promo_active, promo_deadline, is_popular, updated_at: new Date().toISOString() })
-        .eq('plan', editingPlan)
+        .eq('plan', pricesData[editingPlan]._dbPlan)
         .select();
 
     if (error) { showToast('Error saving price: ' + error.message, 'error'); return; }
@@ -2057,7 +2162,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Pull subscriptions from Supabase (renders + charts once resolved).
     loadSubscriptions();
 
-    // Load editable plan pricing (prices table).
+    // Plan cards render at once with the default prices, then refresh with
+    // the live prices table.
+    renderPlanCards();
     loadPrices();
 
     // live-update the display price preview as price/discount change
@@ -2084,6 +2191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 })();
 </script>
+<script src="sidebar.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
 </body>

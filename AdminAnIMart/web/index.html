@@ -4,6 +4,7 @@
 <head>
 
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AnImart</title>
   <link rel="icon" type="image/png" href="assets/animart_logoV2.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -32,7 +33,9 @@
       /* This off-white makes the white card "pop" instantly */
       background-color: var(--bg-dirty);
       color: var(--dark);
-      height: 100vh;
+      /* min-height (not height): on short screens the card grows past the
+         viewport and the page scrolls, instead of the top being clipped. */
+      min-height: 100vh;
       margin: 0;
       display: flex;
       align-items: center;
@@ -264,29 +267,68 @@
     .form-options {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      /* Pushes items to opposite sides */
+      justify-content: flex-end;
+      /* Forgot link sits on the right */
       margin-bottom: 32px;
       /* Spacing before the button */
       font-size: 0.875rem;
     }
 
-    .remember-me {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      /* Space between checkbox and text */
-      cursor: pointer;
-      color: var(--gray-muted);
-      user-select: none;
+    /* Show / hide password toggle inside the password field */
+    .pw-wrap {
+      position: relative;
     }
 
-    .remember-me input {
+    .pw-wrap input {
+      padding-right: 52px;
+    }
+
+    /* Hide Edge's built-in reveal eye so there aren't two */
+    .pw-wrap input::-ms-reveal,
+    .pw-wrap input::-ms-clear {
+      display: none;
+    }
+
+    .pw-toggle {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      color: var(--gray-muted);
       cursor: pointer;
-      accent-color: var(--primary);
-      /* Colors the checkbox mint green */
-      width: 16px;
-      height: 16px;
+      transition: color 0.2s, background-color 0.2s;
+    }
+
+    .pw-toggle:hover {
+      color: var(--dark);
+      background-color: rgba(145, 230, 193, 0.18);
+    }
+
+    .pw-toggle:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 1px;
+    }
+
+    .pw-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .pw-toggle .eye-off,
+    .pw-toggle[aria-pressed="true"] .eye-open {
+      display: none;
+    }
+
+    .pw-toggle[aria-pressed="true"] .eye-off {
+      display: block;
     }
 
     .forgot-link {
@@ -407,15 +449,19 @@
         </div>
 
         <div class="input-group">
-          <label>Password</label>
-          <input id="password" type="password" placeholder="••••••••" required>
+          <label for="password">Password</label>
+          <div class="pw-wrap">
+            <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required>
+            <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password" aria-pressed="false" title="Show password">
+              <!-- eye -->
+              <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              <!-- eye-off -->
+              <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a13.2 13.2 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+            </button>
+          </div>
         </div>
 
         <div class="form-options">
-          <label class="remember-me">
-            <input type="checkbox" id="rememberMe" checked>
-            <span>Remember me</span>
-          </label>
           <a href="#" class="forgot-link" id="forgotLink">Forgot Password?</a>
         </div>
 
@@ -476,6 +522,18 @@
           document.getElementById("loginErrorModal").classList.remove("show");
           document.getElementById("forgotModal").classList.remove("show");
         }
+      });
+
+      // ── Show / hide password ──
+      document.getElementById("pwToggle").addEventListener("click", () => {
+        const input = document.getElementById("password");
+        const btn = document.getElementById("pwToggle");
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        btn.setAttribute("aria-pressed", String(show));
+        btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+        btn.title = show ? "Hide password" : "Show password";
+        input.focus();
       });
 
       // ── Forgot password ──

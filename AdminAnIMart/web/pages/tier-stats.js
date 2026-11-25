@@ -1,47 +1,78 @@
-// ── SHARED SELLER TIER STATS ──
-// Single source of truth for "how many sellers are on each plan tier", used by
-// the Dashboard and Premium Requests pages so both always agree.
+// ── SHARED SELLER PLAN STATS ──
+// Single source of truth for the AniMart subscription plans and "how many
+// sellers are on each plan", used by the Dashboard, Sellers & Buyers and
+// Premium Requests pages so they always agree.
 //
-// Tiers are derived from real data:
-//   • A seller's tier = the plan of their active (approved) subscription.
-//   • Sellers with no active (paid) subscription are on the Free tier.
-//   • Only sellers (users.is_seller = true) are counted — buyers are excluded.
+// The four plans (same labels the mobile app writes VERBATIM to
+// subscriptions.plan — see the app's subscription_service.dart):
+//   • Animart Basic     — ₱0   / month  (1-month free trial for new sellers)
+//   • Animart Essential — ₱99  / week   (starter plan for growing sellers)
+//   • Animart Pro       — ₱99  / month  (for serious livestock traders)
+//   • Animart Elite     — ₱299 / month  (maximum visibility & premium benefits)
+// Live prices come from public.prices (editable on the Premium page); the
+// numbers above are only the fallbacks shown before that table loads.
 //
-// There are three tiers, stored VERBATIM in subscriptions.plan: 'Free',
-// 'Premium', 'Super Premium'. There is no key-mapping layer — the stored
-// string IS the label. Counts are by DISTINCT seller, so
-// Free + Premium + Super Premium === total sellers.
+// Every plan — even the free Basic trial — is a subscriptions row that an
+// admin approves. A seller's plan = the plan of their approved subscription;
+// sellers with none are counted under NO_PLAN. Only sellers
+// (users.is_seller = true) are counted, by DISTINCT seller, so the plan
+// counts + NO_PLAN === total sellers.
 
-// The two PAID tiers (Free is everyone else).
-const PAID_TIERS = ['Premium', 'Super Premium'];
+// The four plans, cheapest → most premium (also the display order).
+const PLAN_TIERS = ['Animart Basic', 'Animart Essential', 'Animart Pro', 'Animart Elite'];
 
-// Normalize ANY stored/legacy plan value to a canonical tier label. The DB has
-// historically stored lowercase keys ('premium', 'superpremium', 'basic') and
-// may also store the spaced labels ('Super Premium') depending on whether the
-// migration ran — so we accept all of them. 'basic'/'pro' fold into Premium;
-// 'elite'/'superpremium' into Super Premium.
+// Bucket for sellers without an approved subscription.
+const NO_PLAN = 'No Plan';
+
+// Normalize ANY stored/legacy plan value to a canonical plan label. Older rows
+// may still hold the retired 3-tier names ('Free' / 'Premium' /
+// 'Super Premium') or lowercase keys, depending on whether the plan migration
+// has run — map them forward exactly like the mobile app does
+// (Free/Basic → Basic, Premium/Pro → Pro, Super Premium/Elite → Elite).
 const _PLAN_ALIASES = {
-    free:         'Free',
-    basic:        'Premium',
-    pro:          'Premium',
-    premium:      'Premium',
-    elite:        'Super Premium',
-    superpremium: 'Super Premium'
+    animartbasic:     'Animart Basic',
+    basic:            'Animart Basic',
+    free:             'Animart Basic',
+    animartessential: 'Animart Essential',
+    essential:        'Animart Essential',
+    animartpro:       'Animart Pro',
+    pro:              'Animart Pro',
+    premium:          'Animart Pro',
+    animartelite:     'Animart Elite',
+    elite:            'Animart Elite',
+    superpremium:     'Animart Elite'
 };
 function normalizePlan(plan) {
     const key = String(plan || '').toLowerCase().replace(/[^a-z]/g, '');
-    return _PLAN_ALIASES[key] || plan || 'Free';
+    return _PLAN_ALIASES[key] || (plan ? String(plan) : NO_PLAN);
 }
 
-// Normalize subscriptions.billing_cycle to 'monthly' | 'yearly'. Rows written
-// before the 20260703 migration have no explicit value, so missing/null (or
-// anything unrecognized) is treated as 'monthly'.
+// Rank used when a seller somehow holds two approved plans: keep the higher one.
+function planRank(plan) {
+    return PLAN_TIERS.indexOf(plan);   // -1 for unknown / NO_PLAN
+}
+
+// Normalize subscriptions.billing_cycle to 'weekly' | 'monthly' | 'yearly'.
+// Rows written before the billing_cycle migration have no value, so
+// missing/null (or anything unrecognized) is treated as 'monthly'.
 function normalizeBillingCycle(cycle) {
-    return String(cycle || '').toLowerCase() === 'yearly' ? 'yearly' : 'monthly';
+    const c = String(cycle || '').toLowerCase().trim();
+    return c === 'weekly' || c === 'yearly' ? c : 'monthly';
 }
 
 function billingCycleLabel(cycle) {
-    return normalizeBillingCycle(cycle) === 'yearly' ? 'Yearly' : 'Monthly';
+    return { weekly: 'Weekly', monthly: 'Monthly', yearly: 'Yearly' }[normalizeBillingCycle(cycle)];
+}
+
+// Converts one billing period's price to a per-month rate (for MRR):
+// weekly × 52/12, yearly ÷ 12, monthly as-is.
+function monthlyEquivalent(amount, cycle) {
+    const a = Number(amount) || 0;
+    switch (normalizeBillingCycle(cycle)) {
+        case 'weekly': return a * 52 / 12;
+        case 'yearly': return a / 12;
+        default:       return a;
+    }
 }
 
 // Selects from subscriptions including billing_cycle, retrying without it when
@@ -58,20 +89,28 @@ async function selectSubscriptions(client, withCycle, withoutCycle, applyFilters
     return res;
 }
 
-// Display metadata for the three tiers (shared so both pages look consistent).
-// `key` is the canonical plan label; `id` is the DOM-safe element suffix.
+// Display metadata for the plans + the no-plan bucket (shared so every page
+// looks consistent). `key` is the canonical plan label; `id` is the DOM-safe
+// element suffix; `short` is the compact label for legends/chips.
 const TIER_META = [
-    { key: 'Free',          id: 'free',    label: 'Free',          color: '#7D8590', rgb: '125,133,144' },
-    { key: 'Premium',       id: 'premium', label: 'Premium',       color: '#FFD166', rgb: '255,209,102' },
-    { key: 'Super Premium', id: 'super',   label: 'Super Premium', color: '#C084FC', rgb: '192,132,252' }
+    { key: 'Animart Basic',     id: 'basic',     label: 'Animart Basic',     short: 'Basic',     icon: 'sprout', color: '#38BDF8', rgb: '56,189,248'  },
+    { key: 'Animart Essential', id: 'essential', label: 'Animart Essential', short: 'Essential', icon: 'zap',    color: '#34D399', rgb: '52,211,153'  },
+    { key: 'Animart Pro',       id: 'pro',       label: 'Animart Pro',       short: 'Pro',       icon: 'crown',  color: '#FFD166', rgb: '255,209,102' },
+    { key: 'Animart Elite',     id: 'elite',     label: 'Animart Elite',     short: 'Elite',     icon: 'gem',    color: '#C084FC', rgb: '192,132,252' },
+    { key: NO_PLAN,             id: 'none',      label: 'No Plan',           short: 'No Plan',   icon: 'user',   color: '#7D8590', rgb: '125,133,144' }
 ];
+
+// Lookup by canonical plan label (falls back to the no-plan styling).
+function tierMeta(plan) {
+    return TIER_META.find(t => t.key === plan) || TIER_META[TIER_META.length - 1];
+}
 
 // Total revenue from mobile-app subscription payments: sum of subscriptions.price
 // over approved (active) + expired rows — pending/rejected were never paid.
 // A row's price is the FULL amount for its billing cycle (a yearly row's price
 // covers the whole year), so `total`/`active` are money actually collected.
-// `mrr` normalizes active plans to a per-month rate (yearly ÷ 12) for
-// monthly-recurring-revenue style display.
+// `mrr` normalizes active plans to a per-month rate (weekly × 52/12,
+// yearly ÷ 12) for monthly-recurring-revenue style display.
 // Returns { total, active, mrr }; zeros on error (callers render zeros, page survives).
 async function computeSubscriptionRevenue(client) {
     try {
@@ -88,7 +127,7 @@ async function computeSubscriptionRevenue(client) {
             total += amt;
             if (r.status === 'approved') {
                 active += amt;
-                mrr += normalizeBillingCycle(r.billing_cycle) === 'yearly' ? amt / 12 : amt;
+                mrr += monthlyEquivalent(amt, r.billing_cycle);
             }
         });
         return { total, active, mrr: Math.round(mrr) };
@@ -172,11 +211,17 @@ async function computeMonthlyRevenue(client, months = 6) {
     };
 }
 
-// Returns { 'Free', 'Premium', 'Super Premium', totalSellers }.
+// Returns { 'Animart Basic', 'Animart Essential', 'Animart Pro',
+// 'Animart Elite', 'No Plan', totalSellers }.
 // On any error, returns all-zero counts and logs (callers render zeros rather
 // than breaking the page).
+function emptyTierCounts() {
+    const z = { totalSellers: 0 };
+    TIER_META.forEach(t => { z[t.key] = 0; });
+    return z;
+}
+
 async function computeSellerTierCounts(client) {
-    const zero = { 'Free': 0, 'Premium': 0, 'Super Premium': 0, totalSellers: 0 };
     try {
         // Total sellers (head:true → count only, no rows transferred).
         const { count: totalSellers, error: uErr } = await client
@@ -185,7 +230,8 @@ async function computeSellerTierCounts(client) {
             .eq('is_seller', true);
         if (uErr) throw uErr;
 
-        // Active subscriptions → map each seller to a tier (distinct sellers).
+        // Active subscriptions → map each seller to ONE plan (distinct sellers;
+        // the highest plan wins if a seller somehow holds two).
         const { data: subs, error: sErr } = await client
             .from('subscriptions')
             .select('user_id, plan')
@@ -195,22 +241,21 @@ async function computeSellerTierCounts(client) {
         const tierByUser = {};
         (subs || []).forEach(s => {
             const tier = normalizePlan(s.plan);
-            if (PAID_TIERS.includes(tier) && s.user_id != null) tierByUser[s.user_id] = tier;
+            if (!PLAN_TIERS.includes(tier) || s.user_id == null) return;
+            const prev = tierByUser[s.user_id];
+            if (!prev || planRank(tier) > planRank(prev)) tierByUser[s.user_id] = tier;
         });
 
-        const counts = { 'Premium': 0, 'Super Premium': 0 };
+        const counts = emptyTierCounts();
         let subscribers = 0;
         Object.values(tierByUser).forEach(plan => { counts[plan]++; subscribers++; });
 
         const total = totalSellers || 0;
-        return {
-            'Free':          Math.max(0, total - subscribers),
-            'Premium':       counts['Premium'],
-            'Super Premium': counts['Super Premium'],
-            totalSellers: total
-        };
+        counts[NO_PLAN] = Math.max(0, total - subscribers);
+        counts.totalSellers = total;
+        return counts;
     } catch (e) {
         console.error('TIER STATS ERROR:', e);
-        return zero;
+        return emptyTierCounts();
     }
 }

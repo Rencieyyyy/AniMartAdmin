@@ -310,6 +310,40 @@
             outline: none; transition: border-color 0.2s;
         }
         .field input:focus, .field select:focus { border-color: rgba(126,255,197,0.4); }
+
+        /* "Forgot password?" under the confirm-it's-you field (Reset password modal) */
+        .field-foot { display: flex; justify-content: flex-end; margin-top: 6px; }
+        .forgot-own {
+            background: none; border: 0; padding: 2px 0; cursor: pointer;
+            font-family: inherit; font-size: 0.72rem; font-weight: 600;
+            color: var(--mint-dim, #5CE8A8);
+        }
+        .forgot-own:hover { text-decoration: underline; }
+        .forgot-box {
+            display: flex; gap: 10px; align-items: flex-start;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 10px; padding: 12px 14px; margin-bottom: 18px;
+            font-size: 0.8rem; line-height: 1.55; color: var(--muted);
+        }
+        .forgot-box svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; color: var(--mint-dim, #5CE8A8); }
+        .forgot-box strong { color: var(--text); word-break: break-all; }
+
+        /* 6-digit recovery code modal */
+        .otp-input {
+            width: 100%;
+            background: var(--surface-2); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px;
+            font-family: 'Sora', sans-serif; font-size: 1.5rem; font-weight: 800;
+            letter-spacing: 0.6em; text-indent: 0.6em; text-align: center;
+            color: var(--text); outline: none; transition: border-color 0.2s;
+        }
+        .otp-input:focus { border-color: rgba(126,255,197,0.4); }
+        .otp-input.bad { border-color: rgba(255,107,107,0.6); }
+        .otp-msg { min-height: 1.2em; margin-top: 10px; font-size: 0.75rem; font-weight: 600; text-align: center; }
+        .otp-msg.err { color: var(--danger); }
+        .otp-msg.ok { color: var(--mint-dim); }
+        .otp-resend { display: flex; justify-content: center; margin-top: 6px; }
+        .otp-resend .forgot-own:disabled { color: var(--muted); cursor: not-allowed; text-decoration: none; }
         .field select option { background: var(--surface-2); }
         .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
@@ -387,13 +421,11 @@
         /* ── RESPONSIVE ── */
         @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
         @media (max-width: 900px) {
-            :root { --sidebar-w: 64px; }
-            .sidebar-brand, .nav-link span, .nav-label { display: none; }
-            .nav-link { justify-content: center; padding: 10px; }
             .main { padding: 24px 18px; }
         }
         @media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
     </style>
+    <link rel="stylesheet" href="admin-shell.css">
 </head>
 <body>
 
@@ -537,12 +569,18 @@
 <!-- RESET PASSWORD MODAL -->
 <div class="modal-overlay" id="resetPwModal">
     <div class="modal">
-        <h2>Reset password</h2>
+        <h2 id="resetPwTitle">Reset password</h2>
+
+        <!-- Step 1: set another admin's password (confirmed with your own) -->
+        <div id="resetPwForm">
         <div class="modal-sub" id="resetPwWho">Set a new login password for this admin. Share it with them securely — they can change it afterwards on their Profile page.</div>
 
         <div class="field">
             <label for="rOwnPassword">Your current password (to confirm it's you)</label>
             <input type="password" id="rOwnPassword" placeholder="••••••••" autocomplete="current-password">
+            <div class="field-foot">
+                <button type="button" class="forgot-own" onclick="showForgotOwnPw()">Forgot password?</button>
+            </div>
         </div>
         <div class="field">
             <label for="rPassword">New password (min 8 chars)</label>
@@ -555,6 +593,46 @@
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="closeModal('resetPwModal')">Cancel</button>
             <button class="btn btn-primary" id="resetPwBtn" onclick="resetPassword()"><i data-lucide="key-round"></i>Set new password</button>
+        </div>
+        </div>
+
+        <!-- Forgot YOUR OWN password: email yourself a 6-digit recovery code
+             (same flow as the login page's "Forgot Password?"). -->
+        <div id="resetPwForgot" hidden>
+            <div class="forgot-box">
+                <i data-lucide="mail"></i>
+                <div>We'll email a 6-digit code to <strong id="forgotOwnEmail">your email</strong>.
+                    Type it in the next step to confirm it's you, then set the new password
+                    for <strong id="forgotTargetName">this admin</strong>. Your own password stays the same.</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="hideForgotOwnPw()">Back</button>
+                <button class="btn btn-primary" id="forgotOwnBtn" onclick="sendOwnResetCode()"><i data-lucide="send"></i>Send code</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ENTER 6-DIGIT CODE MODAL (after "Send code" above). The code must match
+     the one emailed to your own address before you can choose a new password. -->
+<div class="modal-overlay" id="otpModal">
+    <div class="modal">
+        <div class="confirm-icon" style="background:rgba(126,255,197,0.12); color:var(--mint-dim);"><i data-lucide="shield-check"></i></div>
+        <h2>Enter the 6-digit code</h2>
+        <div class="modal-sub">We sent a code to <strong id="otpEmail" style="color:var(--text); word-break:break-all;">your email</strong>.
+            Type it below to confirm it's you, then you'll set the new password for
+            <strong id="otpTargetName" style="color:var(--text);">this admin</strong>.</div>
+
+        <input type="text" id="otpCode" class="otp-input" inputmode="numeric" maxlength="6"
+               placeholder="••••••" autocomplete="one-time-code" aria-label="6-digit code">
+        <div class="otp-msg" id="otpMsg"></div>
+        <div class="otp-resend">
+            <button type="button" class="forgot-own" id="otpResendBtn" onclick="resendOwnResetCode()">Didn't get it? Send a new code</button>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('otpModal')">Cancel</button>
+            <button class="btn btn-primary" id="otpVerifyBtn" onclick="verifyOwnResetCode()"><i data-lucide="check"></i>Verify code</button>
         </div>
     </div>
 </div>
@@ -607,6 +685,7 @@
 <script src="../config.js"></script>
 <script src="escape.js"></script>
 <script src="logout-modal.js"></script>
+<script src="sidebar.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
 <script>
@@ -865,6 +944,7 @@ function openResetPw(id) {
     const a = admins.find(x => x.id === id);
     if (!a) return;
     resetPwTarget = id;
+    hideForgotOwnPw();
     document.getElementById('rOwnPassword').value = '';
     document.getElementById('rPassword').value = '';
     document.getElementById('resetPwWho').innerHTML =
@@ -903,6 +983,176 @@ async function resetPassword() {
         btn.disabled = false;
     }
 }
+
+// FORGOT YOUR OWN PASSWORD — the reset above needs the super admin's current
+// password. If they've forgotten it, send a recovery code to their OWN email
+// (Supabase resetPasswordForEmail, the same 6-digit template the login page
+// and mobile app use), then ask for that code in a modal here. The code only
+// confirms it's really them: a matching code (auth.verifyOtp) moves on to
+// reset-password.html, which sets the password of the admin they clicked
+// (via the admin-users Edge Function) — their own password is untouched.
+let forgotOwnEmail = null;
+const RECOVERY_HANDOFF_KEY = 'animart_recovery_handoff';   // read by reset-password.html
+const RESEND_COOLDOWN_S = 60;                               // Supabase's default email rate limit
+let resendTimer = null;
+
+async function showForgotOwnPw() {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user || !user.email) { showToast('Session expired — please log in again.', 'error'); return; }
+    forgotOwnEmail = user.email;
+    document.getElementById('forgotOwnEmail').textContent = user.email;
+    const target = admins.find(x => x.id === resetPwTarget);
+    document.getElementById('forgotTargetName').textContent = target ? nameOf(target) : 'this admin';
+    document.getElementById('resetPwTitle').textContent = 'Forgot your password?';
+    document.getElementById('resetPwForm').hidden = true;
+    document.getElementById('resetPwForgot').hidden = false;
+    lucide.createIcons();
+}
+
+function hideForgotOwnPw() {
+    document.getElementById('resetPwTitle').textContent = 'Reset password';
+    document.getElementById('resetPwForm').hidden = false;
+    document.getElementById('resetPwForgot').hidden = true;
+}
+
+async function requestOwnResetCode() {
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(forgotOwnEmail, {
+        redirectTo: new URL('../reset-password.html', window.location.href).href
+    });
+    if (error && error.status === 429) throw new Error('Too many requests — wait a minute and try again.');
+    if (error) throw new Error(error.message || 'Could not send the code.');
+}
+
+async function sendOwnResetCode() {
+    if (!forgotOwnEmail) return;
+    const btn = document.getElementById('forgotOwnBtn');
+    btn.disabled = true;
+    try {
+        await requestOwnResetCode();
+        closeModal('resetPwModal');
+        openOtpModal();
+    } catch (e) {
+        showToast(e.message || String(e), 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function setOtpMsg(msg, cls) {
+    const el = document.getElementById('otpMsg');
+    el.textContent = msg || '';
+    el.className = 'otp-msg ' + (cls || '');
+}
+
+function openOtpModal() {
+    const input = document.getElementById('otpCode');
+    input.value = '';
+    input.classList.remove('bad');
+    document.getElementById('otpEmail').textContent = forgotOwnEmail;
+    const target = admins.find(x => x.id === resetPwTarget);
+    document.getElementById('otpTargetName').textContent = target ? nameOf(target) : 'this admin';
+    setOtpMsg('');
+    startResendCooldown();
+    openModal('otpModal');
+    lucide.createIcons();
+    input.focus();
+}
+
+function startResendCooldown() {
+    const btn = document.getElementById('otpResendBtn');
+    let left = RESEND_COOLDOWN_S;
+    clearInterval(resendTimer);
+    btn.disabled = true;
+    btn.textContent = `Send a new code in ${left}s`;
+    resendTimer = setInterval(() => {
+        left -= 1;
+        if (left <= 0) {
+            clearInterval(resendTimer);
+            btn.disabled = false;
+            btn.textContent = "Didn't get it? Send a new code";
+        } else {
+            btn.textContent = `Send a new code in ${left}s`;
+        }
+    }, 1000);
+}
+
+async function resendOwnResetCode() {
+    if (!forgotOwnEmail) return;
+    const btn = document.getElementById('otpResendBtn');
+    btn.disabled = true;
+    try {
+        await requestOwnResetCode();
+        document.getElementById('otpCode').value = '';
+        setOtpMsg('A new code is on its way — the old one no longer works.', 'ok');
+        startResendCooldown();
+    } catch (e) {
+        setOtpMsg(e.message || String(e), 'err');
+        btn.disabled = false;
+    }
+}
+
+async function verifyOwnResetCode() {
+    const input = document.getElementById('otpCode');
+    const code = input.value.trim();
+    input.classList.remove('bad');
+    if (!/^\d{6}$/.test(code)) {
+        input.classList.add('bad');
+        setOtpMsg('Enter all 6 digits from the email.', 'err');
+        input.focus();
+        return;
+    }
+
+    const btn = document.getElementById('otpVerifyBtn');
+    btn.disabled = true;
+    setOtpMsg('Checking code…');
+    try {
+        // Verify on a throwaway client so this page's own session is left
+        // alone; the recovery session it returns is handed to
+        // reset-password.html (same tab, sessionStorage) to set the password.
+        const tmp = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: false, autoRefreshToken: false,
+                detectSessionInUrl: false, storageKey: 'animart-recovery-verify'
+            }
+        });
+        const { data, error } = await tmp.auth.verifyOtp({
+            email: forgotOwnEmail, token: code, type: 'recovery'
+        });
+        if (error || !data || !data.session) {
+            input.classList.add('bad');
+            input.select();
+            setOtpMsg(error && error.status === 429
+                ? 'Too many attempts — wait a minute and try again.'
+                : "That code doesn't match or has expired. Check the email or send a new code.", 'err');
+            return;
+        }
+
+        // The code only proves it's you. The reset page then changes the
+        // password of the admin you clicked (resetPwTarget), not your own.
+        const target = admins.find(x => x.id === resetPwTarget);
+        if (!target) throw new Error('Admin not found — close this and try again.');
+        sessionStorage.setItem(RECOVERY_HANDOFF_KEY, JSON.stringify({
+            access_token: data.session.access_token,
+            target: { id: target.id, name: nameOf(target), email: target.email },
+            at: Date.now()
+        }));
+        setOtpMsg('Code verified — opening the reset page…', 'ok');
+        window.location.href = '../reset-password.html?verified=1';
+    } catch (e) {
+        setOtpMsg(e.message || String(e), 'err');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// Digits only in the code box; Enter submits.
+document.getElementById('otpCode').addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    e.target.classList.remove('bad');
+});
+document.getElementById('otpCode').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') verifyOwnResetCode();
+});
 
 // ─────────────────────────────────────────────────
 // VIEW PROFILE — everything on the admins row, plus their

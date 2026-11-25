@@ -396,9 +396,6 @@
         /* ── RESPONSIVE ── */
         @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
         @media (max-width: 900px) {
-            :root { --sidebar-w: 64px; }
-            .sidebar-brand, .nav-link span, .nav-label { display: none; }
-            .nav-link { justify-content: center; padding: 10px; }
             .main { padding: 24px 18px; }
         }
         @media (max-width: 700px) {
@@ -408,6 +405,7 @@
             .detail-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <link rel="stylesheet" href="admin-shell.css">
 </head>
 <body>
 
@@ -427,7 +425,8 @@
             <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
             <a href="sellers.html"   class="nav-link"><i data-lucide="store"></i><span>Sellers & Buyers</span></a>
             <a href="listings.html"  class="nav-link"><i data-lucide="package"></i><span>Listings</span></a>
-            <a href="premium.html"   class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
+            <a href="transactions.html" class="nav-link"><i data-lucide="receipt"></i><span>Transactions</span></a>
+            <a href="premium.html"  class="nav-link"><i data-lucide="crown"></i><span>Premium Requests</span></a>
 
             <div class="nav-label">Admin</div>
             <a href="announcements.html"  class="nav-link"><i data-lucide="megaphone"></i><span>Announcements</span></a>
@@ -920,6 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 })();
 </script>
+<script src="sidebar.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
 </body>

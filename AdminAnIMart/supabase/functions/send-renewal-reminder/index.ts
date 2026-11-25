@@ -33,6 +33,11 @@ const json = (body: unknown, status = 200) =>
     headers: { ...CORS, "Content-Type": "application/json" },
   });
 
+// User-supplied values (name, plan) go into the email HTML — escape them.
+const esc = (v: unknown) =>
+  String(v ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
@@ -67,23 +72,28 @@ Deno.serve(async (req) => {
     const dateTxt = expires && !isNaN(expires.getTime())
       ? expires.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })
       : "soon";
-    const cycleTxt = billingCycle ? ` (billed ${billingCycle})` : "";
+    const cycleTxt = billingCycle ? ` (billed ${esc(billingCycle)})` : "";
+    const perUnit = { weekly: "/week", monthly: "/month", yearly: "/year" }[String(billingCycle)] ?? "/month";
     const priceTxt = typeof price === "number" && price > 0
-      ? ` at ₱${price.toLocaleString("en-PH")}${billingCycle === "yearly" ? "/year" : "/month"}`
+      ? ` at ₱${price.toLocaleString("en-PH")}${perUnit}`
       : "";
 
+    // Plan labels already carry the brand ('Animart Pro'); only prefix
+    // "AniMart" for anything that doesn't (legacy values).
+    const planName = /^animart/i.test(String(plan)) ? String(plan) : `AniMart ${plan}`;
+
     const subject = expired
-      ? `Your AniMart ${plan} plan has expired`
-      : `Your AniMart ${plan} plan expires on ${dateTxt}`;
+      ? `Your ${planName} plan has expired`
+      : `Your ${planName} plan expires on ${dateTxt}`;
 
     const lead = expired
-      ? `Your <strong>${plan}</strong> plan${cycleTxt} expired on <strong>${dateTxt}</strong>, so your ${plan} benefits are currently paused.`
-      : `Your <strong>${plan}</strong> plan${cycleTxt} will expire on <strong>${dateTxt}</strong>.`;
+      ? `Your <strong>${esc(planName)}</strong> plan${cycleTxt} expired on <strong>${dateTxt}</strong>, so your ${esc(plan)} benefits are currently paused.`
+      : `Your <strong>${esc(planName)}</strong> plan${cycleTxt} will expire on <strong>${dateTxt}</strong>.`;
 
     const html = `
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1f2937;">
         <h2 style="color:#0d9668;margin:0 0 16px;">AniMart</h2>
-        <p>Hi ${name || "there"},</p>
+        <p>Hi ${esc(name || "there")},</p>
         <p>${lead}</p>
         <p>Would you like to renew${priceTxt}? Open the <strong>Premium</strong> section in the AniMart app to resubscribe and keep your benefits — priority placement, verified badge, and more.</p>
         <p>If you have any questions, just reply through the in-app Customer Service chat.</p>

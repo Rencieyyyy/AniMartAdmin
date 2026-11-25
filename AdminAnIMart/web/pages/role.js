@@ -6,8 +6,9 @@
 // script:
 //   1. exposes window.getAdminRole() → Promise<'admin'|'super_admin'|null>;
 //   2. injects the "Super Admin" sidebar section (Payment Settings,
-//      Audit Logs) — ONLY when the signed-in admin is a super admin, so
-//      regular admins never even see the links;
+//      Manage Admins, Audit Logs) — ONLY when the signed-in admin is a super
+//      admin, so regular admins never even see the links. sidebar.js then
+//      folds it into a collapsible dropdown like Main / Admin;
 //   3. fills any [data-admin-role] element with the pretty role name
 //      (used by the My Profile page's role pill);
 //   4. exposes window.requireSuperAdmin() — route guard for the two
@@ -63,6 +64,10 @@
         return true;
     };
 
+    // localStorage key holding the last verified role (written here, at
+    // login by config.js, cleared at logout by logout-modal.js).
+    const ROLE_CACHE_KEY = "animart_admin_role";
+
     function prettyRole(role) {
         return role === "super_admin" ? "Super Admin" : "Admin";
     }
@@ -101,9 +106,20 @@
             }
         }
 
-        if (role !== "super_admin") return;
+        // Remember the verified role so the next page can draw the Super
+        // Admin section immediately (see the top of this file's tail below).
+        try {
+            if (role) localStorage.setItem(ROLE_CACHE_KEY, role);
+            else localStorage.removeItem(ROLE_CACHE_KEY);
+        } catch (e) { /* storage blocked — just no fast path */ }
 
-        // Inject the Super Admin nav section just above .nav-bottom.
+        if (role === "super_admin") injectSuperAdmin();
+        else removeSuperAdmin();
+    }
+
+    // Super Admin section (Payment Settings / Manage Admins / Audit Logs),
+    // inserted just above .nav-bottom. Idempotent.
+    function injectSuperAdmin() {
         const nav = document.querySelector(".sidebar .nav");
         if (!nav || nav.querySelector('a[href$="payment-settings.html"]')) return;
 
@@ -139,8 +155,33 @@
         markActive(pay);
         markActive(admins);
         markActive(logs);
-        if (window.lucide) lucide.createIcons();
+
+        // sidebar.js turns the new label + links into the collapsible
+        // "Super Admin" dropdown (it renders the icons too).
+        if (window.AdminSidebar) window.AdminSidebar.refresh();
+        else if (window.lucide) lucide.createIcons();
     }
+
+    // Undo a cached (optimistic) injection when the live lookup says this
+    // session is not a super admin (role changed, or a different account).
+    function removeSuperAdmin() {
+        const group = document.querySelector('.sidebar .nav-group[data-group="super-admin"]');
+        if (group) { group.remove(); return; }
+        const link = document.querySelector('.sidebar a[href$="payment-settings.html"]');
+        if (!link) return;
+        let el = link.previousElementSibling;
+        if (el && el.classList.contains("nav-label")) el.remove();
+        document.querySelectorAll('.sidebar a[href$="payment-settings.html"], .sidebar a[href$="manage-admins.html"], .sidebar a[href$="audit-logs.html"]')
+            .forEach(a => a.remove());
+    }
+
+    // Fast path: the role from the previous page (or login) draws the Super
+    // Admin section right away, so it doesn't vanish and pop back in on every
+    // navigation while the lookup runs. apply() then confirms or removes it.
+    // UI only — the database enforces super-admin access regardless.
+    try {
+        if (localStorage.getItem(ROLE_CACHE_KEY) === "super_admin") injectSuperAdmin();
+    } catch (e) { /* storage blocked */ }
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", apply);

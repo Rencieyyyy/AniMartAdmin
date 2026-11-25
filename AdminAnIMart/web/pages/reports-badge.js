@@ -18,6 +18,9 @@
             display: inline-flex; align-items: center; justify-content: center;
             line-height: 1;
         }
+        /* display:inline-flex above would otherwise override [hidden] and
+           show a "0" pill when nothing is open. */
+        .nav-link .reports-badge[hidden] { display: none; }
         /* On mint (hover/active) backgrounds the red pill is unreadable —
            switch to a dark-on-mint treatment that inherits the link color. */
         .nav-link:hover .reports-badge,

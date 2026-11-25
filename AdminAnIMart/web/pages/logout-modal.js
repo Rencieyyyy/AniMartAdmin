@@ -89,6 +89,7 @@
     };
 
     window.doLogout = async function () {
+        try { localStorage.removeItem("animart_admin_role"); } catch (e) { /* ignore */ }
         // End the Supabase session before leaving, when available.
         try {
             if (typeof supabaseClient !== "undefined") {

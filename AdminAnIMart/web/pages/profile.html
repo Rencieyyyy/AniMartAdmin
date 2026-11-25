@@ -753,21 +753,6 @@
         }
 
         @media (max-width: 900px) {
-            :root {
-                --sidebar-w: 64px;
-            }
-
-            .sidebar-brand,
-            .nav-link span,
-            .nav-label {
-                display: none;
-            }
-
-            .nav-link {
-                justify-content: center;
-                padding: 10px;
-            }
-
             .main {
                 padding: 24px 20px;
             }
@@ -777,6 +762,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="admin-shell.css">
 </head>
 
 <body>
@@ -1525,6 +1511,7 @@
         });
     })();
     </script>
+    <script src="sidebar.js"></script>
     <script src="reports-badge.js"></script>
     <script src="role.js"></script>
 </body>

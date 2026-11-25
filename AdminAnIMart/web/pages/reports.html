@@ -413,9 +413,6 @@
             .stats-grid { grid-template-columns: repeat(2,1fr); }
         }
         @media (max-width: 900px) {
-            :root { --sidebar-w: 64px; }
-            .sidebar-brand, .nav-link span, .nav-label { display: none; }
-            .nav-link { justify-content: center; padding: 10px; }
             .main { padding: 24px 18px; }
         }
         @media (max-width: 700px) {
@@ -429,6 +426,7 @@
             .stats-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
+    <link rel="stylesheet" href="admin-shell.css">
 </head>
 <body>
 
@@ -587,6 +585,7 @@
 <script src="../config.js"></script>
 <script src="escape.js"></script>
 <script src="logout-modal.js"></script>
+<script src="sidebar.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
 <script>

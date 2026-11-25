@@ -458,20 +458,23 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
+        .queue-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .tier-grid  { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
         /* ─── RESPONSIVE ─── */
         @media (max-width: 1200px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .queue-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .tier-grid  { grid-template-columns: repeat(3, minmax(0, 1fr)); }
             .charts-row { grid-template-columns: 1fr; }
             .livestock-grid { grid-template-columns: repeat(2, 1fr); }
             .bottom-row { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 900px) {
-            :root { --sidebar-w: 64px; }
-            .sidebar-brand, .nav-link span, .nav-label { display: none; }
-            .nav-link { justify-content: center; padding: 10px; }
             .main { padding: 24px 20px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .queue-grid, .tier-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
 
         @media (max-width: 600px) {
@@ -507,6 +510,7 @@
         .cb-reject { background: rgba(255,107,107,0.15); color: var(--danger); border-color: rgba(255,107,107,0.45); }
         .cb-reject:hover { background: rgba(255,107,107,0.25); }
     </style>
+    <link rel="stylesheet" href="admin-shell.css">
 </head>
 <body>
 
@@ -591,7 +595,7 @@
 
         <!-- NEEDS ATTENTION — the admin's work queues, each links to its page -->
         <div class="section-title">Needs Attention</div>
-        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="stats-grid queue-grid">
             <a href="premium.html" class="stat-card" style="--accent-bg: rgba(255,209,102,0.06); display:block; text-decoration:none; color:inherit;">
                 <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:#FFD166;">
                     <i data-lucide="crown"></i>
@@ -618,34 +622,10 @@
             </a>
         </div>
 
-        <!-- SELLERS BY TIER -->
-        <div class="section-title">Sellers by Tier</div>
-        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
-            <div class="stat-card" style="--accent-bg: rgba(125,133,144,0.06);">
-                <div class="stat-icon" style="background:rgba(125,133,144,0.12); color:#7D8590;">
-                    <i data-lucide="user"></i>
-                </div>
-                <div class="stat-label">Free Tier</div>
-                <div class="stat-value" id="tier-free">0</div>
-                <div class="stat-trend" id="tier-free-pct" style="color:#7D8590;"><i data-lucide="users"></i> — of sellers</div>
-            </div>
-            <div class="stat-card" style="--accent-bg: rgba(255,209,102,0.06);">
-                <div class="stat-icon" style="background:rgba(255,209,102,0.12); color:#FFD166;">
-                    <i data-lucide="crown"></i>
-                </div>
-                <div class="stat-label">Premium Tier</div>
-                <div class="stat-value" id="tier-premium">0</div>
-                <div class="stat-trend" id="tier-premium-pct" style="color:#FFD166;"><i data-lucide="users"></i> — of sellers</div>
-            </div>
-            <div class="stat-card" style="--accent-bg: rgba(192,132,252,0.06);">
-                <div class="stat-icon" style="background:rgba(192,132,252,0.12); color:#C084FC;">
-                    <i data-lucide="star"></i>
-                </div>
-                <div class="stat-label">Super Premium Tier</div>
-                <div class="stat-value" id="tier-super">0</div>
-                <div class="stat-trend" id="tier-super-pct" style="color:#C084FC;"><i data-lucide="users"></i> — of sellers</div>
-            </div>
-        </div>
+        <!-- SELLERS BY PLAN — cards rendered by loadTierStats() from TIER_META
+             (tier-stats.js): the four Animart plans + sellers with no plan. -->
+        <div class="section-title">Sellers by Plan</div>
+        <div class="stats-grid tier-grid" id="tier-cards"></div>
 
         <!-- CHARTS -->
         <div class="charts-row">
@@ -870,28 +850,31 @@ async function approvalDecision(id, decision) {
     }, 1000);
 }
 
-// ── SELLERS BY TIER ────────────────────────────────────────────────────────
-// Populates the Free / Premium / Super Premium stat cards using the shared helper
-// in tier-stats.js (same numbers the Premium Requests page shows).
-async function loadTierStats() {
-    const t = await computeSellerTierCounts(supabaseClient);
+// ── SELLERS BY PLAN ────────────────────────────────────────────────────────
+// One card per plan (Animart Basic / Essential / Pro / Elite) plus sellers
+// with no active plan, using the shared helper in tier-stats.js (same numbers
+// the Premium Requests page shows).
+function renderTierCards(t) {
     const total = t.totalSellers || 0;
-
-    // TIER_META (tier-stats.js) drives the three tiers: meta.key is the plan
-    // label used to look up the count; meta.id is the DOM element suffix.
-    TIER_META.forEach(meta => {
+    document.getElementById('tier-cards').innerHTML = TIER_META.map(meta => {
         const count = t[meta.key] || 0;
-        const valEl = document.getElementById('tier-' + meta.id);
-        if (valEl) valEl.textContent = count.toLocaleString();
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        return `
+            <div class="stat-card" style="--accent-bg: rgba(${meta.rgb},0.06);">
+                <div class="stat-icon" style="background:rgba(${meta.rgb},0.12); color:${meta.color};">
+                    <i data-lucide="${meta.icon}"></i>
+                </div>
+                <div class="stat-label">${meta.label}</div>
+                <div class="stat-value" id="tier-${meta.id}">${count.toLocaleString()}</div>
+                <div class="stat-trend" id="tier-${meta.id}-pct" style="color:${meta.color};"><i data-lucide="users"></i> ${total > 0 ? pct + '%' : '—'} of sellers</div>
+            </div>`;
+    }).join('');
+    lucide.createIcons();
+}
 
-        const pctEl = document.getElementById('tier-' + meta.id + '-pct');
-        if (pctEl) {
-            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-            pctEl.innerHTML = `<i data-lucide="users"></i> ${pct}% of sellers`;
-        }
-    });
-
-    lucide.createIcons();   // re-render the icons injected into the trend lines
+async function loadTierStats() {
+    renderTierCards(emptyTierCounts());   // zeros while loading
+    renderTierCards(await computeSellerTierCounts(supabaseClient));
 }
 
 // ── SUBSCRIPTION REVENUE ───────────────────────────────────────────────────
@@ -903,7 +886,7 @@ async function loadSubscriptionRevenue() {
     document.getElementById('stat-sub-revenue').textContent = '₱' + r.total.toLocaleString();
     const note = document.getElementById('stat-sub-revenue-note');
     // r.active sums each plan's full-cycle price; r.mrr is the per-month
-    // equivalent (yearly plans ÷ 12) so yearly rows don't read as monthly rates.
+    // equivalent (weekly × 52/12, yearly ÷ 12) so cycles don't read as monthly rates.
     if (note) note.innerHTML = `<i data-lucide="coins"></i> ₱${r.active.toLocaleString()} active · ₱${r.mrr.toLocaleString()}/mo recurring`;
     lucide.createIcons();   // re-render the icon injected into the trend line
 }
@@ -1128,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Live data loaders (each is self-contained and logs its own errors).
     loadPendingApprovals();     // pending account approvals (users table)
-    loadTierStats();            // Free / Premium / Super Premium seller counts
+    loadTierStats();            // sellers per plan (Basic / Essential / Pro / Elite / none)
     loadSubscriptionRevenue();  // subscription revenue stat card
     loadUserCounts();           // seller/buyer cards + doughnut
     loadListingStats();         // active livestock card + category grid
@@ -1261,6 +1244,7 @@ document.addEventListener('keydown', e => {
     });
 })();
 </script>
+<script src="sidebar.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
 </body>

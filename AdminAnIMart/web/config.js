@@ -2,12 +2,13 @@ SUPABASE_URL = "https://kzhlhrhhfupgvpzjllce.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6aGxocmhoZnVwZ3ZwempsbGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyOTg5MzcsImV4cCI6MjA5Njg3NDkzN30.asNT0AIXPO_cXKDK_YLV9wozWnCHlg9Bb1L8pMNAPxM"
 
 
-// ── "Remember me" ──
+// ── Session storage ──
 // supabase-js keeps the session in localStorage (survives closing the
-// browser). When the user UNchecks "Remember me" at login we set this flag
-// and route the session through sessionStorage instead, so it dies with the
-// browser. The flag itself lives in localStorage so every page (and tab)
-// agrees on where to look. Absent flag = remember (matches old behaviour).
+// browser). The login page used to have a "Remember me" checkbox that, when
+// unchecked, set this flag to "no" and routed the session through
+// sessionStorage instead. The checkbox is gone; every login now clears the
+// flag (= localStorage), but the reader stays so a session that was stored
+// under the old "no" setting is still found until that admin signs in again.
 const REMEMBER_FLAG = "animart_remember_me";
 
 const authStorage = {
@@ -108,10 +109,10 @@ if (loginForm) {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
 
-        // Decide where the session will live BEFORE signing in (see
-        // REMEMBER_FLAG above). Missing checkbox = remember, old behaviour.
-        const rememberBox = document.getElementById("rememberMe");
-        localStorage.setItem(REMEMBER_FLAG, rememberBox && !rememberBox.checked ? "no" : "yes");
+        // Sessions always live in localStorage now (see REMEMBER_FLAG above).
+        // Clear any old "no" flag BEFORE signing in so the new session goes
+        // there.
+        localStorage.removeItem(REMEMBER_FLAG);
 
 
         const { error } = await supabaseClient.auth.signInWithPassword({
@@ -150,8 +151,10 @@ if (loginForm) {
         }
 
 
-        // Admin confirmed → enter the dashboard.
+        // Admin confirmed → enter the dashboard. Remember the role so the
+        // sidebar can draw the Super Admin section without waiting (role.js).
         stampActivity();
+        localStorage.setItem("animart_admin_role", admin.role || "admin");
         const loginBtn = document.getElementById("loginBtn");
 
         loginBtn.innerText = "Authenticating...";

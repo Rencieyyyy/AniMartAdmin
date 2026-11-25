@@ -539,9 +539,6 @@
 
         /* ─── RESPONSIVE ─── */
         @media (max-width: 900px) {
-            :root { --sidebar-w: 64px; }
-            .sidebar-brand, .nav-link span, .nav-label { display: none; }
-            .nav-link { justify-content: center; padding: 10px; }
             .main { padding: 24px 16px; }
         }
         @media (max-width: 600px) {
@@ -549,6 +546,7 @@
             .mini-stats { flex-direction: column; }
         }
     </style>
+    <link rel="stylesheet" href="admin-shell.css">
 </head>
 <body>
 <div class="wrapper">
@@ -800,8 +798,9 @@ async function loadLiveness() {
 
 async function loadUsers() {
     // Plans come from the subscriptions table (what the mobile app uses), not
-    // the stale users.plan column: a user's plan = their approved subscription,
-    // or Free if they have none. Same derivation as tier-stats.js.
+    // the stale users.plan column: a user's plan = their approved subscription
+    // (Animart Basic / Essential / Pro / Elite), or "No Plan" if they have
+    // none. Same derivation as tier-stats.js.
     const [usersRes, subsRes] = await Promise.all([
         supabaseClient
             .from('users')
@@ -826,13 +825,13 @@ async function loadUsers() {
     } else {
         (subsRes.data || []).forEach(s => {
             const tier = normalizePlan(s.plan);          // tier-stats.js
-            if (!PAID_TIERS.includes(tier) || s.user_id == null) return;
+            if (!PLAN_TIERS.includes(tier) || s.user_id == null) return;
             const cycle = normalizeBillingCycle(s.billing_cycle);   // null → monthly
-            // A member can hold monthly + yearly of the same plan while a cycle
-            // upgrade is in flight — show the yearly one rather than whichever
+            // If a member somehow holds two approved plans (e.g. while a plan
+            // change is in flight), show the higher plan rather than whichever
             // row happened to arrive last.
             const prev = planByUser[s.user_id];
-            if (prev && prev.tier === tier && prev.cycle === 'yearly' && cycle !== 'yearly') return;
+            if (prev && planRank(prev.tier) > planRank(tier)) return;
             planByUser[s.user_id] = { tier, cycle };
         });
     }
@@ -852,8 +851,8 @@ async function loadUsers() {
             type:     row.is_seller ? 'seller' : 'buyer',
             joined:   row.created_at || null,
             status:   dbStatusToUi(row.status),       // approved -> active
-            plan:     planByUser[row.id]?.tier || 'Free',
-            // 'Monthly' / 'Yearly' for paid plans; Free has no billing cycle.
+            plan:     planByUser[row.id]?.tier || NO_PLAN,
+            // 'Weekly' / 'Monthly' / 'Yearly' for users on a plan; '—' otherwise.
             billing:  planByUser[row.id] ? billingCycleLabel(planByUser[row.id].cycle) : '—',
             messenger: row.messenger || '',
             idType:      row.valid_id_type || null,
@@ -1365,6 +1364,7 @@ function showToast(msg, type='success') {
     });
 })();
 </script>
+<script src="sidebar.js"></script>
 <script src="reports-badge.js"></script>
 <script src="role.js"></script>
 </body>
