@@ -7,8 +7,8 @@
 // subscriptions.plan — see the app's subscription_service.dart):
 //   • Animart Basic     — ₱0   / month  (1-month free trial for new sellers)
 //   • Animart Essential — ₱99  / week   (starter plan for growing sellers)
-//   • Animart Pro       — ₱99  / month  (for serious livestock traders)
-//   • Animart Elite     — ₱299 / month  (maximum visibility & premium benefits)
+//   • Animart Pro       — ₱299 / month  (for serious livestock traders)
+//   • Animart Elite     — ₱2999 / month (maximum visibility & premium benefits)
 // Live prices come from public.prices (editable on the Premium page); the
 // numbers above are only the fallbacks shown before that table loads.
 //
